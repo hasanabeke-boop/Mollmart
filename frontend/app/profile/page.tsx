@@ -1,13 +1,30 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 type Interest = "Technology" | "Fashion" | "Home Decor" | "Outdoor" | "Books" | "Vintage";
 
 export default function UserProfilePage() {
-  const [name, setName] = useState("Alex Johnson");
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const [name, setName] = useState("");
   const [location, setLocation] = useState("San Francisco, CA");
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || user.email || "User");
+    }
+  }, [user]);
   const [interests, setInterests] = useState<Interest[]>([
     "Technology",
     "Home Decor",
