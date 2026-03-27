@@ -11,7 +11,7 @@ Maybe you can mention me or this repo in the acknowledgements too
   <h1>Express-Ts-Auth-Service</h1>
   
   <p>
-A pre-built authentication server that uses JSON Web Tokens (JWT) for authentication. It is built using Express.js, TypeScript and MySQL
+A pre-built authentication server that uses JSON Web Tokens (JWT) for authentication. It is built using Express.js, TypeScript and PostgreSQL
   </p>
   
 <!-- Badges -->
@@ -89,7 +89,7 @@ This pre-built authentication server is designed to simplify the process of addi
 
 <p align="left">
   <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=ts,nodejs,express,mysql,docker,prisma&perline=13" />
+    <img src="https://skillicons.dev/icons?i=ts,nodejs,express,postgresql,docker,prisma&perline=13" />
   </a>
 </p>
 
@@ -98,7 +98,7 @@ This pre-built authentication server is designed to simplify the process of addi
 ### Features
 
 - :black_nib: Written in TypeScript for type-safe code
-- :floppy_disk: Utilize a MySQL database to efficiently store user data
+- :floppy_disk: Utilize a PostgreSQL database to efficiently store user data
 - :speaking_head: Interacts with the database using the powerful Prisma ORM
 - :lock: Implements secure authentication measures with JWTs, ensuring secure access to sensitive data
 - :key: Implements robust password hashing using Argon2 for maximum security
@@ -155,11 +155,11 @@ POST /v1/verify-email/:token - Verify email
 
 ### Database
 
-Our server relies on MySQL as its primary database management system to store and manage all relevant data. MySQL is a popular and widely used open-source relational database system that provides efficient, secure, and scalable storage and retrieval of data.
+Our server relies on PostgreSQL as its primary database management system to store and manage all relevant data. PostgreSQL is a popular and widely used open-source relational database system that provides efficient, secure, and scalable storage and retrieval of data.
 
-To simplify and streamline the process of managing the data stored in the MySQL database, we utilize Prisma, which is a modern, type-safe ORM that supports various databases, including MySQL.
+To simplify and streamline the process of managing the data stored in the PostgreSQL database, we utilize Prisma, which is a modern, type-safe ORM that supports various databases, including PostgreSQL.
 
-Prisma helps us to write database queries in a more readable and intuitive way, making it easier to manage the data stored in our MySQL database. By using Prisma as our ORM of choice, we can also ensure that our application remains scalable, efficient, and maintainable.
+Prisma helps us to write database queries in a more readable and intuitive way, making it easier to manage the data stored in our PostgreSQL database. By using Prisma as our ORM of choice, we can also ensure that our application remains scalable, efficient, and maintainable.
 
 If you're interested in the structure of our database, you can take a look at the data model presented below, which provides an overview of the tables, columns, and relationships within the database.
 
@@ -331,10 +331,11 @@ REFRESH_TOKEN_EXPIRE=
 # name of the refresh token cookie
 REFRESH_TOKEN_COOKIE_NAME=
 
-MYSQL_DATABASE=
-MYSQL_ROOT_PASSWORD=
+POSTGRES_DB=
+POSTGRES_USER=
+POSTGRES_PASSWORD=
 
-# Example: mysql://USER:PASSWORD@HOST:PORT/DATABASE
+# Example: postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public
 DATABASE_URL=
 
 # Configuration for the emial service
