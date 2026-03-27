@@ -1,507 +1,462 @@
-<!--
-Hey, thanks for using the awesome-readme-template template.
-If you have any enhancements, then fork this project and create a pull request
-or just open an issue with the label "enhancement".
+# Auth Service
 
-Don't forget to give this project a star for additional support ;)
-Maybe you can mention me or this repo in the acknowledgements too
--->
-<div align="center">
+JWT-based authentication service built with Express, TypeScript, Prisma, and PostgreSQL.
 
-  <h1>Express-Ts-Auth-Service</h1>
-  
-  <p>
-A pre-built authentication server that uses JSON Web Tokens (JWT) for authentication. It is built using Express.js, TypeScript and PostgreSQL
-  </p>
-  
-<!-- Badges -->
-<p>
-  <a href="https://github.com/Louis3797/express-ts-auth-service/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/Louis3797/express-ts-auth-service" alt="contributors" />
-  </a>
-  <a href="">
-    <img src="https://img.shields.io/github/last-commit/Louis3797/express-ts-auth-service" alt="last update" />
-  </a>
-  <a href="https://github.com/Louis3797/express-ts-auth-service/network/members">
-    <img src="https://img.shields.io/github/forks/Louis3797/express-ts-auth-service" alt="forks" />
-  </a>
-  <a href="https://github.com/Louis3797/express-ts-auth-service/stargazers">
-    <img src="https://img.shields.io/github/stars/Louis3797/express-ts-auth-service" alt="stars" />
-  </a>
-  <a href="https://github.com/Louis3797/express-ts-auth-service/issues/">
-    <img src="https://img.shields.io/github/issues/Louis3797/express-ts-auth-service" alt="open issues" />
-  </a>
-  <a href="https://github.com/Louis3797/express-ts-auth-service/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/Louis3797/express-ts-auth-service.svg" alt="license" />
-  </a>
-</p>
+This service provides:
 
-<h4>
-    <a href="https://github.com/Louis3797/express-ts-auth-service#readme">Documentation</a>
-  <span> · </span>
-    <a href="https://github.com/Louis3797/express-ts-auth-service/issues/">Report Bug</a>
-  <span> · </span>
-    <a href="https://github.com/Louis3797/express-ts-auth-service/issues/">Request Feature</a>
-  </h4>
-</div>
+- user signup and login
+- refresh token rotation
+- logout via refresh-token invalidation
+- email verification flow
+- forgot-password and reset-password flow
+- a protected sample route for token testing
 
-<!-- Table of Contents -->
+## Stack
 
-# Table of Contents
+- Node.js
+- Express
+- TypeScript
+- Prisma
+- PostgreSQL
+- Argon2
+- JWT
+- Nodemailer
+- Docker Compose
 
-- [Table of Contents](#table-of-contents)
-  - [About the Project](#about-the-project)
-    - [Tech Stack](#tech-stack)
-    - [Features](#features)
-    - [Endpoints](#endpoints)
-    - [Project Structure](#project-structure)
-    - [Database](#database)
-      - [Account](#account)
-      - [User](#user)
-      - [RefreshToken](#refreshtoken)
-      - [ResetToken](#resettoken)
-      - [EmailVerificationToken](#emailverificationtoken)
-    - [Refresh Token Rotation](#refresh-token-rotation)
-    - [Environment Variables](#environment-variables)
-  - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Linting](#linting)
-    - [Running Tests](#running-tests)
-    - [Run Locally](#run-locally)
-    - [Run with Docker](#run-with-docker)
-  - [Roadmap](#roadmap)
-  - [Contributing](#contributing)
-    - [Code of Conduct](#code-of-conduct)
-  - [License](#license)
-  - [Contact](#contact)
-  - [Acknowledgements](#acknowledgements)
+## Project Structure
 
-<!-- About the Project -->
-
-## About the Project
-
-This pre-built authentication server is designed to simplify the process of adding secure user authentication to your web or mobile application. It provides a ready-made solution that uses JSON Web Tokens (JWT) to ensure reliable and secure user sessions, saving you time and resources that would otherwise be required to develop an authentication system from scratch. Built using Express.js and TypeScript, this server is also highly customizable and can be extended to meet the specific needs of your application. By integrating our authentication server into your application, you can rest assured that your users' data and sessions are well protected, leaving you free to focus on other important aspects of your application.
-
-<!-- TechStack -->
-
-### Tech Stack
-
-<p align="left">
-  <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=ts,nodejs,express,postgresql,docker,prisma&perline=13" />
-  </a>
-</p>
-
-<!-- Features -->
-
-### Features
-
-- :black_nib: Written in TypeScript for type-safe code
-- :floppy_disk: Utilize a PostgreSQL database to efficiently store user data
-- :speaking_head: Interacts with the database using the powerful Prisma ORM
-- :lock: Implements secure authentication measures with JWTs, ensuring secure access to sensitive data
-- :key: Implements robust password hashing using Argon2 for maximum security
-- :recycle: Incorporates refresh token rotation functionality to enhance the security
-- :white_check_mark: Includes email verification functionality for new user sign-ups
-- :new: Provides a reset password function for users who have forgotten their password
-- :rabbit2: Enables faster data transfer by implementing GZIP compression
-- :policeman: Implements essential security features using Helmet middleware
-- :cookie: Parses cookies seamlessly with cookie-parser middleware
-- :gear: Allows cross-origin resource sharing using CORS
-- :soap: Sanitizes request data against cross-site-scripting with xss middleware
-- :capital_abcd: Manages environment variables with ease using dotenv
-- :male_detective: Enforces high code quality standards with ESLint and Prettier
-- :horse_racing: Implements rate limiting to prevent abuse and improve server performance
-- :information_source: Accurately manages HTTP response status codes using http-status library
-- :warning: Validates user input with the powerful and flexible Joi library
-- :email: Facilitates sending of emails using nodemailer library
-- :memo: Enables detailed logging of server activities using winston library
-- :dog: Implements Git hooks with Husky to optimize development processes
-- :test_tube: Ensure reliability and robustness of the application with thorough testing using Jest and Supertest
-
-<!-- Endpoints -->
-
-### Endpoints
-
-```
-POST /v1/auth/signup - Signup
-POST /v1/auth/login - Login
-POST /v1/auth/refresh - Refresh access token
-POST /v1/forgot-password - Send reset password email
-POST /v1/reset-password/:token - Reset password
-POST /v1/send-verification-email - Send verification email
-POST /v1/verify-email/:token - Verify email
+```text
+backend/services/auth-service
+├── prisma
+│   ├── migrations
+│   └── schema.prisma
+├── src
+│   ├── config
+│   ├── controller
+│   ├── middleware
+│   ├── routes
+│   ├── types
+│   ├── utils
+│   ├── validations
+│   ├── app.ts
+│   └── index.ts
+├── Dockerfile
+├── docker-compose.yml
+├── package.json
+└── tsconfig.json
 ```
 
-<!-- Project Structure -->
+## API Base URL
 
-### Project Structure
+Local Docker default:
 
-```
-./src
-├── config/         # Config files
-├── controller/     # Route controllers
-├── middleware/     # Custom middlewares
-├── routes/         # Routes
-├── types/          # Types
-├── utils/          # Utility classes and functions
-├── validations/    # Validation schemas
-├── app.ts          # Express App
-└── index.ts        # App Entrypoint
+```text
+http://localhost:4040
 ```
 
-<!-- Database -->
+Main route groups:
 
-### Database
+- `/api/v1/auth`
+- `/api/v1`
 
-Our server relies on PostgreSQL as its primary database management system to store and manage all relevant data. PostgreSQL is a popular and widely used open-source relational database system that provides efficient, secure, and scalable storage and retrieval of data.
+Protected test route:
 
-To simplify and streamline the process of managing the data stored in the PostgreSQL database, we utilize Prisma, which is a modern, type-safe ORM that supports various databases, including PostgreSQL.
+- `GET /secret`
 
-Prisma helps us to write database queries in a more readable and intuitive way, making it easier to manage the data stored in our PostgreSQL database. By using Prisma as our ORM of choice, we can also ensure that our application remains scalable, efficient, and maintainable.
+## Endpoints
 
-If you're interested in the structure of our database, you can take a look at the data model presented below, which provides an overview of the tables, columns, and relationships within the database.
+### Auth
 
-```js
+- `POST /api/v1/auth/signup`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
 
-model Account {
-  id                String   @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
-  expiresAt         DateTime
-  token_type        String?
-  scope             String?
-  id_token          String?  @db.Text
-  session_state     String?
+### Password
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+- `POST /api/v1/forgot-password`
+- `POST /api/v1/reset-password/:token`
 
-  @@unique([provider, providerAccountId])
-}
+### Email Verification
 
-model User {
-  id                     String                   @id @default(cuid())
-  name                   String
-  email                  String?                  @unique
-  password               String
-  emailVerified          DateTime?
-  createdAt              DateTime                 @default(now())
-  accounts               Account[]
-  refreshTokens          RefreshToken[]
-  resetToken             ResetToken[]
-  emailVerificationToken EmailVerificationToken[]
-}
+- `POST /api/v1/send-verification-email`
+- `POST /api/v1/verify-email/:token`
 
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime @default(now())
-}
+### Protected Example
 
-model ResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime @default(now())
-}
+- `GET /secret`
 
-model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime @default(now())
+## Request Examples
+
+All examples below assume the service is running at:
+
+```text
+http://localhost:4040
+```
+
+### 1. Signup
+
+Request:
+
+```http
+POST /api/v1/auth/signup
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "Password123"
 }
 ```
 
-#### Account
+Typical response:
 
-> Social auth is not yet implemented so that the entity can be different in the future
-
-The Account entity represents a linked social media account for a user. It has the following fields:
-
-- id: A unique identifier for the account.
-- userId: The ID of the user associated with the account.
-- type: The type of account, e.g. oauth.
-- provider: The provider of the account, e.g. facebook.
-- providerAccountId: The ID associated with the account from the provider's perspective.
-- refresh_token: A refresh token used to obtain a new access token.
-- access_token: An access token used to authenticate requests to the provider's API.
-- expiresAt: The expiration time of the access token.
-- token_type: The type of access token.
-- scope: The scope of the access token.
-- id_token: An ID token associated with the account.
-- session_state: The session state of the account.
-
-#### User
-
-The User entity represents a user of the application. It has the following fields:
-
-- id: A unique identifier for the user.
-- name: The name of the user.
-- email: The email address of the user.
-- password: The password of the user.
-- emailVerified: The date and time when the user's email address was verified.
-- createdAt: The date of creation.
-- accounts: A list of linked social media accounts for the user.
-- refreshTokens: A list of refresh tokens associated with the user.
-- resetToken: A list of reset tokens associated with the user.
-- emailVerificationToken: A list of email verification tokens associated with the user.
-
-#### RefreshToken
-
-The RefreshToken entity represents a refresh token used to obtain a new access token. It has the following fields:
-
-- id: A unique identifier for the refresh token.
-- token: The token itself.
-- user: The user associated with the refresh token.
-- userId: The ID of the user associated with the refresh token.
-- createdAt: The date of creation.
-
-#### ResetToken
-
-The ResetToken entity represents a reset token used to reset a user's password. It has the following fields:
-
-- id: A unique identifier for the refresh token.
-- token: The token itself.
-- expiresAt: The expiration time of the reset token.
-- user: The user associated with the reset token.
-- userId: The ID of the user associated with the reset token.
-- createdAt: The date of creation.
-
-#### EmailVerificationToken
-
-The EmailVerificationToken entity represents a token used to verify a user's email address. It has the following fields:
-
-- id: A unique identifier for the refresh token.
-- token: The token itself.
-- expiresAt: The expiration time of the email verification token.
-- user: The user associated with the email verification token.
-- userId: The ID of the user associated with the email verification token.
-- createdAt: The date of creation.
-
-<!-- Refresh Token Rotation -->
-
-### Refresh Token Rotation
-
-Refresh token rotation is a security practice used to mitigate the risk of unauthorized access to a user's account or resources. When a user logs in to an application, the application issues an access token and a refresh token. The access token is used to access the user's resources, while the refresh token is used to obtain a new access token when the current one expires.
-
-In refresh token rotation, the application periodically rotates the refresh token, meaning it invalidates the old refresh token and issues a new one. This practice can limit the amount of time an attacker can use a stolen refresh token to gain access to the user's account or resources. By rotating the refresh token, the application reduces the risk of a long-lived refresh token being used to access the user's account or resources without their permission.
-
-![Refresh Token Rotation Flow](https://github.com/Louis3797/express-ts-auth-service/blob/main/assets/refresh_token_rotation_flow_diagram.png)
-
-<!-- Env Variables -->
-
-### Environment Variables
-
-To run this project, you will need to add the following environment variables to your .env file
-
+```json
+{
+  "message": "New user created"
+}
 ```
-# App's running environment
-NODE_ENV=
 
-# App's running port
-PORT=
+### 2. Login
 
-# Server url
-SERVER_URL=
+Request:
 
-# Cors origin url
-CORS_ORIGIN=
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+```
 
-# Run node -e "console.log(require('crypto').randomBytes(256).toString('base64'));" in your console to generate a secret
+```json
+{
+  "email": "test@example.com",
+  "password": "Password123"
+}
+```
+
+Typical response:
+
+```json
+{
+  "accessToken": "eyJ..."
+}
+```
+
+Notes:
+
+- this endpoint also sets a refresh-token cookie
+- keep cookies enabled in Postman if you want to test refresh/logout
+
+### 3. Refresh Access Token
+
+Request:
+
+```http
+POST /api/v1/auth/refresh
+```
+
+Body:
+
+```json
+{}
+```
+
+Typical response:
+
+```json
+{
+  "accessToken": "eyJ..."
+}
+```
+
+### 4. Logout
+
+Request:
+
+```http
+POST /api/v1/auth/logout
+```
+
+Body:
+
+```json
+{}
+```
+
+Typical response:
+
+```text
+204 No Content
+```
+
+### 5. Forgot Password
+
+Request:
+
+```http
+POST /api/v1/forgot-password
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "test@example.com"
+}
+```
+
+### 6. Reset Password
+
+Request:
+
+```http
+POST /api/v1/reset-password/:token
+Content-Type: application/json
+```
+
+```json
+{
+  "newPassword": "NewPassword123"
+}
+```
+
+### 7. Send Verification Email
+
+Request:
+
+```http
+POST /api/v1/send-verification-email
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "test@example.com"
+}
+```
+
+### 8. Verify Email
+
+Request:
+
+```http
+POST /api/v1/verify-email/:token
+```
+
+### 9. Protected Route
+
+Request:
+
+```http
+GET /secret
+Authorization: Bearer <access-token>
+```
+
+Typical response:
+
+```json
+{
+  "message": "You can see me"
+}
+```
+
+## Validation Rules
+
+### Signup
+
+- `username`: required, 2-50 chars
+- `email`: required, valid email
+- `password`: required, 6-150 chars
+
+### Login
+
+- `email`: required, valid email
+- `password`: required, 6-150 chars
+
+### Forgot Password
+
+- `email`: required, valid email
+
+### Reset Password
+
+- `newPassword`: required, 6-150 chars
+- `token`: route param required
+
+### Send Verification Email
+
+- `email`: required, valid email
+
+### Verify Email
+
+- `token`: route param required
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values.
+
+```env
+NODE_ENV=production
+PORT=4040
+SERVER_URL=http://localhost:4040
+CORS_ORIGIN=http://localhost:3000
+
 ACCESS_TOKEN_SECRET=
-
 REFRESH_TOKEN_SECRET=
+ACCESS_TOKEN_EXPIRE=20m
+REFRESH_TOKEN_EXPIRE=1d
+REFRESH_TOKEN_COOKIE_NAME=jid
 
-ACCESS_TOKEN_EXPIRE=
+POSTGRES_DB=authdb
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres123
+DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/authdb?schema=public
 
-REFRESH_TOKEN_EXPIRE=
-
-# name of the refresh token cookie
-REFRESH_TOKEN_COOKIE_NAME=
-
-POSTGRES_DB=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-
-# Example: postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public
-DATABASE_URL=
-
-# Configuration for the emial service
 SMTP_HOST=
-SMTP_PORT=
+SMTP_PORT=587
 SMTP_USERNAME=
 SMTP_PASSWORD=
 EMAIL_FROM=
 ```
 
-See .env.example for further details
+Important:
 
-<!-- Getting Started -->
+- when you run Prisma from your Windows host, `DATABASE_URL` should usually use `localhost` or `127.0.0.1`
+- when the app runs inside Docker Compose, the database host inside the container network is `postgres`
 
-## Getting Started
+## Local Development
 
-<!-- Prerequisites -->
-
-### Prerequisites
-
-This project uses Yarn as package manager
+Install dependencies:
 
 ```bash
- npm install --global yarn
+npm install
 ```
 
-<!-- Installation -->
-
-### Installation
+Build:
 
 ```bash
-  git clone https://github.com/Louis3797/express-ts-auth-service.git
+npm run build
 ```
 
-Go to the project directory
+Watch TypeScript build:
 
 ```bash
-  cd express-ts-auth-service
+npm run watch
 ```
+
+Start development flow:
 
 ```bash
-  yarn install
+npm run dev
 ```
 
-### Linting
+Start production script locally:
 
 ```bash
-  # run ESLint
-  yarn lint
-
-  # fix ESLint errors
-  yarn lint:fix
-
-  # run prettier
-  yarn prettier:check
-
-  # fix prettier errors
-  yarn prettier:format
-
-  # fix prettier errors in specific file
-  yarn prettier:format:file <file-name>
+npm run start
 ```
 
-<!-- Running Tests -->
+## Docker
 
-### Running Tests
-
-To run tests, run the following command
+From `backend/services/auth-service`:
 
 ```bash
-  yarn test
+docker compose up --build
 ```
 
-Run tests with watch flag
+This starts:
+
+- `auth-service` on port `4040`
+- `postgres` on port `5432`
+
+Useful commands:
 
 ```bash
-  yarn test:watch
+docker compose up -d
+docker compose down
+docker ps
+docker logs auth-service
+docker logs postgres
 ```
 
-See test coverage
+## Database and Prisma
+
+### Prisma Schema
+
+The Prisma schema lives in:
+
+- `prisma/schema.prisma`
+
+Models:
+
+- `User`
+- `Account`
+- `RefreshToken`
+- `ResetToken`
+- `EmailVerificationToken`
+
+### Apply Migrations
+
+If PostgreSQL is already running and your local `.env` points to the host port:
 
 ```bash
-  yarn coverage
+npx prisma migrate deploy
 ```
 
-<!-- Run Locally -->
-
-### Run Locally
-
-Start the server in development mode
-
-> Note: Dont forget to define the .env variables
+Open Prisma Studio:
 
 ```bash
-  yarn dev
+npx prisma studio
 ```
 
-Start the server in production mode
+Prisma Studio default URL:
+
+```text
+http://localhost:5555
+```
+
+## Postman Tips
+
+- always use the full URL, for example `http://localhost:4040/api/v1/auth/signup`
+- set `Content-Type: application/json`
+- choose `Body -> raw -> JSON`
+- keep cookies enabled to test refresh and logout
+- copy the returned `accessToken` into the `Authorization` header for `/secret`
+
+## Security Behavior
+
+This service uses:
+
+- Argon2 password hashing
+- JWT access and refresh tokens
+- HTTP-only refresh token cookies
+- refresh token rotation
+- CORS
+- Helmet
+- request body sanitization
+- rate limiting on auth routes in production
+
+## Scripts
 
 ```bash
-  yarn start
+npm run build
+npm run dev
+npm run watch
+npm run start
+npm run lint
+npm run lint:fix
+npm run prettier:check
+npm run prettier:format
+npm run test
+npm run test:watch
+npm run coverage
 ```
 
-<!-- Run with Docker -->
+## Known Notes
 
-### Run with Docker
-
-Run docker compose
-
-```bash
-  cd express-ts-auth-service
-  docker-compose up
-```
-
-<!-- Roadmap -->
-## Roadmap
-
-- [ ] Winston + morgan for logging ?
-- [ ] Clean and order imports
-  - [x] Order imports
-  - [ ] Add index.ts files for cleaner imports
-- [x] Add xss attack prevention middleware
-- [ ] Add API Endpoint documentation
-- [ ] Social Auth
-  - [ ] Google
-  - [ ] Github
-  - [ ] Facebook
-  - [ ] Twitter
-- [ ] Better Error handeling
-  - [ ] Custom Error classes like ```AccessTokenNotFoundError```
-- [ ] Integration Tests
-
-<!-- Contributing -->
-## Contributing
-
-<a href="https://github.com/Louis3797/express-ts-auth-service/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Louis3797/express-ts-auth-service" />
-</a>
-
-Contributions are always welcome!
-
-See `CONTRIBUTING.md` for ways to get started.
-
-<!-- Code of Conduct -->
-### Code of Conduct
-
-Please read the [Code of Conduct](https://github.com/Louis3797/express-ts-auth-service/blob/main/CODE_OF_CONDUCT.md)
-
-<!-- License -->
+- the service currently depends on older Prisma and Node-related tooling, so running Prisma commands is usually easiest either from a compatible local Node version or from a Docker-based workflow
+- refresh cookies are configured as `SameSite=None` and `secure=true`, which is correct for HTTPS deployments but may affect some local testing setups
+- email-related flows require valid SMTP settings in `.env`
 
 ## License
 
-Distributed under the MIT License. See LICENSE for more information.
-
-<!-- Contact -->
-
-## Contact
-
-Louis-Kaan Ay - louiskaan.ay@gmail.com
-
-Project Link: [https://github.com/Louis3797/express-ts-auth-service](https://github.com/Louis3797/express-ts-auth-service)
-
-<!-- Acknowledgments -->
-
-## Acknowledgements
-
-- [Readme Template](https://github.com/Louis3797/awesome-readme-template)
-- [Node Express Boilerplate](https://github.com/hagopj13/node-express-boilerplate)
-- [Express Ts Boilerplate](https://github.com/Louis3797/express-ts-boilerplate)
+MIT

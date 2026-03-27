@@ -15,3 +15,4 @@ process.on('SIGTERM', () => {
     process.exit(err ? 1 : 0);
   });
 });
+
