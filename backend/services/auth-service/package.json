@@ -19,8 +19,7 @@
     "prettier:format:file": "prettier --write ",
     "test": "jest",
     "test:watch": "jest -i --watchAll",
-    "coverage": "jest -i --coverage",
-    "prepare": "husky install"
+    "coverage": "jest -i --coverage"
   },
   "dependencies": {
     "@prisma/client": "^4.11.0",
