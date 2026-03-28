@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RequestStatus {
+  draft
+  published
+  has_offers
+  in_negotiation
+  accepted
+  closed
+  cancelled
+}
+
+enum RequestStatusHistoryAction {
+  created
+  updated
+  published
+  moved_to_has_offers
+  moved_to_negotiation
+  accepted
+  closed
+  cancelled
+}
+
+model Request {
+  id            String                 @id @default(cuid())
+  buyerId       String
+  title         String
+  description   String                 @db.Text
+  categoryId    String
+  budgetMin     Decimal?               @db.Decimal(12, 2)
+  budgetMax     Decimal?               @db.Decimal(12, 2)
+  currency      String                 @db.VarChar(3)
+  location      String?
+  deadlineAt    DateTime?
+  status        RequestStatus          @default(draft)
+  offerCount    Int                    @default(0)
+  isNegotiable  Boolean                @default(false)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  publishedAt   DateTime?
+  closedAt      DateTime?
+  attachments   RequestAttachment[]
+  statusHistory RequestStatusHistory[]
+
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([categoryId, status])
+  @@index([deadlineAt])
+}
+
+model RequestAttachment {
+  id         String   @id @default(cuid())
+  requestId  String
+  fileName   String
+  fileUrl    String
+  mimeType   String?
+  createdAt  DateTime @default(now())
+  request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model RequestStatusHistory {
+  id         String                     @id @default(cuid())
+  requestId  String
+  fromStatus RequestStatus?
+  toStatus   RequestStatus
+  action     RequestStatusHistoryAction
+  actorId    String
+  note       String?
+  createdAt  DateTime                   @default(now())
+  request    Request                    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt(sort: Desc)])
+}
