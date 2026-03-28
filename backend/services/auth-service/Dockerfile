@@ -33,7 +33,7 @@ RUN apk add --no-cache --virtual .build-deps \
     gcc \
     g++ \
     python3 \
-    && HUSKY=0 npm ci --omit=dev \
+    && HUSKY=0 npm ci \
     && npm cache clean --force \
     && apk del .build-deps
 
@@ -50,4 +50,4 @@ ENV PORT=4040
 
 EXPOSE 4040
 
-CMD ["dumb-init", "node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && dumb-init node dist/index.js"]
