@@ -80,7 +80,7 @@ export const handleVerifyEmail = async (req: Request, res: Response) => {
   if (!token) return res.sendStatus(httpStatus.NOT_FOUND);
 
   // Check if the token exists in the database and is not expired
-  const verificationToken = await prisma?.emailVerificationToken.findUnique({
+  const verificationToken = await prismaClient.emailVerificationToken.findUnique({
     where: { token }
   });
 

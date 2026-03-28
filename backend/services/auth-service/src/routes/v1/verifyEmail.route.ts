@@ -20,4 +20,10 @@ verifyEmailRouter.post(
   emailController.handleVerifyEmail
 );
 
+verifyEmailRouter.get(
+  '/verify-email/:token',
+  validate(verifyEmailSchema),
+  emailController.handleVerifyEmail
+);
+
 export default verifyEmailRouter;
