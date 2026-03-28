@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ModerationTargetType {
+  request
+  offer
+  user
+}
+
+enum ModerationCaseStatus {
+  open
+  in_review
+  resolved
+  dismissed
+}
+
+enum ModerationActionType {
+  note
+  hide_content
+  unhide_content
+  block_user
+  unblock_user
+  resolve_case
+}
+
+enum ContentFlagStatus {
+  active
+  hidden
+  cleared
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+
+  @@index([parentId])
+  @@index([isActive, createdAt(sort: Desc)])
+}
+
+model ModerationCase {
+  id             String               @id @default(cuid())
+  targetType     ModerationTargetType
+  targetId       String
+  reason         String               @db.Text
+  status         ModerationCaseStatus @default(open)
+  createdBy      String
+  assignedTo     String?
+  resolutionNote String?              @db.Text
+  createdAt      DateTime             @default(now())
+  resolvedAt     DateTime?
+  actions        ModerationAction[]
+
+  @@index([targetType, targetId])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model ModerationAction {
+  id          String               @id @default(cuid())
+  moderationCaseId String
+  actionType  ModerationActionType
+  actorId     String
+  note        String?              @db.Text
+  createdAt   DateTime             @default(now())
+  moderationCase ModerationCase    @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+
+  @@index([moderationCaseId, createdAt(sort: Desc)])
+}
+
+model BlockedUser {
+  id          String   @id @default(cuid())
+  userId       String   @unique
+  reason       String   @db.Text
+  blockedBy    String
+  blockedAt    DateTime @default(now())
+  unblockedAt  DateTime?
+}
+
+model ContentFlag {
+  id          String               @id @default(cuid())
+  targetType  ModerationTargetType
+  targetId    String
+  reason      String               @db.Text
+  status      ContentFlagStatus    @default(active)
+  createdBy   String
+  hiddenBy    String?
+  hiddenAt    DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([status, createdAt(sort: Desc)])
+}
