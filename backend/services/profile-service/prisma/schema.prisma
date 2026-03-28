@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  buyer
+  seller
+  admin
+}
+
+enum VerificationStatus {
+  unverified
+  pending
+  verified
+  rejected
+}
+
+model UserProfile {
+  id         String        @id @default(cuid())
+  userId     String        @unique
+  role       UserRole
+  fullName   String
+  phone      String?
+  city       String?
+  avatarUrl  String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  sellerProfile SellerProfile?
+  buyerProfile  BuyerProfile?
+
+  @@index([role, createdAt(sort: Desc)])
+}
+
+model SellerProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  displayName        String
+  description        String?            @db.Text
+  businessType       String?
+  website            String?
+  instagramUrl       String?
+  verificationStatus VerificationStatus @default(unverified)
+  ratingAverage      Decimal            @default(0) @db.Decimal(3, 2)
+  completedDealsCount Int               @default(0)
+  userProfile        UserProfile        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([verificationStatus, ratingAverage(sort: Desc)])
+}
+
+model BuyerProfile {
+  id              String      @id @default(cuid())
+  userId          String      @unique
+  displayName     String
+  city            String?
+  preferencesJson Json?
+  userProfile     UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
