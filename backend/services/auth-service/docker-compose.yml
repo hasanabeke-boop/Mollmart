@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # Express Server
   auth-service:
@@ -19,7 +17,6 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
-    command: ["dumb-init", "node", "dist/index.js"]
 
   # PostgreSQL Database
   postgres:

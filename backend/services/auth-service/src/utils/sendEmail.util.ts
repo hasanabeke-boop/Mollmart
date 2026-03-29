@@ -45,9 +45,7 @@ export const sendVerifyEmail = (email: string, token: string) => {
     subject: 'Email verification',
     html: `
       <p>Please verify your email by clicking the button below:</p>
-      <form action="${verifyLink}" method="POST">
-        <button type="submit">Verify Email</button>
-      </form>
+      <p><a href="${verifyLink}">Verify Email</a></p>
     `
   };
   console.log(verifyLink);
