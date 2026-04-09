@@ -52,6 +52,12 @@ export interface MessageReadEventPayload {
   readByUserId: string;
 }
 
+export interface ConversationStatusChangePayload {
+  conversationId: string;
+  status: ConversationStatus;
+  updatedByUserId: string;
+}
+
 export interface ParticipantContext {
   requestId: string;
   offerId?: string;

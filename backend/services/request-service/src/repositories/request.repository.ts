@@ -8,6 +8,7 @@ import {
 } from '@prisma/client';
 import prisma from '../config/prisma';
 import { buildPageMeta } from '../utils/pagination';
+import { getHistoryActionForStatus } from '../utils/requestState';
 import { OwnerRequestQuery, RequestBoardQuery, RequestListResult, StatusHistoryRecordInput } from '../types/request';
 
 const requestDetailsInclude = {
@@ -103,7 +104,7 @@ export class RequestRepository implements RequestRepositoryLike {
   }
 
   async publish(id: string, actorId: string, note?: string): Promise<RequestWithRelations> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const current = await tx.request.findUniqueOrThrow({
         where: { id }
       });
@@ -138,7 +139,7 @@ export class RequestRepository implements RequestRepositoryLike {
     actorId: string,
     note?: string
   ): Promise<RequestWithRelations> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const current = await tx.request.findUniqueOrThrow({
         where: { id }
       });
@@ -170,7 +171,7 @@ export class RequestRepository implements RequestRepositoryLike {
     actorId: string,
     note?: string
   ): Promise<RequestWithRelations> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const current = await tx.request.findUniqueOrThrow({
         where: { id }
       });
@@ -188,12 +189,7 @@ export class RequestRepository implements RequestRepositoryLike {
         actorId,
         fromStatus: current.status,
         toStatus,
-        action:
-          toStatus === 'has_offers'
-            ? 'moved_to_has_offers'
-            : toStatus === 'in_negotiation'
-              ? 'moved_to_negotiation'
-              : toStatus,
+        action: getHistoryActionForStatus(toStatus),
         ...(note !== undefined ? { note } : {})
       });
 

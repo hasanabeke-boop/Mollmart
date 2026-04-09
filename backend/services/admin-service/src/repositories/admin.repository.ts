@@ -2,7 +2,6 @@ import {
   BlockedUser,
   Category,
   ContentFlag,
-  ContentFlagStatus,
   ModerationAction,
   ModerationActionType,
   ModerationCase,
@@ -149,7 +148,7 @@ export class AdminRepository implements AdminRepositoryLike {
       note?: string;
     }
   ): Promise<ModerationCaseWithActions> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.moderationCase.update({
         where: { id },
         data

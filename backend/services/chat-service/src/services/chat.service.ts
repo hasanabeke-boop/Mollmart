@@ -1,4 +1,4 @@
-import { MessageType, SenderRole } from '@prisma/client';
+import { Conversation, ConversationStatus, MessageType, SenderRole } from '@prisma/client';
 import { AuthUser } from '../types/express';
 import {
   ConversationListQuery,
@@ -35,11 +35,16 @@ export class ChatService {
     );
 
     if (existing != null) {
+      let conversation = existing;
+
       if (existing.offerId == null && context.offerId !== undefined) {
-        return this.chatRepository.updateConversationOfferContext(existing.id, context.offerId);
+        conversation = await this.chatRepository.updateConversationOfferContext(
+          existing.id,
+          context.offerId
+        );
       }
 
-      return existing;
+      return this.ensureConversationStatus(conversation, ConversationStatus.active, user.id);
     }
 
     const conversation = await this.chatRepository.createConversation(context);
@@ -79,6 +84,10 @@ export class ChatService {
 
     this.assertParticipant(conversation, user.id);
 
+    if (conversation.status === ConversationStatus.closed) {
+      throw badRequest('Conversation is closed. Reopen it before sending messages');
+    }
+
     const senderRole = this.resolveSenderRole(conversation, user);
     const message = await this.chatRepository.createMessage(
       conversationId,
@@ -111,6 +120,26 @@ export class ChatService {
     }
 
     return readMessages;
+  }
+
+  async closeConversation(user: AuthUser, conversationId: string): Promise<Conversation> {
+    const conversation = await this.chatRepository.findConversationById(conversationId);
+    if (conversation == null) {
+      throw notFound('Conversation not found');
+    }
+
+    this.assertParticipant(conversation, user.id);
+    return this.ensureConversationStatus(conversation, ConversationStatus.closed, user.id);
+  }
+
+  async reopenConversation(user: AuthUser, conversationId: string): Promise<Conversation> {
+    const conversation = await this.chatRepository.findConversationById(conversationId);
+    if (conversation == null) {
+      throw notFound('Conversation not found');
+    }
+
+    this.assertParticipant(conversation, user.id);
+    return this.ensureConversationStatus(conversation, ConversationStatus.active, user.id);
   }
 
   private async resolveParticipantContext(
@@ -215,6 +244,29 @@ export class ChatService {
     }
 
     throw forbidden('Only participants can send messages');
+  }
+
+  private async ensureConversationStatus(
+    conversation: Conversation,
+    status: ConversationStatus,
+    updatedByUserId: string
+  ): Promise<Conversation> {
+    if (conversation.status === status) {
+      return conversation;
+    }
+
+    const updatedConversation = await this.chatRepository.updateConversationStatus(
+      conversation.id,
+      status
+    );
+
+    await this.chatEventPublisher.publishConversationStatusChanged({
+      conversationId: updatedConversation.id,
+      status: updatedConversation.status,
+      updatedByUserId
+    });
+
+    return updatedConversation;
   }
 }
 

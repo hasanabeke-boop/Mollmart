@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import RequestService from '../services/request.service';
 import { OwnerRequestQuery, RequestBoardQuery } from '../types/request';
+import { badRequest } from '../utils/apiError';
+
+function requireParam(value: string | undefined, name: string): string {
+  if (value == null) {
+    throw badRequest(`${name} is required`);
+  }
+
+  return value;
+}
 
 export class RequestController {
   constructor(private readonly requestService: RequestService) {}
@@ -12,7 +21,8 @@ export class RequestController {
   };
 
   publish = async (req: Request, res: Response): Promise<void> => {
-    const request = await this.requestService.publishRequest(req.user!, req.params.id);
+    const requestId = requireParam(req.params.id, 'Request id');
+    const request = await this.requestService.publishRequest(req.user!, requestId);
     res.status(httpStatus.OK).json(request);
   };
 
@@ -29,22 +39,26 @@ export class RequestController {
   };
 
   getById = async (req: Request, res: Response): Promise<void> => {
-    const request = await this.requestService.getRequestById(req.user!, req.params.id);
+    const requestId = requireParam(req.params.id, 'Request id');
+    const request = await this.requestService.getRequestById(req.user!, requestId);
     res.status(httpStatus.OK).json(request);
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
-    const request = await this.requestService.updateRequest(req.user!, req.params.id, req.body);
+    const requestId = requireParam(req.params.id, 'Request id');
+    const request = await this.requestService.updateRequest(req.user!, requestId, req.body);
     res.status(httpStatus.OK).json(request);
   };
 
   close = async (req: Request, res: Response): Promise<void> => {
-    const request = await this.requestService.closeRequest(req.user!, req.params.id);
+    const requestId = requireParam(req.params.id, 'Request id');
+    const request = await this.requestService.closeRequest(req.user!, requestId);
     res.status(httpStatus.OK).json(request);
   };
 
   cancel = async (req: Request, res: Response): Promise<void> => {
-    const request = await this.requestService.cancelRequest(req.user!, req.params.id);
+    const requestId = requireParam(req.params.id, 'Request id');
+    const request = await this.requestService.cancelRequest(req.user!, requestId);
     res.status(httpStatus.OK).json(request);
   };
 }
