@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 RUN apk add --no-cache --virtual .build-deps \
+    make \
     gcc \
     g++ \
     python3 \
@@ -30,6 +31,7 @@ RUN addgroup -g 1001 -S nodejs \
     && adduser -S nodejs -u 1001
 
 RUN apk add --no-cache --virtual .build-deps \
+    make \
     gcc \
     g++ \
     python3 \
