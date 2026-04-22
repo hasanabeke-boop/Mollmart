@@ -70,12 +70,17 @@ export const sendVerificationEmail = async (
     });
 
     // Send an email with the new verification link
-    await sendVerifyEmail(email, token);
+    const emailSent = await sendVerifyEmail(email, token);
 
     // Return a success message
-    return res
-      .status(httpStatus.OK)
-      .json({ message: 'Verification email sent' });
+    return res.status(httpStatus.OK).json(
+      emailSent
+        ? { message: 'Verification email sent' }
+        : {
+            message: 'Verification email is disabled.',
+            verificationToken: token
+          }
+    );
   } catch (error) {
     logger.error(error);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

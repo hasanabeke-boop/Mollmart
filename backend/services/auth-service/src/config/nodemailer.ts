@@ -23,7 +23,12 @@ const createTestTransporter = async (): Promise<Transporter> => {
   return transporter;
 };
 
-export const getTransporter = async (): Promise<Transporter> => {
+export const getTransporter = async (): Promise<Transporter | null> => {
+  if (!config.email.enabled) {
+    logger.warn('Email delivery is disabled because SMTP is using placeholder values.');
+    return null;
+  }
+
   if (transporter) return transporter;
 
   if (config.node_env === 'production') {

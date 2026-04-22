@@ -27,6 +27,25 @@ import logger from '../middleware/logger';
 // @ts-expect-error
 const { verify } = jwt;
 
+const createVerificationToken = async (userId: string): Promise<string> => {
+  await prismaClient.emailVerificationToken.deleteMany({
+    where: { userId }
+  });
+
+  const token = randomUUID();
+  const expiresAt = new Date(Date.now() + 3600000);
+
+  await prismaClient.emailVerificationToken.create({
+    data: {
+      token,
+      expiresAt,
+      userId
+    }
+  });
+
+  return token;
+};
+
 /**
  * This function handles the signup process for new users. It expects a request object with the following properties:
  *
@@ -58,7 +77,46 @@ export const handleSignUp = async (
     }
   });
 
-  if (checkUserEmail) return res.sendStatus(httpStatus.CONFLICT); // email is already in db
+  if (checkUserEmail) {
+    if (checkUserEmail.emailVerified) {
+      return res.status(httpStatus.CONFLICT).json({
+        message: 'A verified user with this email already exists'
+      });
+    }
+
+    try {
+      const hashedPassword = await argon2.hash(password);
+
+      await prismaClient.user.update({
+        where: { id: checkUserEmail.id },
+        data: {
+          name: username,
+          password: hashedPassword
+        }
+      });
+
+      const token = await createVerificationToken(checkUserEmail.id);
+      const emailSent = await sendVerifyEmail(email, token);
+
+      return res.status(httpStatus.OK).json(
+        emailSent
+          ? {
+              message:
+                'User already exists but is not verified. A new verification email was sent.'
+            }
+          : {
+              message:
+                'User already exists but is not verified. Verification email is disabled.',
+              verificationToken: token
+            }
+      );
+    } catch (err) {
+      logger.error(err);
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to recreate verification state for existing user'
+      });
+    }
+  }
 
   try {
     const hashedPassword = await argon2.hash(password);
@@ -71,21 +129,19 @@ export const handleSignUp = async (
       }
     });
 
-    const token = randomUUID();
-    const expiresAt = new Date(Date.now() + 3600000); // Token expires in 1 hour
-
-    await prismaClient.emailVerificationToken.create({
-      data: {
-        token,
-        expiresAt,
-        userId: newUser.id
-      }
-    });
+    const token = await createVerificationToken(newUser.id);
 
     // Send an email with the verification link
-    await sendVerifyEmail(email, token);
+    const emailSent = await sendVerifyEmail(email, token);
 
-    return res.status(httpStatus.CREATED).json({ message: 'New user created' });
+    return res.status(httpStatus.CREATED).json(
+      emailSent
+        ? { message: 'New user created' }
+        : {
+            message: 'New user created. Verification email is disabled.',
+            verificationToken: token
+          }
+    );
   } catch (err) {
     logger.error(err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

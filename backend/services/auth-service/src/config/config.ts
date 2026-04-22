@@ -60,6 +60,10 @@ const config = {
     }
   },
   email: {
+    enabled:
+      validatedEnv.SMTP_HOST !== 'smtp.example.com' &&
+      validatedEnv.SMTP_USERNAME !== 'user@example.com' &&
+      validatedEnv.SMTP_PASSWORD !== 'password',
     smtp: {
       host: validatedEnv.SMTP_HOST,
       port: validatedEnv.SMTP_PORT,

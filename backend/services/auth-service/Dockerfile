@@ -10,13 +10,14 @@ RUN apk add --no-cache --virtual .build-deps \
     g++ \
     python3 \
     && npm ci \
-    && apk del .build-deps \
     && npm cache clean --force
 
 COPY . .
 
 RUN npm run build \
-    && npx prisma generate
+    && npx prisma generate \
+    && npm prune --omit=dev \
+    && apk del .build-deps
 
 FROM node:18-alpine3.16 AS run
 
@@ -30,16 +31,8 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs \
     && adduser -S nodejs -u 1001
 
-RUN apk add --no-cache --virtual .build-deps \
-    make \
-    gcc \
-    g++ \
-    python3 \
-    && HUSKY=0 npm ci \
-    && npm cache clean --force \
-    && apk del .build-deps
-
 COPY --chown=nodejs:nodejs --from=build /app/dist ./dist
+COPY --chown=nodejs:nodejs --from=build /app/node_modules ./node_modules
 COPY --chown=nodejs:nodejs --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --chown=nodejs:nodejs --from=build /app/node_modules/@prisma/client ./node_modules/@prisma/client
 

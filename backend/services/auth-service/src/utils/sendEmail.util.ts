@@ -11,7 +11,7 @@ import config from '../config/config';
 export const sendResetEmail = async (
   email: string,
   token: string
-): Promise<void> => {
+): Promise<boolean> => {
   const resetLink = `${config.server.url}/api/v1/reset-password/${token}`;
   const mailOptions = {
     from: config.email.from,
@@ -26,8 +26,10 @@ export const sendResetEmail = async (
   };
 
   const transporter = await getTransporter();
+  if (!transporter) return false;
   const info = await transporter.sendMail(mailOptions);
   logger.info('Reset password email sent: ' + info.response);
+  return true;
 };
 
 /**
@@ -39,7 +41,7 @@ export const sendResetEmail = async (
 export const sendVerifyEmail = async (
   email: string,
   token: string
-): Promise<void> => {
+): Promise<boolean> => {
   const verifyLink = `${config.server.url}/api/v1/verify-email/${token}`;
   const mailOptions = {
     from: config.email.from,
@@ -52,6 +54,8 @@ export const sendVerifyEmail = async (
   };
 
   const transporter = await getTransporter();
+  if (!transporter) return false;
   const info = await transporter.sendMail(mailOptions);
   logger.info('Verify email sent: ' + info.response);
+  return true;
 };

@@ -63,12 +63,17 @@ export const handleForgotPassword = async (
     });
 
     // Send an email with the reset link
-    await sendResetEmail(email, resetToken);
+    const emailSent = await sendResetEmail(email, resetToken);
 
     // Return a success message
-    return res
-      .status(httpStatus.OK)
-      .json({ message: 'Password reset email sent' });
+    return res.status(httpStatus.OK).json(
+      emailSent
+        ? { message: 'Password reset email sent' }
+        : {
+            message: 'Password reset email is disabled.',
+            resetToken
+          }
+    );
   } catch (error) {
     logger.error(error);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
