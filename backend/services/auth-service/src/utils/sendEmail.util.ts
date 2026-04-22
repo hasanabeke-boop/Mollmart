@@ -1,5 +1,5 @@
 import logger from '../middleware/logger';
-import transporter from '../config/nodemailer';
+import { getTransporter } from '../config/nodemailer';
 import config from '../config/config';
 
 /**
@@ -8,7 +8,10 @@ import config from '../config/config';
  * @param {string} email - The email of the user
  * @param {string} token - The reset password token
  */
-export const sendResetEmail = (email: string, token: string) => {
+export const sendResetEmail = async (
+  email: string,
+  token: string
+): Promise<void> => {
   const resetLink = `${config.server.url}/api/v1/reset-password/${token}`;
   const mailOptions = {
     from: config.email.from,
@@ -21,14 +24,10 @@ export const sendResetEmail = (email: string, token: string) => {
       </form>
     `
   };
-  console.log(resetLink);
-  transporter?.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      logger.error(error);
-    } else {
-      logger.info('Reset password email sent: ' + info.response);
-    }
-  });
+
+  const transporter = await getTransporter();
+  const info = await transporter.sendMail(mailOptions);
+  logger.info('Reset password email sent: ' + info.response);
 };
 
 /**
@@ -37,7 +36,10 @@ export const sendResetEmail = (email: string, token: string) => {
  * @param {string} email - The email of the user
  * @param {string} token - The email verification token
  */
-export const sendVerifyEmail = (email: string, token: string) => {
+export const sendVerifyEmail = async (
+  email: string,
+  token: string
+): Promise<void> => {
   const verifyLink = `${config.server.url}/api/v1/verify-email/${token}`;
   const mailOptions = {
     from: config.email.from,
@@ -48,12 +50,8 @@ export const sendVerifyEmail = (email: string, token: string) => {
       <p><a href="${verifyLink}">Verify Email</a></p>
     `
   };
-  console.log(verifyLink);
-  transporter?.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      logger.error(error);
-    } else {
-      logger.info('Verify email sent: ' + info.response);
-    }
-  });
+
+  const transporter = await getTransporter();
+  const info = await transporter.sendMail(mailOptions);
+  logger.info('Verify email sent: ' + info.response);
 };

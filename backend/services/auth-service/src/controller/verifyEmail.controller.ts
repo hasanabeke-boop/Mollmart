@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import prismaClient from '../config/prisma';
 import type { EmailRequestBody, TypedRequest } from '../types/types';
 import { sendVerifyEmail } from '../utils/sendEmail.util';
+import logger from '../middleware/logger';
 
 /**
  * Sends Verification email
@@ -56,22 +57,31 @@ export const sendVerificationEmail = async (
       .json({ error: 'Verification email already sent' });
   }
 
-  // Generate a new verification token and save it to the database
-  const token = randomUUID();
-  const expiresAt = new Date(Date.now() + 3600000); // Token expires in 1 hour
-  await prismaClient.emailVerificationToken.create({
-    data: {
-      token,
-      expiresAt,
-      userId: user.id
-    }
-  });
+  try {
+    // Generate a new verification token and save it to the database
+    const token = randomUUID();
+    const expiresAt = new Date(Date.now() + 3600000); // Token expires in 1 hour
+    await prismaClient.emailVerificationToken.create({
+      data: {
+        token,
+        expiresAt,
+        userId: user.id
+      }
+    });
 
-  // Send an email with the new verification link
-  sendVerifyEmail(email, token);
+    // Send an email with the new verification link
+    await sendVerifyEmail(email, token);
 
-  // Return a success message
-  return res.status(httpStatus.OK).json({ message: 'Verification email sent' });
+    // Return a success message
+    return res
+      .status(httpStatus.OK)
+      .json({ message: 'Verification email sent' });
+  } catch (error) {
+    logger.error(error);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to send verification email'
+    });
+  }
 };
 
 export const handleVerifyEmail = async (req: Request, res: Response) => {

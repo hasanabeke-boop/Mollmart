@@ -12,8 +12,12 @@ export const resetPasswordSchema = {
     newPassword: Joi.string().required().min(6).max(150)
   }),
   params: Joi.object().keys({
-    token: Joi.string().regex(
-      /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_.+/=]*$/
-    )
+    token: Joi.string().guid({ version: ['uuidv4', 'uuidv5'] }).required()
+  })
+};
+
+export const resetPasswordTokenSchema = {
+  params: Joi.object().keys({
+    token: Joi.string().guid({ version: ['uuidv4', 'uuidv5'] }).required()
   })
 };

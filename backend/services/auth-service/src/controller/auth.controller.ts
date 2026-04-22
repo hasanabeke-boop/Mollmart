@@ -83,11 +83,14 @@ export const handleSignUp = async (
     });
 
     // Send an email with the verification link
-    sendVerifyEmail(email, token);
+    await sendVerifyEmail(email, token);
 
-    res.status(httpStatus.CREATED).json({ message: 'New user created' });
+    return res.status(httpStatus.CREATED).json({ message: 'New user created' });
   } catch (err) {
-    res.status(httpStatus.INTERNAL_SERVER_ERROR);
+    logger.error(err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to create user'
+    });
   }
 };
 
@@ -108,7 +111,6 @@ export const handleLogin = async (
   res: Response
 ) => {
   const cookies = req.cookies;
-
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -123,27 +125,15 @@ export const handleLogin = async (
     }
   });
 
-  if (!user) return res.sendStatus(httpStatus.UNAUTHORIZED);
-
-  // check if email is verified
-  if (!user.emailVerified) {
-    res.status(httpStatus.UNAUTHORIZED).json({
-      message: 'Your email is not verified! Please confirm your email!'
-    });
-  }
-
-  // Generating the dummy hash dynamically may introduce a slight performance overhead, as argon2.hash()
-  // is a computationally expensive operation.
-  // However, this is generally negligible compared to the security benefits it provides
-  const dummyPassword = 'dummy_password';
-  const dummyHash = await argon2.hash(dummyPassword);
-
-  // Use the user's hash if found, otherwise use the dummy hash
-  const userPasswordHash = user ? user.password : dummyHash;
-
   // check password
   try {
-    const isPasswordValid = await argon2.verify(userPasswordHash, password);
+    if (!user) {
+      return res.status(httpStatus.UNAUTHORIZED).json({
+        message: 'Invalid email or password!'
+      });
+    }
+
+    const isPasswordValid = await argon2.verify(user.password, password);
 
     // Check if email is verified
     // Check for verified email after verifying the password to prevent user enumeration attacks
@@ -219,7 +209,10 @@ export const handleLogin = async (
     // send access token per json to user so it can be stored in the localStorage
     return res.json({ accessToken });
   } catch (err) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR);
+    logger.error(err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Login failed'
+    });
   }
 };
 
@@ -315,9 +308,11 @@ export const handleRefresh = async (req: Request, res: Response) => {
             userId: payload.userId
           }
         });
+
+        return res.sendStatus(httpStatus.FORBIDDEN);
       }
     );
-    return res.status(httpStatus.FORBIDDEN);
+    return;
   }
 
   // delete from db
