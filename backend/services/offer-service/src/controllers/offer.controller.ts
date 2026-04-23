@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import OfferService from '../services/offer.service';
 import { OfferListQuery, OfferRequestListQuery } from '../types/offer';
+import { badRequest } from '../utils/apiError';
+
+function requireParam(value: string | undefined, name: string): string {
+  if (value == null) {
+    throw badRequest(`${name} is required`);
+  }
+
+  return value;
+}
 
 export class OfferController {
   constructor(private readonly offerService: OfferService) {}
@@ -12,12 +21,14 @@ export class OfferController {
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
-    const offer = await this.offerService.updateOffer(req.user!, req.params.id, req.body);
+    const offerId = requireParam(req.params.id, 'Offer id');
+    const offer = await this.offerService.updateOffer(req.user!, offerId, req.body);
     res.status(httpStatus.OK).json(offer);
   };
 
   withdraw = async (req: Request, res: Response): Promise<void> => {
-    const offer = await this.offerService.withdrawOffer(req.user!, req.params.id);
+    const offerId = requireParam(req.params.id, 'Offer id');
+    const offer = await this.offerService.withdrawOffer(req.user!, offerId);
     res.status(httpStatus.OK).json(offer);
   };
 
@@ -27,9 +38,10 @@ export class OfferController {
   };
 
   getByRequest = async (req: Request, res: Response): Promise<void> => {
+    const requestId = requireParam(req.params.requestId, 'Request id');
     const query = {
       ...(req.query as object),
-      requestId: req.params.requestId
+      requestId
     } as OfferRequestListQuery;
 
     const result = await this.offerService.listOffersForRequest(req.user!, query);
@@ -37,7 +49,8 @@ export class OfferController {
   };
 
   accept = async (req: Request, res: Response): Promise<void> => {
-    const offer = await this.offerService.acceptOffer(req.user!, req.params.id);
+    const offerId = requireParam(req.params.id, 'Offer id');
+    const offer = await this.offerService.acceptOffer(req.user!, offerId);
     res.status(httpStatus.OK).json(offer);
   };
 }

@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import ProfileService from '../services/profile.service';
 import { SellerListQuery } from '../types/profile';
+import { badRequest } from '../utils/apiError';
+
+function requireParam(value: string | undefined, name: string): string {
+  if (value == null) {
+    throw badRequest(`${name} is required`);
+  }
+
+  return value;
+}
 
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
@@ -27,12 +36,14 @@ export class ProfileController {
   };
 
   getSellerByUserId = async (req: Request, res: Response): Promise<void> => {
-    const profile = await this.profileService.getPublicSellerProfile(req.params.userId);
+    const userId = requireParam(req.params.userId, 'User id');
+    const profile = await this.profileService.getPublicSellerProfile(userId);
     res.status(httpStatus.OK).json(profile);
   };
 
   getBuyerByUserId = async (req: Request, res: Response): Promise<void> => {
-    const profile = await this.profileService.getBuyerProfile(req.params.userId);
+    const userId = requireParam(req.params.userId, 'User id');
+    const profile = await this.profileService.getBuyerProfile(userId);
     res.status(httpStatus.OK).json(profile);
   };
 

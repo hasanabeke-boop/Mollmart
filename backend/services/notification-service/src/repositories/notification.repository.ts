@@ -1,4 +1,5 @@
-import { Notification, Prisma, PrismaClient } from '@prisma/client';
+import { Notification, PrismaClient } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import prisma from '../config/prisma';
 import { NotificationRecordInput } from '../types/notification';
 
@@ -27,7 +28,7 @@ export class NotificationRepository implements NotificationRepositoryLike {
       });
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002' &&
         input.dedupeKey !== undefined
       ) {

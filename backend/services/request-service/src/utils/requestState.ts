@@ -43,13 +43,21 @@ const limitedEditableFieldsAfterOffers = new Set<keyof UpdateableRequestFields>(
 ]);
 
 export function ensureTransitionAllowed(fromStatus: RequestStatus, toStatus: RequestStatus): void {
-  if (!allowedTransitions[fromStatus].includes(toStatus)) {
+  const transitions = allowedTransitions[fromStatus];
+
+  if (transitions == null || !transitions.includes(toStatus)) {
     throw badRequest(`Invalid request status transition from "${fromStatus}" to "${toStatus}"`);
   }
 }
 
 export function getHistoryActionForStatus(status: RequestStatus): RequestStatusHistoryAction {
-  return statusActionMap[status];
+  const action = statusActionMap[status];
+
+  if (action == null) {
+    throw badRequest(`No history action configured for request status "${status}"`);
+  }
+
+  return action;
 }
 
 export function assertRequestEditable(status: RequestStatus): void {

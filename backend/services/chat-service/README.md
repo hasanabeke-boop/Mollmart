@@ -11,6 +11,7 @@ Core capabilities:
 - list conversations for the current user
 - fetch message history
 - mark unread messages as read
+- close and reopen conversations
 - publish Redis-backed notification events
 - enforce participant-only access
 
@@ -110,14 +111,17 @@ Endpoints:
 - `GET /conversations/:id/messages`
 - `POST /conversations/:id/messages`
 - `POST /conversations/:id/read`
+- `POST /conversations/:id/close`
+- `POST /conversations/:id/reopen`
 
 ## Core Rules
 
 - Only the buyer and seller participants can access a conversation.
 - Conversations are tied to marketplace entities and cannot be created as free-form global chats.
 - Messages are immutable in the MVP.
+- Closed conversations reject new messages until reopened by a participant.
 - Read tracking is stored per user per message.
-- Redis events are published for conversation creation, message creation, and reads.
+- Redis events are published for conversation creation, message creation, reads, and status changes.
 
 ## Redis Events
 
@@ -126,6 +130,7 @@ The service publishes JSON payloads to Redis pub/sub channels:
 - `chat.conversation.created`
 - `chat.message.created`
 - `chat.message.read`
+- `chat.conversation.status.changed`
 
 ## Realtime Approach
 
@@ -166,6 +171,7 @@ The MVP uses one conversation per `requestId + buyerId + sellerId`.
 - Repeated `POST /conversations` for the same trio returns the existing conversation.
 - `offerId` is treated as optional context metadata on that shared thread.
 - If a conversation already exists without `offerId` and a later open call includes one, the service keeps the existing thread and fills in `offerId` only if it is currently empty.
+- If that existing conversation is closed, the open call reactivates it instead of creating a parallel thread.
 
 This keeps the chat simple and avoids fragmented parallel threads for the same buyer-seller negotiation around one request.
 
@@ -176,6 +182,7 @@ The included tests cover:
 - participant-only conversation access
 - successful message sending
 - read marking for recipient-only unread messages
+- conversation close and reopen behavior
 
 ## Assumptions
 

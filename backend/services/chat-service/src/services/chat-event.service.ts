@@ -1,12 +1,16 @@
 import { Conversation, Message } from '@prisma/client';
 import { getRedisClient } from '../config/redis';
 import logger from '../middleware/logger';
-import { MessageReadEventPayload } from '../types/chat';
+import {
+  ConversationStatusChangePayload,
+  MessageReadEventPayload
+} from '../types/chat';
 
 export interface ChatEventPublisherLike {
   publishConversationCreated(conversation: Conversation): Promise<void>;
   publishMessageCreated(message: Message): Promise<void>;
   publishMessagesRead(payload: MessageReadEventPayload): Promise<void>;
+  publishConversationStatusChanged(payload: ConversationStatusChangePayload): Promise<void>;
 }
 
 export class ChatEventPublisher implements ChatEventPublisherLike {
@@ -20,6 +24,12 @@ export class ChatEventPublisher implements ChatEventPublisherLike {
 
   async publishMessagesRead(payload: MessageReadEventPayload): Promise<void> {
     await this.publish('chat.message.read', payload);
+  }
+
+  async publishConversationStatusChanged(
+    payload: ConversationStatusChangePayload
+  ): Promise<void> {
+    await this.publish('chat.conversation.status.changed', payload);
   }
 
   private async publish(channel: string, payload: unknown): Promise<void> {

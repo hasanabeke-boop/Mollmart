@@ -1,7 +1,6 @@
 import {
   Category,
   ContentFlagStatus,
-  ModerationCaseStatus,
   ModerationTargetType
 } from '@prisma/client';
 import { AuthUser } from '../types/express';
@@ -99,6 +98,7 @@ export class AdminService {
     }
 
     const actionType = input.actionType ?? (isResolving ? 'note' : 'note');
+    const resolutionNote = input.resolutionNote?.trim();
 
     const updated = await this.adminRepository.updateModerationCase(
       moderationCaseId,
@@ -118,7 +118,7 @@ export class AdminService {
                 ? 'resolve_case'
                 : 'note',
         actorId: user.id,
-        note: input.resolutionNote?.trim()
+        ...(resolutionNote !== undefined ? { note: resolutionNote } : {})
       }
     );
 

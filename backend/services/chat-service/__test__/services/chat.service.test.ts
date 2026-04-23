@@ -1,4 +1,4 @@
-import { Conversation, MessageType, SenderRole } from '@prisma/client';
+import { Conversation, ConversationStatus, MessageType, SenderRole } from '@prisma/client';
 import ChatService from '../../src/services/chat.service';
 import {
   ChatRepositoryLike,
@@ -70,6 +70,11 @@ function createRepositoryMock(
         offerId
       })
     ),
+    updateConversationStatus: jest.fn(async (_id, status) =>
+      makeConversation({
+        status
+      })
+    ),
     listUserConversations: jest.fn(),
     getConversationWithLastMessage: jest.fn(async () => makeConversationWithPreview()),
     listMessages: jest.fn(),
@@ -88,7 +93,8 @@ function createEventPublisherMock(): jest.Mocked<ChatEventPublisherLike> {
   return {
     publishConversationCreated: jest.fn(async () => undefined),
     publishMessageCreated: jest.fn(async () => undefined),
-    publishMessagesRead: jest.fn(async () => undefined)
+    publishMessagesRead: jest.fn(async () => undefined),
+    publishConversationStatusChanged: jest.fn(async () => undefined)
   };
 }
 
@@ -157,6 +163,25 @@ describe('ChatService', () => {
     expect(events.publishMessageCreated).toHaveBeenCalledTimes(1);
   });
 
+  it('blocks sending a message to a closed conversation', async () => {
+    const service = new ChatService(
+      createRepositoryMock(
+        makeConversation({
+          status: ConversationStatus.closed
+        })
+      ),
+      createEventPublisherMock(),
+      createRequestClientMock(),
+      createOfferClientMock()
+    );
+
+    await expect(
+      service.sendMessage(seller, 'conv-1', {
+        body: 'Can we still discuss this?'
+      })
+    ).rejects.toThrow('Conversation is closed. Reopen it before sending messages');
+  });
+
   it('marks recipient unread messages as read and publishes an event', async () => {
     const repository = createRepositoryMock();
     const events = createEventPublisherMock();
@@ -172,5 +197,66 @@ describe('ChatService', () => {
     expect(result).toHaveLength(1);
     expect(repository.markMessagesRead).toHaveBeenCalledWith('conv-1', 'buyer-1');
     expect(events.publishMessagesRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('reopens a closed existing conversation when opened again', async () => {
+    const repository = createRepositoryMock(
+      makeConversation({
+        status: ConversationStatus.closed
+      })
+    );
+    repository.findUniqueConversation.mockResolvedValue(
+      makeConversation({
+        status: ConversationStatus.closed
+      })
+    );
+
+    const events = createEventPublisherMock();
+    const service = new ChatService(
+      repository,
+      events,
+      createRequestClientMock(),
+      createOfferClientMock()
+    );
+
+    const conversation = await service.openConversation(buyer, {
+      requestId: 'request-1',
+      sellerId: 'seller-1'
+    });
+
+    expect(conversation.status).toBe(ConversationStatus.active);
+    expect(repository.updateConversationStatus).toHaveBeenCalledWith(
+      'conv-1',
+      ConversationStatus.active
+    );
+    expect(events.publishConversationStatusChanged).toHaveBeenCalledWith({
+      conversationId: 'conv-1',
+      status: ConversationStatus.active,
+      updatedByUserId: 'buyer-1'
+    });
+  });
+
+  it('closes a conversation for a participant and publishes an event', async () => {
+    const repository = createRepositoryMock();
+    const events = createEventPublisherMock();
+    const service = new ChatService(
+      repository,
+      events,
+      createRequestClientMock(),
+      createOfferClientMock()
+    );
+
+    const conversation = await service.closeConversation(buyer, 'conv-1');
+
+    expect(conversation.status).toBe(ConversationStatus.closed);
+    expect(repository.updateConversationStatus).toHaveBeenCalledWith(
+      'conv-1',
+      ConversationStatus.closed
+    );
+    expect(events.publishConversationStatusChanged).toHaveBeenCalledWith({
+      conversationId: 'conv-1',
+      status: ConversationStatus.closed,
+      updatedByUserId: 'buyer-1'
+    });
   });
 });

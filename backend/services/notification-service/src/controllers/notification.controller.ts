@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import NotificationService from '../services/notification.service';
 import { NotificationListQuery } from '../types/notification';
+import { badRequest } from '../utils/apiError';
+
+function requireParam(value: string | undefined, name: string): string {
+  if (value == null) {
+    throw badRequest(`${name} is required`);
+  }
+
+  return value;
+}
 
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
@@ -15,7 +24,8 @@ export class NotificationController {
   };
 
   markRead = async (req: Request, res: Response): Promise<void> => {
-    const notification = await this.notificationService.markNotificationRead(req.user!, req.params.id);
+    const notificationId = requireParam(req.params.id, 'Notification id');
+    const notification = await this.notificationService.markNotificationRead(req.user!, notificationId);
     res.status(httpStatus.OK).json(notification);
   };
 

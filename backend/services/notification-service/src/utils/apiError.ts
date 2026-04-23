@@ -15,3 +15,6 @@ export default class ApiError extends Error {
 
 export const notFound = (message: string): ApiError =>
   new ApiError(httpStatus.NOT_FOUND, message);
+
+export const badRequest = (message: string, details?: unknown): ApiError =>
+  new ApiError(httpStatus.BAD_REQUEST, message, details);

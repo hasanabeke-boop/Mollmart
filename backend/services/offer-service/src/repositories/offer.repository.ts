@@ -117,7 +117,7 @@ export class OfferRepository implements OfferRepositoryLike {
     actorId: string,
     note?: string
   ): Promise<OfferWithRelations> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const current = await tx.offer.findUniqueOrThrow({ where: { id } });
 
       await tx.offer.update({
@@ -150,7 +150,7 @@ export class OfferRepository implements OfferRepositoryLike {
     actorId: string,
     note?: string
   ): Promise<OfferWithRelations> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const current = await tx.offer.findUniqueOrThrow({
         where: { id }
       });
@@ -188,7 +188,7 @@ export class OfferRepository implements OfferRepositoryLike {
   }
 
   async acceptOffer(id: string, actorId: string): Promise<AcceptOfferResult> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const target = await tx.offer.findUniqueOrThrow({
         where: { id }
       });

@@ -48,6 +48,7 @@ export interface ChatRepositoryLike {
   findUniqueConversation(requestId: string, buyerId: string, sellerId: string): Promise<Conversation | null>;
   createConversation(data: ConversationRecordInput): Promise<Conversation>;
   updateConversationOfferContext(id: string, offerId: string): Promise<Conversation>;
+  updateConversationStatus(id: string, status: ConversationStatus): Promise<Conversation>;
   listUserConversations(userId: string, status: ConversationStatus | undefined, page: number, limit: number): Promise<RequestListResult<ConversationWithPreview>>;
   getConversationWithLastMessage(id: string): Promise<ConversationWithPreview | null>;
   listMessages(conversationId: string, page: number, limit: number): Promise<RequestListResult<MessageWithReadStates>>;
@@ -91,6 +92,13 @@ export class ChatRepository implements ChatRepositoryLike {
     return this.client.conversation.update({
       where: { id },
       data: { offerId }
+    });
+  }
+
+  async updateConversationStatus(id: string, status: ConversationStatus): Promise<Conversation> {
+    return this.client.conversation.update({
+      where: { id },
+      data: { status }
     });
   }
 
@@ -167,7 +175,7 @@ export class ChatRepository implements ChatRepositoryLike {
     body: string,
     messageType: MessageType
   ): Promise<MessageWithReadStates> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const message = await tx.message.create({
         data: {
           conversationId,
@@ -191,7 +199,7 @@ export class ChatRepository implements ChatRepositoryLike {
   }
 
   async markMessagesRead(conversationId: string, readerUserId: string): Promise<MessageWithReadStates[]> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const unreadMessages = await tx.message.findMany({
         where: {
           conversationId,

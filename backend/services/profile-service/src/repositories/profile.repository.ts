@@ -25,12 +25,18 @@ export interface EnsureProfileInput {
   role: 'buyer' | 'seller' | 'admin';
 }
 
+export interface BuyerProfileUpsertInput {
+  displayName?: string;
+  city?: string | null;
+  preferencesJson?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+}
+
 export interface ProfileRepositoryLike {
   ensureBaseProfile(input: EnsureProfileInput): Promise<FullProfile>;
   findByUserId(userId: string): Promise<FullProfile | null>;
   updateBaseProfile(userId: string, data: Partial<Pick<UserProfile, 'fullName' | 'phone' | 'city' | 'avatarUrl'>>): Promise<FullProfile>;
   upsertSellerProfile(userId: string, data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl'>>): Promise<FullProfile>;
-  upsertBuyerProfile(userId: string, data: Partial<Pick<BuyerProfile, 'displayName' | 'city' | 'preferencesJson'>>): Promise<FullProfile>;
+  upsertBuyerProfile(userId: string, data: BuyerProfileUpsertInput): Promise<FullProfile>;
   listPublicSellers(query: SellerListQuery): Promise<RequestListResult<FullProfile>>;
 }
 
@@ -38,7 +44,7 @@ export class ProfileRepository implements ProfileRepositoryLike {
   constructor(private readonly client: PrismaClient = prisma) {}
 
   async ensureBaseProfile(input: EnsureProfileInput): Promise<FullProfile> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       const existing = await tx.userProfile.findUnique({
         where: { userId: input.userId },
         include: profileInclude
@@ -102,7 +108,7 @@ export class ProfileRepository implements ProfileRepositoryLike {
     userId: string,
     data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl'>>
   ): Promise<FullProfile> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.sellerProfile.upsert({
         where: { userId },
         update: data,
@@ -125,9 +131,9 @@ export class ProfileRepository implements ProfileRepositoryLike {
 
   async upsertBuyerProfile(
     userId: string,
-    data: Partial<Pick<BuyerProfile, 'displayName' | 'city' | 'preferencesJson'>>
+    data: BuyerProfileUpsertInput
   ): Promise<FullProfile> {
-    return this.client.$transaction(async (tx) => {
+    return this.client.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.buyerProfile.upsert({
         where: { userId },
         update: data,

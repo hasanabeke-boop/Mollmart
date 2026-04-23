@@ -217,7 +217,7 @@ export class ProfileService {
     const data: Partial<{
       displayName: string;
       city: string | null;
-      preferencesJson: Prisma.JsonValue;
+      preferencesJson: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     }> = {};
 
     if (input.displayName !== undefined) {
@@ -227,7 +227,7 @@ export class ProfileService {
       data.city = input.city.trim().length > 0 ? input.city.trim() : null;
     }
     if (input.preferencesJson !== undefined) {
-      data.preferencesJson = input.preferencesJson;
+      data.preferencesJson = input.preferencesJson === null ? Prisma.JsonNull : input.preferencesJson;
     }
 
     return data;

@@ -18,7 +18,7 @@ export interface UpdateSellerProfileInput {
 export interface UpdateBuyerProfileInput {
   displayName?: string;
   city?: string;
-  preferencesJson?: Prisma.JsonValue;
+  preferencesJson?: Prisma.InputJsonValue | null;
 }
 
 export interface SellerListQuery {

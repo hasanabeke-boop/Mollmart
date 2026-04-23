@@ -22,6 +22,8 @@ export function createChatRouter(controller: ChatController): Router {
   router.get('/conversations/:id/messages', validate(messageListSchema), asyncHandler(controller.listMessages));
   router.post('/conversations/:id/messages', validate(sendMessageSchema), asyncHandler(controller.sendMessage));
   router.post('/conversations/:id/read', validate(conversationIdParamSchema), asyncHandler(controller.markRead));
+  router.post('/conversations/:id/close', validate(conversationIdParamSchema), asyncHandler(controller.closeConversation));
+  router.post('/conversations/:id/reopen', validate(conversationIdParamSchema), asyncHandler(controller.reopenConversation));
 
   return router;
 }
