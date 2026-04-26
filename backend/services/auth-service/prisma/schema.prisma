@@ -10,6 +10,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  buyer
+  seller
+  admin
+}
+
+enum UserStatus {
+  active
+  blocked
+  suspended
+}
+
 model Account {
   id                String   @id @default(cuid())
   userId            String
@@ -34,8 +46,12 @@ model User {
   name                   String
   email                  String?                  @unique
   password               String
+  role                   UserRole                 @default(buyer)
+  status                 UserStatus               @default(active)
   emailVerified          DateTime?
   createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  lastLoginAt            DateTime?
   accounts               Account[]
   refreshTokens          RefreshToken[]
   resetToken             ResetToken[]

@@ -19,9 +19,16 @@ export const sendResetEmail = async (
     subject: 'Password reset',
     html: `
       <p>Please reset your password by clicking the button below:</p>
-      <form action="${resetLink}" method="POST">
-        <button type="submit">Reset Password</button>
-      </form>
+      <p>
+        <a
+          href="${resetLink}"
+          style="display:inline-block;padding:12px 20px;background:#18181b;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;"
+        >
+          Reset Password
+        </a>
+      </p>
+      <p>If the button does not work, copy and paste this link into your browser:</p>
+      <p><a href="${resetLink}">${resetLink}</a></p>
     `
   };
 

@@ -20,13 +20,20 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  role: "buyer" | "seller" | "admin";
+  status: "active" | "blocked" | "suspended";
 };
 
 type AuthState = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (username: string, email: string, password: string) => Promise<void>;
+  signup: (
+    username: string,
+    email: string,
+    password: string,
+    role: "buyer" | "seller",
+  ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -47,9 +54,11 @@ function userFromToken(token: string): User | null {
   const payload = parseJwt(token);
   if (!payload) return null;
   return {
-    id: (payload.userID as string) || "",
+    id: (payload.userId as string) || (payload.sub as string) || "",
     name: (payload.name as string) || "",
     email: (payload.email as string) || "",
+    role: ((payload.role as User["role"]) || "buyer"),
+    status: ((payload.status as User["status"]) || "active"),
   };
 }
 
@@ -83,10 +92,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signup = useCallback(
-    async (username: string, email: string, password: string) => {
+    async (
+      username: string,
+      email: string,
+      password: string,
+      role: "buyer" | "seller",
+    ) => {
       await apiFetch<{ message: string }>("/api/v1/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, role }),
       });
     },
     [],

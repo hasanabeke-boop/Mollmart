@@ -134,18 +134,88 @@ export const handleResetPassword = async (
   });
 
   // Return a success message
-  return res
-    .status(httpStatus.OK)
-    .json({ message: 'Password reset successful' });
+  if (req.accepts('html')) {
+    return res.status(httpStatus.OK).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Password Reset Successful</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background: #f4f4f5;
+              color: #18181b;
+              display: grid;
+              place-items: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 24px;
+            }
+            .card {
+              width: min(100%, 420px);
+              background: #ffffff;
+              padding: 24px;
+              border-radius: 12px;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+              text-align: center;
+            }
+            a {
+              display: inline-block;
+              margin-top: 16px;
+              padding: 12px 20px;
+              background: #18181b;
+              color: #ffffff;
+              text-decoration: none;
+              border-radius: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>Password Reset Successful</h1>
+            <p>Your password has been updated. You can now sign in with the new password.</p>
+            <a href="${req.protocol}://${req.get('host')}">Go to app</a>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+
+  return res.status(httpStatus.OK).json({ message: 'Password reset successful' });
 };
 
-export const renderResetPasswordPage = (
+export const renderResetPasswordPage = async (
   req: TypedRequest,
   res: Response
 ) => {
   const { token } = req.params;
 
   if (!token) return res.sendStatus(httpStatus.NOT_FOUND);
+
+  const resetToken = await prismaClient.resetToken.findFirst({
+    where: { token, expiresAt: { gt: new Date() } }
+  });
+
+  if (!resetToken) {
+    return res.status(httpStatus.NOT_FOUND).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Invalid Reset Link</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; background: #f4f4f5; color: #18181b; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 24px;">
+          <div style="width: min(100%, 420px); background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); text-align: center;">
+            <h1>Invalid or Expired Link</h1>
+            <p>This password reset link is no longer valid. Please request a new one.</p>
+          </div>
+        </body>
+      </html>
+    `);
+  }
 
   return res.status(httpStatus.OK).send(`
     <!DOCTYPE html>
@@ -189,7 +259,7 @@ export const renderResetPasswordPage = (
         </style>
       </head>
       <body>
-        <form method="POST" action="/api/v1/reset-password/${token}">
+        <form method="POST" action="${req.protocol}://${req.get('host')}/api/v1/reset-password/${token}">
           <h1>Reset Password</h1>
           <p>Enter a new password to complete your reset request.</p>
           <input

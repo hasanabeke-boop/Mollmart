@@ -5,6 +5,10 @@ import * as argon2 from 'argon2';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import prismaClient from '../config/prisma';
 import type {
+  AdminUpdateUserRequestBody,
+  AuthTokenUser,
+  ChangePasswordRequestBody,
+  TokenIntrospectionRequestBody,
   TypedRequest,
   UserLoginCredentials,
   UserSignUpCredentials
@@ -26,6 +30,77 @@ import logger from '../middleware/logger';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 const { verify } = jwt;
+
+const buildTokenUser = (user: {
+  id: string;
+  name: string;
+  email: string | null;
+  role: 'buyer' | 'seller' | 'admin';
+  status: 'active' | 'blocked' | 'suspended';
+}): AuthTokenUser => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  status: user.status
+});
+
+const serializeUser = (user: {
+  id: string;
+  name: string;
+  email: string | null;
+  role: 'buyer' | 'seller' | 'admin';
+  status: 'active' | 'blocked' | 'suspended';
+  emailVerified: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt: Date | null;
+}) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  status: user.status,
+  emailVerified: user.emailVerified,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+  lastLoginAt: user.lastLoginAt
+});
+
+const resolvePayloadUserId = (payload?: JwtPayload): string | undefined =>
+  payload?.sub ?? payload?.userId;
+
+const activeUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  status: true,
+  emailVerified: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLoginAt: true
+} as const;
+
+const adminUserOrderBy = {
+  createdAt: 'desc'
+} as const;
+
+const sendAccountStatusError = (res: Response, status: string) => {
+  if (status === 'blocked') {
+    return res
+      .status(httpStatus.FORBIDDEN)
+      .json({ message: 'Your account is blocked' });
+  }
+
+  if (status === 'suspended') {
+    return res
+      .status(httpStatus.FORBIDDEN)
+      .json({ message: 'Your account is suspended' });
+  }
+
+  return null;
+};
 
 const createVerificationToken = async (userId: string): Promise<string> => {
   await prismaClient.emailVerificationToken.deleteMany({
@@ -62,7 +137,7 @@ export const handleSignUp = async (
   req: TypedRequest<UserSignUpCredentials>,
   res: Response
 ) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, role = 'buyer' } = req.body;
 
   // check req.body values
   if (!username || !email || !password) {
@@ -91,7 +166,8 @@ export const handleSignUp = async (
         where: { id: checkUserEmail.id },
         data: {
           name: username,
-          password: hashedPassword
+          password: hashedPassword,
+          role
         }
       });
 
@@ -125,7 +201,8 @@ export const handleSignUp = async (
       data: {
         name: username,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        role
       }
     });
 
@@ -206,6 +283,11 @@ export const handleLogin = async (
       });
     }
 
+    const statusResponse = sendAccountStatusError(res, user.status);
+    if (statusResponse != null) {
+      return statusResponse;
+    }
+
     // if there is a refresh token in the req.cookie, then we need to check if this
     // refresh token exists in the database and belongs to the current user than we need to delete it
     // if the token does not belong to the current user, then we delete all refresh tokens
@@ -243,9 +325,16 @@ export const handleLogin = async (
       );
     }
 
-    const accessToken = createAccessToken(user.id);
+    await prismaClient.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date()
+      }
+    });
 
-    const newRefreshToken = createRefreshToken(user.id);
+    const tokenUser = buildTokenUser(user);
+    const accessToken = createAccessToken(tokenUser);
+    const newRefreshToken = createRefreshToken(tokenUser);
 
     // store new refresh token in db
     await prismaClient.refreshToken.create({
@@ -316,6 +405,311 @@ export const handleLogout = async (req: TypedRequest, res: Response) => {
   return res.sendStatus(httpStatus.NO_CONTENT);
 };
 
+export const handleLogoutAll = async (req: TypedRequest, res: Response) => {
+  const userId = resolvePayloadUserId(req.payload);
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  await prismaClient.refreshToken.deleteMany({
+    where: { userId }
+  });
+
+  res.clearCookie(
+    config.jwt.refresh_token.cookie_name,
+    clearRefreshTokenCookieConfig
+  );
+
+  return res.sendStatus(httpStatus.NO_CONTENT);
+};
+
+export const handleGetMe = async (req: TypedRequest, res: Response) => {
+  const userId = resolvePayloadUserId(req.payload);
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: activeUserSelect
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(user)
+  });
+};
+
+export const handleChangePassword = async (
+  req: TypedRequest<ChangePasswordRequestBody>,
+  res: Response
+) => {
+  const userId = resolvePayloadUserId(req.payload);
+  const { currentPassword, newPassword } = req.body;
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  if (!currentPassword || !newPassword) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Current password and new password are required'
+    });
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  const isPasswordValid = await argon2.verify(user.password, currentPassword);
+
+  if (!isPasswordValid) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      message: 'Current password is incorrect'
+    });
+  }
+
+  const hashedPassword = await argon2.hash(newPassword);
+
+  await prismaClient.user.update({
+    where: { id: userId },
+    data: {
+      password: hashedPassword
+    }
+  });
+
+  await prismaClient.refreshToken.deleteMany({
+    where: { userId }
+  });
+
+  res.clearCookie(
+    config.jwt.refresh_token.cookie_name,
+    clearRefreshTokenCookieConfig
+  );
+
+  return res.status(httpStatus.OK).json({
+    message: 'Password updated successfully'
+  });
+};
+
+export const handleIntrospectToken = async (
+  req: TypedRequest<TokenIntrospectionRequestBody>,
+  res: Response
+) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Token is required'
+    });
+  }
+
+  try {
+    const payload = verify(
+      token,
+      config.jwt.access_token.secret
+    ) as JwtPayload;
+    const userId = payload.sub ?? payload.userId;
+
+    if (userId == null) {
+      return res.status(httpStatus.OK).json({ active: false });
+    }
+
+    const user = await prismaClient.user.findUnique({
+      where: { id: userId },
+      select: activeUserSelect
+    });
+
+    return res.status(httpStatus.OK).json({
+      active: user != null && user.status === 'active',
+      user: user == null ? null : serializeUser(user),
+      claims: {
+        sub: payload.sub ?? userId,
+        userId,
+        role: user?.role ?? payload.role,
+        status: user?.status ?? payload.status
+      }
+    });
+  } catch {
+    return res.status(httpStatus.OK).json({ active: false });
+  }
+};
+
+export const handleGetUserById = async (req: TypedRequest, res: Response) => {
+  const user = await prismaClient.user.findUnique({
+    where: { id: req.params['id'] as string },
+    select: activeUserSelect
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(user)
+  });
+};
+
+export const handleAdminListUsers = async (req: TypedRequest, res: Response) => {
+  const search =
+    typeof req.query['search'] === 'string' ? req.query['search'].trim() : '';
+  const role =
+    typeof req.query['role'] === 'string' ? req.query['role'] : undefined;
+  const status =
+    typeof req.query['status'] === 'string' ? req.query['status'] : undefined;
+
+  const users = await prismaClient.user.findMany({
+    where: {
+      ...(search.length > 0
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } }
+            ]
+          }
+        : {}),
+      ...(role != null ? { role: role as 'buyer' | 'seller' | 'admin' } : {}),
+      ...(status != null ? { status: status as 'active' | 'blocked' | 'suspended' } : {})
+    },
+    select: activeUserSelect,
+    orderBy: adminUserOrderBy
+  });
+
+  return res.status(httpStatus.OK).json({
+    users: users.map(serializeUser)
+  });
+};
+
+export const handleAdminUpdateUser = async (
+  req: TypedRequest<AdminUpdateUserRequestBody>,
+  res: Response
+) => {
+  const userId = req.params['id'] as string;
+  const { name, email, role, status } = req.body;
+  const actingUserId = resolvePayloadUserId(req.payload);
+
+  if (actingUserId === userId && role != null && role !== 'admin') {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Admin users cannot remove their own admin role'
+    });
+  }
+
+  const existingUser = await prismaClient.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (existingUser == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  if (email != null && email !== existingUser.email) {
+    const emailOwner = await prismaClient.user.findUnique({
+      where: { email }
+    });
+
+    if (emailOwner != null && emailOwner.id !== userId) {
+      return res.status(httpStatus.CONFLICT).json({
+        message: 'A user with this email already exists'
+      });
+    }
+  }
+
+  const user = await prismaClient.user.update({
+    where: { id: userId },
+    data: {
+      ...(name != null ? { name } : {}),
+      ...(email != null ? { email } : {}),
+      ...(role != null ? { role } : {}),
+      ...(status != null ? { status } : {})
+    },
+    select: activeUserSelect
+  });
+
+  if (status === 'blocked' || status === 'suspended') {
+    await prismaClient.refreshToken.deleteMany({
+      where: { userId }
+    });
+  }
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(user)
+  });
+};
+
+export const handleBlockUser = async (req: TypedRequest, res: Response) => {
+  const userId = req.params['id'] as string;
+
+  const user = await prismaClient.user.update({
+    where: { id: userId },
+    data: {
+      status: 'blocked'
+    },
+    select: activeUserSelect
+  }).catch(() => null);
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  await prismaClient.refreshToken.deleteMany({
+    where: { userId }
+  });
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(user)
+  });
+};
+
+export const handleUnblockUser = async (req: TypedRequest, res: Response) => {
+  const user = await prismaClient.user.update({
+    where: { id: req.params['id'] as string },
+    data: {
+      status: 'active'
+    },
+    select: activeUserSelect
+  }).catch(() => null);
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(user)
+  });
+};
+
+export const handleAdminRevokeUserSessions = async (
+  req: TypedRequest,
+  res: Response
+) => {
+  const userId = req.params['id'] as string;
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  const deleted = await prismaClient.refreshToken.deleteMany({
+    where: { userId }
+  });
+
+  return res.status(httpStatus.OK).json({
+    message: 'User sessions revoked',
+    revokedRefreshTokens: deleted.count
+  });
+};
+
 /**
  * This function handles the refresh process for users. It expects a request object with the following properties:
  *
@@ -383,21 +777,36 @@ export const handleRefresh = async (req: Request, res: Response) => {
     refreshToken,
     config.jwt.refresh_token.secret,
     async (err: unknown, payload: JwtPayload) => {
-      if (err || foundRefreshToken.userId !== payload.userId) {
+      const userId = payload.sub ?? payload.userId;
+
+      if (err || userId == null || foundRefreshToken.userId !== userId) {
         return res.sendStatus(httpStatus.FORBIDDEN);
       }
 
-      // Refresh token was still valid
-      const accessToken = createAccessToken(payload.userId);
+      const user = await prismaClient.user.findUnique({
+        where: { id: userId }
+      });
 
-      const newRefreshToken = createRefreshToken(payload.userId);
+      if (user == null) {
+        return res.sendStatus(httpStatus.FORBIDDEN);
+      }
+
+      const statusResponse = sendAccountStatusError(res, user.status);
+      if (statusResponse != null) {
+        return statusResponse;
+      }
+
+      // Refresh token was still valid
+      const tokenUser = buildTokenUser(user);
+      const accessToken = createAccessToken(tokenUser);
+      const newRefreshToken = createRefreshToken(tokenUser);
 
       // add refresh token to db
       await prismaClient.refreshToken
         .create({
           data: {
             token: newRefreshToken,
-            userId: payload.userId
+            userId
           }
         })
         .catch((err: Error) => {

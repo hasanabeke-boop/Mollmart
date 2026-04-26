@@ -24,7 +24,8 @@ const envSchema = Joi.object().keys({
   SMTP_PORT: Joi.string().default('587'),
   SMTP_USERNAME: Joi.string().required(),
   SMTP_PASSWORD: Joi.string().required(),
-  EMAIL_FROM: Joi.string().email().required()
+  EMAIL_FROM: Joi.string().email().required(),
+  INTERNAL_API_TOKEN: Joi.string().allow('').optional().default('')
 });
 
 const { value: validatedEnv, error } = envSchema
@@ -73,6 +74,9 @@ const config = {
       }
     },
     from: validatedEnv.EMAIL_FROM
+  },
+  internal: {
+    api_token: validatedEnv.INTERNAL_API_TOKEN
   }
 } as const;
 

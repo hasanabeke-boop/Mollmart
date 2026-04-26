@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"buyer" | "seller">("buyer");
   const [showPw, setShowPw] = useState(false);
   const [terms, setTerms] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await signup(username.trim(), email, password);
+      await signup(username.trim(), email, password, role);
       setSuccess(true);
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
@@ -166,11 +167,12 @@ export default function RegisterPage() {
             <div className="grid grid-cols-2 gap-4 p-1 bg-primary/5 rounded-xl border border-primary/10">
               <label className="cursor-pointer">
                 <input
-                  defaultChecked
                   className="peer sr-only"
                   name="account_type"
                   type="radio"
                   value="buyer"
+                  checked={role === "buyer"}
+                  onChange={() => setRole("buyer")}
                 />
                 <div className="flex items-center justify-center gap-2 rounded-lg py-3 px-4 text-sm font-semibold transition-all peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm text-slate-600 peer-checked:animate-[popScale_0.2s_ease-out]">
                   <span className="material-symbols-outlined text-lg">shopping_bag</span>
@@ -178,7 +180,14 @@ export default function RegisterPage() {
                 </div>
               </label>
               <label className="cursor-pointer">
-                <input className="peer sr-only" name="account_type" type="radio" value="seller" />
+                <input
+                  className="peer sr-only"
+                  name="account_type"
+                  type="radio"
+                  value="seller"
+                  checked={role === "seller"}
+                  onChange={() => setRole("seller")}
+                />
                 <div className="flex items-center justify-center gap-2 rounded-lg py-3 px-4 text-sm font-semibold transition-all peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm text-slate-600 peer-checked:animate-[popScale_0.2s_ease-out]">
                   <span className="material-symbols-outlined text-lg">storefront</span>
                   Seller

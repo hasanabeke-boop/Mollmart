@@ -46,9 +46,22 @@ export interface UserSignUpCredentials {
   username: string;
   email: string;
   password: string;
+  role: UserRole;
 }
 
-export type UserLoginCredentials = Omit<UserSignUpCredentials, 'username'>;
+export type UserLoginCredentials = Omit<UserSignUpCredentials, 'username' | 'role'>;
+
+export type UserRole = 'buyer' | 'seller' | 'admin';
+
+export type UserStatus = 'active' | 'blocked' | 'suspended';
+
+export interface AuthTokenUser {
+  id: string;
+  name: string;
+  email: string | null;
+  role: UserRole;
+  status: UserStatus;
+}
 
 export interface EmailRequestBody {
   email: string;
@@ -56,6 +69,28 @@ export interface EmailRequestBody {
 
 export interface ResetPasswordRequestBodyType {
   newPassword: string;
+}
+
+export interface ChangePasswordRequestBody {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface TokenIntrospectionRequestBody {
+  token: string;
+}
+
+export interface AdminUserListQuery {
+  search?: string;
+  role?: UserRole;
+  status?: UserStatus;
+}
+
+export interface AdminUpdateUserRequestBody {
+  name?: string;
+  email?: string;
+  role?: UserRole;
+  status?: UserStatus;
 }
 
 export type Sanitized<T> = T extends (...args: unknown[]) => unknown

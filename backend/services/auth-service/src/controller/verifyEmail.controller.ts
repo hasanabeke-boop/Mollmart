@@ -116,6 +116,24 @@ export const handleVerifyEmail = async (req: Request, res: Response) => {
     where: { userId: verificationToken.userId }
   });
 
-  // Return a success message
+  if (req.method === 'GET' || req.accepts('html')) {
+    return res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Email Verified</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; background: #f4f4f5; color: #18181b; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 24px;">
+          <div style="width: min(100%, 420px); background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); text-align: center;">
+            <h1>Email Verified</h1>
+            <p>Your email has been verified successfully. You can now sign in.</p>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+
   return res.status(200).json({ message: 'Email verification successful' });
 };
