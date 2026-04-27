@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
+import { apiFetchWithRefresh } from "@/lib/api";
 
 const CATEGORIES = [
   { value: "home-furniture", label: "Home & Furniture" },
@@ -54,10 +55,50 @@ export default function CreateProductRequestPage() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [createdId, setCreatedId] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    setSubmitted(true);
+
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const body = {
+        title: title.trim(),
+        description: description.trim(),
+        categoryId: category,
+        budgetMax: Number(budget),
+        currency: "USD",
+        isNegotiable: true,
+      };
+
+      const created = await apiFetchWithRefresh<{ id: string }>("/api/v1/requests", {
+        method: "POST",
+        service: "request",
+        body: JSON.stringify(body),
+      });
+
+      setCreatedId(created.id);
+
+      try {
+        await apiFetchWithRefresh(`/api/v1/requests/${created.id}/publish`, {
+          method: "POST",
+          service: "request",
+        });
+      } catch {
+        // publish might not be required; request is still created
+      }
+
+      setSubmitted(true);
+    } catch (err: unknown) {
+      const e = err as Error;
+      setSubmitError(e.message || "Failed to create request");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const addFiles = useCallback(
@@ -516,14 +557,25 @@ export default function CreateProductRequestPage() {
 
             {/* Submit */}
             <div className="pt-4">
+              {submitError && (
+                <div className="mb-4 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                  <span className="material-symbols-outlined text-[20px]">error</span>
+                  {submitError}
+                </div>
+              )}
               <button
                 type="submit"
-                className="w-full bg-[#607afb] hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                disabled={submitting}
+                className="w-full bg-[#607afb] hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span>Post Request</span>
-                <span className="material-symbols-outlined text-[20px]">
-                  send
-                </span>
+                {submitting ? (
+                  <span>Posting...</span>
+                ) : (
+                  <>
+                    <span>Post Request</span>
+                    <span className="material-symbols-outlined text-[20px]">send</span>
+                  </>
+                )}
               </button>
               <p className="text-center text-xs text-slate-400 mt-4">
                 By posting, you agree to Mollmart&apos;s Buyer Terms of Service.

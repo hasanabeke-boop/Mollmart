@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { apiFetchWithRefresh } from "@/lib/api";
 
 type NotificationCategory = "all" | "orders" | "messages" | "promotions";
 
 type NotificationItem = {
-  id: number;
+  id: string;
   category: Exclude<NotificationCategory, "all">;
   title: string;
   body: string;
@@ -14,77 +15,121 @@ type NotificationItem = {
   type: "order" | "message" | "promo" | "system";
 };
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1,
-    category: "orders",
-    title: "Order #12345 Shipped",
-    body: "Your package is on its way and is estimated to arrive by Friday.",
-    time: "2h ago",
-    unread: true,
-    type: "order",
-  },
-  {
-    id: 2,
-    category: "messages",
-    title: "New Message from TechStore",
-    body: '"Hi there! Regarding your question about the lens compatibility..."',
-    time: "4h ago",
-    unread: true,
-    type: "message",
-  },
-  {
-    id: 3,
-    category: "promotions",
-    title: "20% Off Vintage Cameras",
-    body:
-      "A selection of vintage film cameras is on sale for a limited time. Don't miss out!",
-    time: "1d ago",
-    unread: false,
-    type: "promo",
-  },
-  {
-    id: 4,
-    category: "orders",
-    title: "Order #12340 Delivered",
-    body: "Your package has been delivered to your front porch.",
-    time: "3d ago",
-    unread: false,
-    type: "order",
-  },
-  {
-    id: 5,
-    category: "orders",
-    title: "Security Alert: Login Attempt",
-    body: "We noticed a login from a new device. Was this you?",
-    time: "2d ago",
-    unread: false,
-    type: "system",
-  },
+function categorize(n: { type?: string }): Exclude<NotificationCategory, "all"> {
+  const t = n.type || "";
+  if (t.includes("order") || t.includes("request")) return "orders";
+  if (t.includes("message") || t.includes("chat")) return "messages";
+  if (t.includes("promo") || t.includes("offer")) return "promotions";
+  return "orders";
+}
+
+function typeIcon(n: { type?: string }): NotificationItem["type"] {
+  const t = n.type || "";
+  if (t.includes("order") || t.includes("request")) return "order";
+  if (t.includes("message") || t.includes("chat")) return "message";
+  if (t.includes("promo") || t.includes("offer")) return "promo";
+  return "system";
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+const FALLBACK_NOTIFICATIONS: NotificationItem[] = [
+  { id: "1", category: "orders", title: "Order #12345 Shipped", body: "Your package is on its way and is estimated to arrive by Friday.", time: "2h ago", unread: true, type: "order" },
+  { id: "2", category: "messages", title: "New Message from TechStore", body: '"Hi there! Regarding your question about the lens compatibility..."', time: "4h ago", unread: true, type: "message" },
+  { id: "3", category: "promotions", title: "20% Off Vintage Cameras", body: "A selection of vintage film cameras is on sale for a limited time. Don't miss out!", time: "1d ago", unread: false, type: "promo" },
+  { id: "4", category: "orders", title: "Order #12340 Delivered", body: "Your package has been delivered to your front porch.", time: "3d ago", unread: false, type: "order" },
+  { id: "5", category: "orders", title: "Security Alert: Login Attempt", body: "We noticed a login from a new device. Was this you?", time: "2d ago", unread: false, type: "system" },
 ];
 
 export default function NotificationsPage() {
   const [category, setCategory] = useState<NotificationCategory>("all");
-  const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [items, setItems] = useState<NotificationItem[]>(FALLBACK_NOTIFICATIONS);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await apiFetchWithRefresh<
+        Array<{
+          id: string;
+          title?: string;
+          message?: string;
+          body?: string;
+          type?: string;
+          isRead?: boolean;
+          createdAt?: string;
+        }> | { data?: Array<{
+          id: string;
+          title?: string;
+          message?: string;
+          body?: string;
+          type?: string;
+          isRead?: boolean;
+          createdAt?: string;
+        }> }
+      >("/api/v1/notifications", { service: "notification" });
+
+      const arr = Array.isArray(data) ? data : (data.data || []);
+      if (arr.length > 0) {
+        setItems(
+          arr.map((n) => ({
+            id: n.id,
+            category: categorize(n),
+            title: n.title || "Notification",
+            body: n.message || n.body || "",
+            time: n.createdAt ? timeAgo(n.createdAt) : "",
+            unread: !n.isRead,
+            type: typeIcon(n),
+          })),
+        );
+      }
+    } catch {
+      // keep fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   const filtered = items.filter(
     (n) => category === "all" || n.category === category,
   );
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setItems((prev) => prev.map((n) => ({ ...n, unread: false })));
+    try {
+      await apiFetchWithRefresh("/api/v1/notifications/read-all", {
+        method: "POST",
+        service: "notification",
+      });
+    } catch {
+      // already marked locally
+    }
   };
 
-  const handleClick = (item: NotificationItem) => {
-    // Помечаем как прочитанное и показываем демо-действие
+  const handleClick = async (item: NotificationItem) => {
     setItems((prev) =>
       prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n)),
     );
-    alert(`Open details for: ${item.title}`);
+    try {
+      await apiFetchWithRefresh(`/api/v1/notifications/${item.id}/read`, {
+        method: "POST",
+        service: "notification",
+      });
+    } catch {
+      // already marked locally
+    }
   };
 
   const handleLoadOlder = () => {
-    alert("Load older notifications (demo).");
+    loadNotifications();
   };
 
   return (

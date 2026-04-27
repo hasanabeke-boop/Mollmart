@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from "react";
 import {
   apiFetch,
+  apiFetchWithRefresh,
   refreshAccessToken,
   setAccessToken,
   type ApiError,
@@ -40,40 +41,39 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function parseJwt(token: string): Record<string, unknown> | null {
-  try {
-    const base64 = token.split(".")[1];
-    const json = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function userFromToken(token: string): User | null {
-  const payload = parseJwt(token);
-  if (!payload) return null;
-  return {
-    id: (payload.userId as string) || (payload.sub as string) || "",
-    name: (payload.name as string) || "",
-    email: (payload.email as string) || "",
-    role: ((payload.role as User["role"]) || "buyer"),
-    status: ((payload.status as User["status"]) || "active"),
-  };
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = useCallback(async () => {
-    const token = await refreshAccessToken();
-    if (token) {
-      setUser(userFromToken(token));
-    } else {
+  const fetchMe = useCallback(async () => {
+    try {
+      const data = await apiFetchWithRefresh<{
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        status: string;
+      }>("/api/v1/auth/me", { service: "auth" });
+      setUser({
+        id: data.id,
+        name: data.name || "",
+        email: data.email || "",
+        role: (data.role as User["role"]) || "buyer",
+        status: (data.status as User["status"]) || "active",
+      });
+    } catch {
       setUser(null);
     }
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    const token = await refreshAccessToken();
+    if (token) {
+      await fetchMe();
+    } else {
+      setUser(null);
+    }
+  }, [fetchMe]);
 
   useEffect(() => {
     refreshUser().finally(() => setLoading(false));
@@ -84,11 +84,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "/api/v1/auth/login",
       {
         method: "POST",
+        service: "auth",
         body: JSON.stringify({ email, password }),
       },
     );
     setAccessToken(data.accessToken);
-    setUser(userFromToken(data.accessToken));
+    try {
+      const me = await apiFetch<{
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        status: string;
+      }>("/api/v1/auth/me", { service: "auth" });
+      setUser({
+        id: me.id,
+        name: me.name || "",
+        email: me.email || "",
+        role: (me.role as User["role"]) || "buyer",
+        status: (me.status as User["status"]) || "active",
+      });
+    } catch {
+      setUser({ id: "", name: "", email, role: "buyer", status: "active" });
+    }
   }, []);
 
   const signup = useCallback(
@@ -100,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ) => {
       await apiFetch<{ message: string }>("/api/v1/auth/signup", {
         method: "POST",
+        service: "auth",
         body: JSON.stringify({ username, email, password, role }),
       });
     },
@@ -108,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await apiFetch("/api/v1/auth/logout", { method: "POST" });
+      await apiFetch("/api/v1/auth/logout", { method: "POST", service: "auth" });
     } catch {
       // ignore
     }

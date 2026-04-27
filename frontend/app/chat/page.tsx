@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { apiFetchWithRefresh } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const SELLER_AVATAR =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuDm0iUsxivA_SuKl8RFN-YRTJXEv735l3-lukZidmOvJiTHVqdFjWyUpRcInHSnNlT4Bq2Uwul7HK7PXV8ILKISsGmPcnW8utE7qgBt4avSa7x8ntXw4Oywd_4k5cshZEi8pdOLRcWsYAfYpoffhOcMinl3h_aPSaXn-3oxxJUFtxIyHZk06ubI8i7348myhBfownfFc66s4Q2u26WU-8a87dz9mQVXhJdhr3xe3hw4IzNTzqmnIw3dhpU1ciybKZNOS7q-6-2IAUA";
@@ -128,6 +130,7 @@ function now() {
 }
 
 export default function ChatPage() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
   const [activeId, setActiveId] = useState("photopro22");
   const [input, setInput] = useState("");
@@ -135,7 +138,106 @@ export default function ChatPage() {
   const [showOfferInput, setShowOfferInput] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
   const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [apiLoaded, setApiLoaded] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const data = await apiFetchWithRefresh<{
+        data?: Array<{
+          id: string;
+          otherParticipant?: { name: string; avatarUrl?: string };
+          lastMessage?: { body: string; createdAt: string };
+          unreadCount?: number;
+          request?: { title: string };
+          offer?: { price: number };
+        }>;
+      }>("/api/v1/conversations", { service: "chat" });
+
+      const items = data.data || (Array.isArray(data) ? data : []);
+      if (items.length > 0) {
+        const mapped: Conversation[] = (items as Array<{
+          id: string;
+          otherParticipant?: { name: string; avatarUrl?: string };
+          lastMessage?: { body: string; createdAt: string };
+          unreadCount?: number;
+          request?: { title: string };
+          offer?: { price: number };
+        }>).map((c) => ({
+          id: c.id,
+          name: c.otherParticipant?.name || "User",
+          avatar: c.otherParticipant?.avatarUrl || SELLER_AVATAR,
+          lastMessage: c.lastMessage?.body || "",
+          timeAgo: c.lastMessage?.createdAt
+            ? new Date(c.lastMessage.createdAt).toLocaleDateString()
+            : "",
+          online: false,
+          unread: (c.unreadCount || 0) > 0,
+          product: {
+            name: c.request?.title || "Item",
+            price: c.offer?.price || 0,
+            image: PRODUCT_IMAGE,
+          },
+          seller: { rating: 0, reviews: 0, joined: "", responseTime: "", location: "" },
+          messages: [],
+        }));
+        setConversations(mapped);
+        setActiveId(mapped[0].id);
+        setApiLoaded(true);
+      }
+    } catch {
+      // fall back to mock data
+    }
+  }, []);
+
+  const loadMessages = useCallback(async (convId: string) => {
+    if (!apiLoaded) return;
+    try {
+      const data = await apiFetchWithRefresh<{
+        data?: Array<{
+          id: string;
+          senderId: string;
+          body: string;
+          createdAt: string;
+          messageType?: string;
+        }>;
+      }>(`/api/v1/conversations/${convId}/messages`, { service: "chat" });
+
+      const items = data.data || (Array.isArray(data) ? data : []);
+      const mapped: ChatMessage[] = (items as Array<{
+        id: string;
+        senderId: string;
+        body: string;
+        createdAt: string;
+        messageType?: string;
+      }>).map((m, i) => ({
+        id: i + 1,
+        from: m.senderId === user?.id ? ("me" as const) : ("seller" as const),
+        text: m.body,
+        time: new Date(m.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      }));
+
+      setConversations((prev) =>
+        prev.map((c) => (c.id === convId ? { ...c, messages: mapped } : c)),
+      );
+    } catch {
+      // keep existing messages
+    }
+  }, [apiLoaded, user?.id]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (activeId && apiLoaded) {
+      loadMessages(activeId);
+      apiFetchWithRefresh(`/api/v1/conversations/${activeId}/read`, {
+        method: "POST",
+        service: "chat",
+      }).catch(() => {});
+    }
+  }, [activeId, apiLoaded, loadMessages]);
 
   const active = conversations.find((c) => c.id === activeId)!;
 
@@ -153,7 +255,7 @@ export default function ChatPage() {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  }, [active.messages]);
+  }, [active?.messages]);
 
   const updateMessages = (convId: string, updater: (msgs: ChatMessage[]) => ChatMessage[]) => {
     setConversations((prev) =>
@@ -171,7 +273,7 @@ export default function ChatPage() {
     );
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const text = input.trim();
     if (!text) return;
     updateMessages(activeId, (msgs) => [
@@ -179,6 +281,16 @@ export default function ChatPage() {
       { id: nextId++, from: "me", text, time: now() },
     ]);
     setInput("");
+
+    try {
+      await apiFetchWithRefresh(`/api/v1/conversations/${activeId}/messages`, {
+        method: "POST",
+        service: "chat",
+        body: JSON.stringify({ body: text, messageType: "text" }),
+      });
+    } catch {
+      // message already shown locally
+    }
   };
 
   const sendOffer = () => {

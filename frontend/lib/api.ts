@@ -1,4 +1,14 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
+export type ServiceName = "auth" | "request" | "offer" | "chat" | "profile" | "admin" | "notification";
+
+const SERVICE_URLS: Record<ServiceName, string> = {
+  auth: process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:4040",
+  request: process.env.NEXT_PUBLIC_REQUEST_URL || "http://localhost:4050",
+  offer: process.env.NEXT_PUBLIC_OFFER_URL || "http://localhost:4060",
+  chat: process.env.NEXT_PUBLIC_CHAT_URL || "http://localhost:4070",
+  profile: process.env.NEXT_PUBLIC_PROFILE_URL || "http://localhost:4080",
+  admin: process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:4090",
+  notification: process.env.NEXT_PUBLIC_NOTIFICATION_URL || "http://localhost:4100",
+};
 
 let accessToken: string | null = null;
 
@@ -12,24 +22,28 @@ export function setAccessToken(token: string | null) {
 
 export type ApiError = {
   message?: string;
+  error?: string;
   errors?: { field: string; message: string }[];
 };
 
 export async function apiFetch<T = unknown>(
   path: string,
-  options: RequestInit = {},
+  options: RequestInit & { service?: ServiceName } = {},
 ): Promise<T> {
+  const { service = "auth", ...fetchOptions } = options;
+  const baseUrl = SERVICE_URLS[service];
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
+    ...(fetchOptions.headers as Record<string, string>),
   };
 
   if (accessToken) {
     headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
+  const res = await fetch(`${baseUrl}${path}`, {
+    ...fetchOptions,
     headers,
     credentials: "include",
   });
@@ -39,7 +53,8 @@ export async function apiFetch<T = unknown>(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const err = new Error(data.message || `Request failed (${res.status})`) as Error & { status: number; data: ApiError };
+    const msg = data.message || data.error || `Request failed (${res.status})`;
+    const err = new Error(msg) as Error & { status: number; data: ApiError };
     err.status = res.status;
     err.data = data;
     throw err;
@@ -52,6 +67,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   try {
     const data = await apiFetch<{ accessToken: string }>("/api/v1/auth/refresh", {
       method: "POST",
+      service: "auth",
     });
     setAccessToken(data.accessToken);
     return data.accessToken;
@@ -63,7 +79,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 export async function apiFetchWithRefresh<T = unknown>(
   path: string,
-  options: RequestInit = {},
+  options: RequestInit & { service?: ServiceName } = {},
 ): Promise<T> {
   try {
     return await apiFetch<T>(path, options);

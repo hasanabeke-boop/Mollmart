@@ -2,17 +2,29 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetchWithRefresh } from "@/lib/api";
 
 type Interest = "Technology" | "Fashion" | "Home Decor" | "Outdoor" | "Books" | "Vintage";
+
+type ProfileData = {
+  fullName?: string;
+  phone?: string;
+  city?: string;
+  avatarUrl?: string;
+};
 
 export default function UserProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [location, setLocation] = useState("San Francisco, CA");
+  const [location, setLocation] = useState("");
+  const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -20,11 +32,26 @@ export default function UserProfilePage() {
     }
   }, [user, authLoading, router]);
 
-  useEffect(() => {
-    if (user) {
-      setName(user.name || user.email || "User");
+  const loadProfile = useCallback(async () => {
+    try {
+      const data = await apiFetchWithRefresh<ProfileData>("/api/v1/profiles/me", {
+        service: "profile",
+      });
+      if (data.fullName) setName(data.fullName);
+      if (data.city) setLocation(data.city);
+      if (data.phone) setPhone(data.phone);
+      if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
+    } catch {
+      if (user) {
+        setName(user.name || user.email || "User");
+      }
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) loadProfile();
+  }, [user, loadProfile]);
+
   const [interests, setInterests] = useState<Interest[]>([
     "Technology",
     "Home Decor",
@@ -44,8 +71,28 @@ export default function UserProfilePage() {
     );
   };
 
-  const handleSaveProfile = () => {
-    alert(`Profile saved:\nName: ${name}\nLocation: ${location}`);
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      const body: Record<string, string> = {};
+      if (name.trim()) body.fullName = name.trim();
+      if (location.trim()) body.city = location.trim();
+      if (phone.trim()) body.phone = phone.trim();
+
+      await apiFetchWithRefresh("/api/v1/profiles/me", {
+        method: "PATCH",
+        service: "profile",
+        body: JSON.stringify(body),
+      });
+      setSaveMsg("Profile saved!");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (err: unknown) {
+      const e = err as Error;
+      setSaveMsg(e.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -158,14 +205,22 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleSaveProfile}
-              className="w-full md:w-auto px-5 py-2.5 rounded-lg bg-[#f5f6f8] hover:bg-[#e7f3eb] border border-[#e7f3eb] text-sm font-bold flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">save</span>
-              Save Profile
-            </button>
+            <div className="flex items-center gap-3">
+              {saveMsg && (
+                <span className={`text-sm font-medium ${saveMsg.includes("saved") ? "text-green-600" : "text-red-500"}`}>
+                  {saveMsg}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="w-full md:w-auto px-5 py-2.5 rounded-lg bg-[#f5f6f8] hover:bg-[#e7f3eb] border border-[#e7f3eb] text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[18px]">save</span>
+                {saving ? "Saving..." : "Save Profile"}
+              </button>
+            </div>
           </div>
         </section>
 

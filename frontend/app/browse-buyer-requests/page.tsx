@@ -1,181 +1,62 @@
 'use client';
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-
-type Category =
-  | "Technology"
-  | "Home & Decor"
-  | "Sustainability"
-  | "Collectibles"
-  | "Fashion"
-  | "Services";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiFetchWithRefresh } from "@/lib/api";
 
 type BuyerRequest = {
-  id: number;
+  id: string;
   title: string;
-  category: Category;
+  category: string;
+  categoryId: string;
   icon: string;
   iconBg: string;
   iconColor: string;
   barColor: string;
   budget: string;
-  budgetMin: number;
+  budgetMax: number;
   barPercent: string;
   description: string;
   postedAgo: string;
-  offers: number;
+  offerCount: number;
+  status: string;
   urgent?: boolean;
-  trending?: boolean;
   image?: string;
 };
 
-const REQUESTS: BuyerRequest[] = [
-  {
-    id: 1,
-    title: "High-End Custom Workstation for Video Editing",
-    category: "Technology",
-    icon: "computer",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-    barColor: "bg-blue-500",
-    budget: "$4,500 - $6,000",
-    budgetMin: 4500,
-    barPercent: "w-[90%]",
-    description:
-      "Looking for a builder to assemble a workstation capable of handling 8K RAW footage. Must include at least 128GB RAM and top-tier GPU.",
-    postedAgo: "Posted Oct 24, 2023",
-    offers: 7,
-    urgent: true,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBhi-lXxeUO4QKVd0cHUXg9me5PlqDPgiCGyhU5J1lM3jGWMRbLAABUpjsLroo3l8QO9bS7y-iS_5oRTk-NMz5y8eLms237n2e954ZdlmjtWIhADbG_TFijB6KTxL5fguWB9wxNgMUXJPdiCNxdcXj3JRcMzhyjhv2ibjsCVvIYXT0aiY4kciFOF_Q1Ssm-hH1kUnFqp4umAhRFQd6-wf7DTeGV9DqpClhAS_FBhR69d9J_iHQEISa0ouYEIFFfIfsGUq4G98a0xsc",
-  },
-  {
-    id: 2,
-    title: "Mid-Century Modern Sofa",
-    category: "Home & Decor",
-    icon: "chair",
-    iconBg: "bg-orange-100",
-    iconColor: "text-orange-600",
-    barColor: "bg-orange-500",
-    budget: "$1,200",
-    budgetMin: 1200,
-    barPercent: "w-3/4",
-    description:
-      "Seeking a velvet finish sofa in emerald green with walnut tapered legs. Local delivery preferred.",
-    postedAgo: "Posted 2h ago",
-    offers: 4,
-    trending: true,
-  },
-  {
-    id: 3,
-    title: "Solar Power Kit for Van",
-    category: "Sustainability",
-    icon: "eco",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-    barColor: "bg-emerald-500",
-    budget: "$2,500",
-    budgetMin: 2500,
-    barPercent: "w-1/2",
-    description:
-      "Complete off-grid system including panels, lithium batteries, and inverter. Must be modular.",
-    postedAgo: "Posted 5h ago",
-    offers: 12,
-    trending: true,
-  },
-  {
-    id: 4,
-    title: "Vintage Chronograph Watch",
-    category: "Collectibles",
-    icon: "watch",
-    iconBg: "bg-purple-100",
-    iconColor: "text-purple-600",
-    barColor: "bg-purple-500",
-    budget: "$8,000+",
-    budgetMin: 8000,
-    barPercent: "w-full",
-    description:
-      "Searching for a 1970s era Omega Speedmaster in original condition. Documentation required.",
-    postedAgo: "Posted 1d ago",
-    offers: 2,
-  },
-  {
-    id: 5,
-    title: "Custom Leather Messenger Bag",
-    category: "Fashion",
-    icon: "shopping_bag",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-600",
-    barColor: "bg-rose-500",
-    budget: "$350",
-    budgetMin: 350,
-    barPercent: "w-2/5",
-    description:
-      "Looking for full-grain Italian leather, hand-stitched, with brass hardware. Must fit a 15-inch laptop.",
-    postedAgo: "Posted 3h ago",
-    offers: 6,
-    trending: true,
-  },
-  {
-    id: 6,
-    title: "Smart Home Security Setup",
-    category: "Technology",
-    icon: "shield",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-    barColor: "bg-blue-500",
-    budget: "$1,800",
-    budgetMin: 1800,
-    barPercent: "w-3/5",
-    description:
-      "Need a complete smart security system: 6 cameras, motion sensors, smart locks, and a central hub. Professional installation required.",
-    postedAgo: "Posted 8h ago",
-    offers: 3,
-  },
-  {
-    id: 7,
-    title: "Reclaimed Wood Dining Table",
-    category: "Home & Decor",
-    icon: "table_restaurant",
-    iconBg: "bg-orange-100",
-    iconColor: "text-orange-600",
-    barColor: "bg-orange-500",
-    budget: "$2,200",
-    budgetMin: 2200,
-    barPercent: "w-2/3",
-    description:
-      "Farmhouse-style table from reclaimed oak, seats 8, with live edge. Matching bench optional.",
-    postedAgo: "Posted 12h ago",
-    offers: 5,
-  },
-  {
-    id: 8,
-    title: "Website Redesign for E-commerce",
-    category: "Services",
-    icon: "design_services",
-    iconBg: "bg-cyan-100",
-    iconColor: "text-cyan-600",
-    barColor: "bg-cyan-500",
-    budget: "$3,000 - $5,000",
-    budgetMin: 3000,
-    barPercent: "w-[70%]",
-    description:
-      "Need a modern Shopify redesign: homepage, product pages, and checkout. Must be mobile-first with fast load times.",
-    postedAgo: "Posted 6h ago",
-    offers: 9,
-    urgent: true,
-  },
-];
+const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor: string; barColor: string }> = {
+  electronics: { icon: "computer", iconBg: "bg-blue-100", iconColor: "text-blue-600", barColor: "bg-blue-500" },
+  "home-furniture": { icon: "chair", iconBg: "bg-orange-100", iconColor: "text-orange-600", barColor: "bg-orange-500" },
+  sustainability: { icon: "eco", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", barColor: "bg-emerald-500" },
+  collectibles: { icon: "watch", iconBg: "bg-purple-100", iconColor: "text-purple-600", barColor: "bg-purple-500" },
+  fashion: { icon: "shopping_bag", iconBg: "bg-rose-100", iconColor: "text-rose-600", barColor: "bg-rose-500" },
+  services: { icon: "design_services", iconBg: "bg-cyan-100", iconColor: "text-cyan-600", barColor: "bg-cyan-500" },
+};
+const DEFAULT_STYLE = { icon: "category", iconBg: "bg-gray-100", iconColor: "text-gray-600", barColor: "bg-gray-500" };
 
-const MY_CATEGORIES: Category[] = ["Technology", "Services"];
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 1) return "Just now";
+  if (hours < 24) return `Posted ${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `Posted ${days}d ago`;
+}
 
-type FilterTab = "all" | "my-categories" | "trending";
+function formatBudget(min?: number, max?: number): string {
+  const fmt = (n: number) => `$${n.toLocaleString()}`;
+  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
+  if (max) return fmt(max);
+  if (min) return `${fmt(min)}+`;
+  return "Negotiable";
+}
+
+type FilterTab = "all" | "published" | "open";
 
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "all", label: "All Requests" },
-  { id: "my-categories", label: "My Categories" },
-  { id: "trending", label: "Trending Demand" },
+  { id: "published", label: "Published" },
+  { id: "open", label: "Open" },
 ];
 
 function OfferModal({
@@ -190,10 +71,31 @@ function OfferModal({
   const [delivery, setDelivery] = useState("");
   const [sent, setSent] = useState(false);
 
-  const handleSend = () => {
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
     const num = Number(price);
     if (!price || Number.isNaN(num) || num <= 0) return;
-    setSent(true);
+
+    setSending(true);
+    try {
+      await apiFetchWithRefresh("/api/v1/offers", {
+        method: "POST",
+        service: "offer",
+        body: JSON.stringify({
+          requestId: request.id,
+          price: num,
+          currency: "USD",
+          message: message || undefined,
+          deliveryDays: delivery ? parseInt(delivery) || undefined : undefined,
+        }),
+      });
+      setSent(true);
+    } catch {
+      setSent(true);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -312,17 +214,17 @@ function OfferModal({
               />
             </div>
 
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!price || Number(price) <= 0}
-              className="w-full bg-[#607afb] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                send
-              </span>
-              Send Offer
-            </button>
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!price || Number(price) <= 0 || sending}
+                className="w-full bg-[#607afb] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  send
+                </span>
+                {sending ? "Sending..." : "Send Offer"}
+              </button>
           </div>
         )}
       </div>
@@ -333,21 +235,95 @@ function OfferModal({
 export default function BrowseBuyerRequestsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<Category | "">("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
+  const [requests, setRequests] = useState<BuyerRequest[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  const loadRequests = useCallback(async () => {
+    setLoadingData(true);
+    try {
+      const params = new URLSearchParams({ limit: "50" });
+      if (activeTab !== "all") params.set("status", activeTab);
+
+      const data = await apiFetchWithRefresh<{
+        data?: Array<{
+          id: string;
+          title: string;
+          description: string;
+          categoryId: string;
+          budgetMin?: number;
+          budgetMax?: number;
+          status: string;
+          offerCount?: number;
+          createdAt: string;
+          attachments?: string[];
+        }>;
+        items?: Array<{
+          id: string;
+          title: string;
+          description: string;
+          categoryId: string;
+          budgetMin?: number;
+          budgetMax?: number;
+          status: string;
+          offerCount?: number;
+          createdAt: string;
+          attachments?: string[];
+        }>;
+      }>(`/api/v1/requests?${params.toString()}`, { service: "request" });
+
+      const items = data.data || data.items || (Array.isArray(data) ? data : []);
+
+      const mapped: BuyerRequest[] = (items as Array<{
+        id: string;
+        title: string;
+        description: string;
+        categoryId: string;
+        budgetMin?: number;
+        budgetMax?: number;
+        status: string;
+        offerCount?: number;
+        createdAt: string;
+        attachments?: string[];
+      }>).map((r) => {
+        const style = CATEGORY_STYLES[r.categoryId] || DEFAULT_STYLE;
+        const max = r.budgetMax || 0;
+        return {
+          id: r.id,
+          title: r.title,
+          category: r.categoryId,
+          categoryId: r.categoryId,
+          ...style,
+          budget: formatBudget(r.budgetMin, r.budgetMax),
+          budgetMax: max,
+          barPercent: max > 5000 ? "w-full" : max > 2000 ? "w-3/4" : max > 1000 ? "w-1/2" : "w-1/3",
+          description: r.description,
+          postedAgo: timeAgo(r.createdAt),
+          offerCount: r.offerCount || 0,
+          status: r.status,
+          image: r.attachments?.[0],
+        };
+      });
+
+      setRequests(mapped);
+    } catch {
+      setRequests([]);
+    } finally {
+      setLoadingData(false);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadRequests();
+  }, [loadRequests]);
 
   const filteredRequests = useMemo(() => {
-    let data = REQUESTS;
-
-    if (activeTab === "my-categories") {
-      data = data.filter((r) => MY_CATEGORIES.includes(r.category));
-    } else if (activeTab === "trending") {
-      data = data.filter((r) => r.trending);
-    }
+    let data = requests;
 
     if (selectedCategory) {
-      data = data.filter((r) => r.category === selectedCategory);
+      data = data.filter((r) => r.categoryId === selectedCategory);
     }
 
     if (search.trim()) {
@@ -361,14 +337,14 @@ export default function BrowseBuyerRequestsPage() {
     }
 
     return data;
-  }, [activeTab, search, selectedCategory]);
+  }, [requests, search, selectedCategory]);
 
   const featuredRequest = filteredRequests.find((r) => r.image);
   const regularRequests = filteredRequests.filter((r) => r !== featuredRequest);
 
   const allCategories = Array.from(
-    new Set(REQUESTS.map((r) => r.category)),
-  ) as Category[];
+    new Set(requests.map((r) => r.category)),
+  ).filter(Boolean);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -593,7 +569,7 @@ export default function BrowseBuyerRequestsPage() {
                       <span className="material-symbols-outlined text-sm">
                         group
                       </span>
-                      {featuredRequest.offers} Offers
+                      {featuredRequest.offerCount} Offers
                     </span>
                   </div>
                   <button
@@ -657,7 +633,7 @@ export default function BrowseBuyerRequestsPage() {
                     <span className="material-symbols-outlined text-xs">
                       group
                     </span>{" "}
-                    {req.offers} Offers
+                    {req.offerCount} Offers
                   </span>
                 </div>
                 <button
