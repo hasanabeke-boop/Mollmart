@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "types": ["node", "jest"]
-  },
-  "include": ["src/**/*.ts", "__test__/**/*.ts", "prisma/seed.ts"]
-}

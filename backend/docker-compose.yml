@@ -1,8 +1,25 @@
 services:
+  backend-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mollmart}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    ports:
+      - '${POSTGRES_PORT:-54320}:5432'
+    volumes:
+      - backend_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mollmart}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   backend-redis:
     image: redis:7-alpine
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6380}:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -10,281 +27,29 @@ services:
       retries: 5
     restart: unless-stopped
 
-  auth-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: authdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5432:5432'
-    volumes:
-      - auth_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d authdb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  request-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: requestdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5435:5432'
-    volumes:
-      - request_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d requestdb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  offer-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: offerdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5436:5432'
-    volumes:
-      - offer_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d offerdb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  chat-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: chatdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5437:5432'
-    volumes:
-      - chat_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d chatdb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  profile-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: profiledb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5438:5432'
-    volumes:
-      - profile_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d profiledb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  admin-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: admindb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5439:5432'
-    volumes:
-      - admin_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d admindb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  notification-postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: notificationdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - '5440:5432'
-    volumes:
-      - notification_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d notificationdb']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  auth-service:
+  backend:
     build:
-      context: ./services/auth-service
+      context: .
       dockerfile: Dockerfile
     env_file:
-      - ./services/auth-service/.env
+      - .env
     environment:
       NODE_ENV: production
       PORT: 4040
-      POSTGRES_DB: authdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      DATABASE_URL: postgresql://postgres:postgres123@auth-postgres:5432/authdb?schema=public
-      ACCESS_TOKEN_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-      REFRESH_TOKEN_SECRET: ${JWT_REFRESH_SECRET:-change-me-shared-refresh-secret}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@backend-postgres:5432/${POSTGRES_DB:-mollmart}?schema=public
+      REDIS_URL: redis://backend-redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-shared-refresh-secret}
+      SERVER_URL: ${SERVER_URL:-http://localhost:4040}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
       - '4040:4040'
     depends_on:
-      auth-postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  request-service:
-    build:
-      context: ./services/request-service
-    env_file:
-      - ./services/request-service/.env
-    environment:
-      NODE_ENV: production
-      PORT: 4050
-      DATABASE_URL: postgresql://postgres:postgres123@request-postgres:5432/requestdb?schema=public
-      REDIS_URL: redis://backend-redis:6379
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-    ports:
-      - '4050:4050'
-    depends_on:
-      request-postgres:
-        condition: service_healthy
-      backend-redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  offer-service:
-    build:
-      context: ./services/offer-service
-    env_file:
-      - ./services/offer-service/.env
-    environment:
-      NODE_ENV: production
-      PORT: 4060
-      DATABASE_URL: postgresql://postgres:postgres123@offer-postgres:5432/offerdb?schema=public
-      REDIS_URL: redis://backend-redis:6379
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-      REQUEST_SERVICE_URL: http://request-service:4050/api/v1
-    ports:
-      - '4060:4060'
-    depends_on:
-      offer-postgres:
-        condition: service_healthy
-      backend-redis:
-        condition: service_healthy
-      request-service:
-        condition: service_started
-    restart: unless-stopped
-
-  chat-service:
-    build:
-      context: ./services/chat-service
-    env_file:
-      - ./services/chat-service/.env
-    environment:
-      NODE_ENV: production
-      PORT: 4070
-      DATABASE_URL: postgresql://postgres:postgres123@chat-postgres:5432/chatdb?schema=public
-      REDIS_URL: redis://backend-redis:6379
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-      REQUEST_SERVICE_URL: http://request-service:4050/api/v1
-      OFFER_SERVICE_URL: http://offer-service:4060/api/v1
-    ports:
-      - '4070:4070'
-    depends_on:
-      chat-postgres:
-        condition: service_healthy
-      backend-redis:
-        condition: service_healthy
-      request-service:
-        condition: service_started
-      offer-service:
-        condition: service_started
-    restart: unless-stopped
-
-  profile-service:
-    build:
-      context: ./services/profile-service
-    env_file:
-      - ./services/profile-service/.env
-    environment:
-      NODE_ENV: production
-      PORT: 4080
-      DATABASE_URL: postgresql://postgres:postgres123@profile-postgres:5432/profiledb?schema=public
-      REDIS_URL: redis://backend-redis:6379
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-    ports:
-      - '4080:4080'
-    depends_on:
-      profile-postgres:
-        condition: service_healthy
-      backend-redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  admin-service:
-    build:
-      context: ./services/admin-service
-    env_file:
-      - ./services/admin-service/.env
-    environment:
-      NODE_ENV: production
-      PORT: 4090
-      DATABASE_URL: postgresql://postgres:postgres123@admin-postgres:5432/admindb?schema=public
-      REDIS_URL: redis://backend-redis:6379
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-    ports:
-      - '4090:4090'
-    depends_on:
-      admin-postgres:
-        condition: service_healthy
-      backend-redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  notification-service:
-    build:
-      context: ./services/notification-service
-    env_file:
-      - ./services/notification-service/.env
-    environment:
-      NODE_ENV: production
-      PORT: 4100
-      DATABASE_URL: postgresql://postgres:postgres123@notification-postgres:5432/notificationdb?schema=public
-      REDIS_URL: redis://backend-redis:6379
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-shared-access-secret}
-    ports:
-      - '4100:4100'
-    depends_on:
-      notification-postgres:
+      backend-postgres:
         condition: service_healthy
       backend-redis:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  auth_postgres_data:
-  request_postgres_data:
-  offer_postgres_data:
-  chat_postgres_data:
-  profile_postgres_data:
-  admin_postgres_data:
-  notification_postgres_data:
+  backend_postgres_data:

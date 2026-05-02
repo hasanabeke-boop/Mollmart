@@ -1,11 +1,66 @@
 # Backend
 
-This backend can now run in two ways:
+The backend is now a modular monolith.
 
-- all services together from `backend/docker-compose.yml`
-- each service separately from its own `backend/services/<service>/docker-compose.yml`
+One Express application runs all domain modules:
 
-## Run Whole Backend
+- auth
+- profile
+- request
+- offer
+- chat
+- admin
+- notification
+
+The former service source now lives in `src/modules/*` and is wired through a single `src/app.ts` entry point. Cross-module calls happen in-process instead of through service-to-service HTTP clients.
+
+## Structure
+
+```text
+backend/
+  src/
+    app.ts
+    index.ts
+    config/
+    middleware/
+    modules/
+      auth/
+      profile/
+      request/
+      offer/
+      chat/
+      admin/
+      notification/
+  prisma/
+    schema.prisma
+    seed.ts
+  docker-compose.yml
+  package.json
+```
+
+## Local Setup
+
+```bash
+cp .env.example .env
+npm install
+npm run prisma:generate
+npm run prisma:push
+npm run dev
+```
+
+API base URL:
+
+```text
+http://localhost:4040/api/v1
+```
+
+Health check:
+
+```text
+http://localhost:4040/health
+```
+
+## Docker
 
 From `backend/`:
 
@@ -13,49 +68,8 @@ From `backend/`:
 docker compose up --build
 ```
 
-Services:
+Docker now starts:
 
-- auth-service: `http://localhost:4040`
-- request-service: `http://localhost:4050`
-- offer-service: `http://localhost:4060`
-- chat-service: `http://localhost:4070`
-- profile-service: `http://localhost:4080`
-- admin-service: `http://localhost:4090`
-- notification-service: `http://localhost:4100`
-
-Databases:
-
-- auth: `localhost:5432`
-- request: `localhost:5435`
-- offer: `localhost:5436`
-- chat: `localhost:5437`
-- profile: `localhost:5438`
-- admin: `localhost:5439`
-- notification: `localhost:5440`
-
-Redis:
-
-- `localhost:6379`
-
-Optional shared env file:
-
-```bash
-cp .env.example .env
-```
-
-You can set:
-
-- `JWT_ACCESS_SECRET`
-- `JWT_REFRESH_SECRET`
-- `CORS_ORIGIN`
-
-## Run One Service Separately
-
-Example:
-
-```bash
-cd services/auth-service
-docker compose up --build
-```
-
-The per-service compose files still work independently.
+- one backend app on `localhost:4040`
+- one PostgreSQL database on `localhost:54320`
+- one Redis instance on `localhost:6380`

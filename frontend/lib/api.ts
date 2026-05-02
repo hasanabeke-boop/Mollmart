@@ -1,13 +1,15 @@
 export type ServiceName = "auth" | "request" | "offer" | "chat" | "profile" | "admin" | "notification";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
+
 const SERVICE_URLS: Record<ServiceName, string> = {
-  auth: process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:4040",
-  request: process.env.NEXT_PUBLIC_REQUEST_URL || "http://localhost:4050",
-  offer: process.env.NEXT_PUBLIC_OFFER_URL || "http://localhost:4060",
-  chat: process.env.NEXT_PUBLIC_CHAT_URL || "http://localhost:4070",
-  profile: process.env.NEXT_PUBLIC_PROFILE_URL || "http://localhost:4080",
-  admin: process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:4090",
-  notification: process.env.NEXT_PUBLIC_NOTIFICATION_URL || "http://localhost:4100",
+  auth: process.env.NEXT_PUBLIC_AUTH_URL || API_URL,
+  request: process.env.NEXT_PUBLIC_REQUEST_URL || API_URL,
+  offer: process.env.NEXT_PUBLIC_OFFER_URL || API_URL,
+  chat: process.env.NEXT_PUBLIC_CHAT_URL || API_URL,
+  profile: process.env.NEXT_PUBLIC_PROFILE_URL || API_URL,
+  admin: process.env.NEXT_PUBLIC_ADMIN_URL || API_URL,
+  notification: process.env.NEXT_PUBLIC_NOTIFICATION_URL || API_URL,
 };
 
 let accessToken: string | null = null;
