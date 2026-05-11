@@ -55,7 +55,7 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         userId: buyerId,
         type: 'request_published',
         title: 'Request published',
-        body: 'Your request is now live on the marketplace.',
+        body: 'Your request is now live and visible to matching sellers.',
         referenceType: 'request',
         referenceId: requestId,
         dedupeKey: `request-published-${requestId}-${buyerId}`
@@ -128,7 +128,7 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
       userId: recipientId,
       type: 'chat_message_created',
       title: 'New message',
-      body: 'You received a new marketplace chat message.',
+      body: 'You received a new chat message from a matched user.',
       referenceType: 'conversation',
       referenceId: conversationId,
       dedupeKey: `chat-message-${asString(payload.messageId) ?? conversationId}-${recipientId}`

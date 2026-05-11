@@ -11,7 +11,7 @@ export function Footer() {
               <span className="text-xl font-bold text-[#0d1b12]">Mollmart</span>
             </a>
             <p className="text-sm text-gray-500">
-              Connecting buyers and sellers through intelligent, personalized discovery.
+              Connecting buyers and sellers through requests, offers, and direct communication.
             </p>
             <div className="mt-6 flex space-x-4">
               <a className="text-gray-400 hover:text-primary transition-colors hover:scale-110" href="#">
@@ -45,16 +45,16 @@ export function Footer() {
 
           <div className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-sm font-semibold leading-6 text-[#0d1b12]">Shop</h3>
+              <h3 className="text-sm font-semibold leading-6 text-[#0d1b12]">Requests</h3>
               <ul className="mt-4 space-y-3" role="list">
                 <li>
                   <a className="text-sm leading-6 text-gray-500 hover:text-primary transition-colors" href="#">
-                    New Arrivals
+                    Create Request
                   </a>
                 </li>
                 <li>
                   <a className="text-sm leading-6 text-gray-500 hover:text-primary transition-colors" href="#">
-                    Featured
+                    Browse Demand
                   </a>
                 </li>
                 <li>
@@ -70,7 +70,7 @@ export function Footer() {
               <ul className="mt-4 space-y-3" role="list">
                 <li>
                   <a className="text-sm leading-6 text-gray-500 hover:text-primary transition-colors" href="#">
-                    Start Selling
+                    Seller Dashboard
                   </a>
                 </li>
                 <li>

@@ -118,7 +118,7 @@ export default function RegisterPage() {
             business journey.
           </h2>
           <p className="text-xl opacity-90 max-w-md">
-            Join over 10,000+ sellers and buyers who have found their perfect marketplace today.
+            Join buyers posting real demand and sellers responding with relevant offers.
           </p>
           <div className="mt-12 flex gap-6">
             <div className="flex flex-col">
@@ -175,7 +175,7 @@ export default function RegisterPage() {
                   onChange={() => setRole("buyer")}
                 />
                 <div className="flex items-center justify-center gap-2 rounded-lg py-3 px-4 text-sm font-semibold transition-all peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm text-slate-600 peer-checked:animate-[popScale_0.2s_ease-out]">
-                  <span className="material-symbols-outlined text-lg">shopping_bag</span>
+                  <span className="material-symbols-outlined text-lg">playlist_add_check</span>
                   Buyer
                 </div>
               </label>

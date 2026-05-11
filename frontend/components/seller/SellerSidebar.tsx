@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-type SellerNavId = "dashboard" | "products" | "orders" | "messages" | "analytics";
+type SellerNavId = "dashboard" | "requests" | "offers" | "messages" | "analytics";
 
 const NAV_ITEMS: {
   id: SellerNavId;
@@ -13,8 +13,8 @@ const NAV_ITEMS: {
   badge?: number;
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
-  { id: "products", icon: "inventory_2", label: "Products", href: "/products" },
-  { id: "orders", icon: "shopping_bag", label: "Orders", href: "/orders", badge: 3 },
+  { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
+  { id: "offers", icon: "local_offer", label: "Offers", href: "/browse-buyer-requests", badge: 3 },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];

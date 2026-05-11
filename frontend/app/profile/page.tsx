@@ -58,8 +58,8 @@ export default function UserProfilePage() {
     "Books",
   ]);
   const [notifications, setNotifications] = useState({
-    orderUpdates: true,
-    priceDrops: true,
+    requestUpdates: true,
+    offerReplies: true,
     newsletter: false,
   });
 
@@ -119,15 +119,15 @@ export default function UserProfilePage() {
             Profile Info
           </button>
           <Link
-            href="/orders"
+            href="/create-product-request"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
           >
-            <span className="material-symbols-outlined">package_2</span>
-            My Orders
+            <span className="material-symbols-outlined">playlist_add</span>
+            My Requests
           </Link>
           <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
-            <span className="material-symbols-outlined">favorite</span>
-            Wishlist
+            <span className="material-symbols-outlined">travel_explore</span>
+            Saved Interests
           </button>
           <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
             <span className="material-symbols-outlined">tune</span>
@@ -146,7 +146,7 @@ export default function UserProfilePage() {
             </span>
             <h4 className="font-bold text-lg">Sell on Mollmart</h4>
             <p className="text-xs text-gray-300 mb-2">
-              Turn your unused items into cash today.
+              Respond to live buyer requests and start more conversations.
             </p>
             <Link
               href="/seller/dashboard"
@@ -188,7 +188,7 @@ export default function UserProfilePage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#4c9a66]">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-[18px]">
-                      shopping_bag
+                      verified_user
                     </span>
                     Verified Buyer
                   </span>
@@ -227,13 +227,13 @@ export default function UserProfilePage() {
         {/* Stats (статичные) */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">Active Orders</p>
+            <p className="text-sm text-[#4c9a66] font-medium">Active Requests</p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-[#0d1b12]">2</span>
             </div>
           </div>
           <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">Items Sold</p>
+            <p className="text-sm text-[#4c9a66] font-medium">Offers Received</p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-[#0d1b12]">14</span>
               <span className="text-xs text-[#4c9a66] font-medium">Lifetime</span>
@@ -298,17 +298,17 @@ export default function UserProfilePage() {
             </div>
             <div className="flex flex-col gap-4">
               <ToggleRow
-                label="Order Updates"
-                checked={notifications.orderUpdates}
+                label="Request Updates"
+                checked={notifications.requestUpdates}
                 onChange={(v) =>
-                  setNotifications((prev) => ({ ...prev, orderUpdates: v }))
+                  setNotifications((prev) => ({ ...prev, requestUpdates: v }))
                 }
               />
               <ToggleRow
-                label="Price Drops"
-                checked={notifications.priceDrops}
+                label="Offer Replies"
+                checked={notifications.offerReplies}
                 onChange={(v) =>
-                  setNotifications((prev) => ({ ...prev, priceDrops: v }))
+                  setNotifications((prev) => ({ ...prev, offerReplies: v }))
                 }
               />
               <ToggleRow

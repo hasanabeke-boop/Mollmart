@@ -120,7 +120,7 @@ export class ChatService {
     const request = await this.requestModuleAdapter.getRequestById(input.requestId, user);
 
     if (!['published', 'has_offers', 'in_negotiation', 'accepted'].includes(request.status)) {
-      throw badRequest('Conversation can only be created for a valid marketplace request context');
+      throw badRequest('Conversation can only be created for a valid request context');
     }
 
     if (user.role === 'buyer') {
@@ -159,7 +159,7 @@ export class ChatService {
       };
     }
 
-    throw forbidden('Only buyers and sellers can open marketplace conversations');
+    throw forbidden('Only buyers and sellers can open request conversations');
   }
 
   private async resolveSellerId(input: CreateConversationInput): Promise<string> {

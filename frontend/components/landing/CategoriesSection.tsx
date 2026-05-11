@@ -5,9 +5,9 @@ export function CategoriesSection() {
         <div className="flex items-end justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[#0d1b12] sm:text-3xl">
-              Shop by Category
+              Explore Request Categories
             </h2>
-            <p className="mt-2 text-gray-500">Explore our most popular departments.</p>
+            <p className="mt-2 text-gray-500">Categories help buyers describe needs and sellers find matching demand.</p>
           </div>
           <div className="flex gap-2">
             <button className="h-10 w-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-white transition-colors">
@@ -30,7 +30,7 @@ export function CategoriesSection() {
               </div>
               <h3 className="font-bold text-[#0d1b12] text-lg">Electronics</h3>
               <span className="text-xs text-gray-500 group-hover:text-primary transition-colors flex items-center gap-1 mt-1">
-                Browse <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                View requests <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </span>
             </div>
           </a>
@@ -43,9 +43,9 @@ export function CategoriesSection() {
               <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center mb-3 text-emerald-500 shadow-sm group-hover:scale-110 transition-transform">
                 <span className="material-symbols-outlined">chair</span>
               </div>
-              <h3 className="font-bold text-[#0d1b12] text-lg">Home &amp; Living</h3>
+              <h3 className="font-bold text-[#0d1b12] text-lg">Home &amp; Office</h3>
               <span className="text-xs text-gray-500 group-hover:text-emerald-500 transition-colors flex items-center gap-1 mt-1">
-                Browse <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                View requests <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </span>
             </div>
           </a>
@@ -60,7 +60,7 @@ export function CategoriesSection() {
               </div>
               <h3 className="font-bold text-[#0d1b12] text-lg">Fashion</h3>
               <span className="text-xs text-gray-500 group-hover:text-rose-500 transition-colors flex items-center gap-1 mt-1">
-                Browse <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                View requests <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </span>
             </div>
           </a>
@@ -75,7 +75,7 @@ export function CategoriesSection() {
               </div>
               <h3 className="font-bold text-[#0d1b12] text-lg">Art &amp; Collectibles</h3>
               <span className="text-xs text-gray-500 group-hover:text-amber-500 transition-colors flex items-center gap-1 mt-1">
-                Browse <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                View requests <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </span>
             </div>
           </a>
@@ -90,7 +90,7 @@ export function CategoriesSection() {
               </div>
               <h3 className="font-bold text-[#0d1b12] text-lg">Sports</h3>
               <span className="text-xs text-gray-500 group-hover:text-cyan-500 transition-colors flex items-center gap-1 mt-1">
-                Browse <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                View requests <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </span>
             </div>
           </a>
@@ -103,9 +103,9 @@ export function CategoriesSection() {
               <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center mb-3 text-purple-500 shadow-sm group-hover:scale-110 transition-transform">
                 <span className="material-symbols-outlined">toys</span>
               </div>
-              <h3 className="font-bold text-[#0d1b12] text-lg">Toys &amp; Hobbies</h3>
+              <h3 className="font-bold text-[#0d1b12] text-lg">Hobbies &amp; Specialty</h3>
               <span className="text-xs text-gray-500 group-hover:text-purple-500 transition-colors flex items-center gap-1 mt-1">
-                Browse <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                View requests <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </span>
             </div>
           </a>

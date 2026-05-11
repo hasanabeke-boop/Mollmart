@@ -1,22 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/landing/Header";
 import { AuthProvider } from "@/context/AuthContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
   title: "Mollmart",
-  description: "Empowering local commerce and community growth",
+  description: "Buyer request, seller offer, and negotiation platform",
 };
 
 export default function RootLayout({
@@ -32,7 +21,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="antialiased">
         <AuthProvider>
           <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
             <Header />

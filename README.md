@@ -1,15 +1,18 @@
 # Mollmart
 
-Mollmart is a web-based reverse auction marketplace where buyers publish structured purchase requests and sellers compete by submitting offers.
+Mollmart is a web-based request-and-offer platform where buyers publish product requests and sellers respond with offers.
+
+It is not an in-app commerce or fulfillment system. Mollmart does not handle checkout, payments, delivery, shipment tracking, or cart flows. Its core purpose is lead generation, matching, negotiation, and communication between buyers and sellers.
 
 The project uses a web frontend and a modular monolith backend. Backend domains are separated as internal modules, not independent deployable apps.
 
 ## Core Flow
 
-1. Buyers register, create request drafts, and publish purchase requests.
+1. Buyers register, create request drafts, and publish requests for products they need.
 2. Sellers browse published requests and submit offers.
-3. Buyers compare offers, chat with sellers, and accept one offer.
-4. Admins manage categories, moderation cases, and user blocking.
+3. Buyers compare offers and accept the best one.
+4. After acceptance, buyers and sellers continue negotiation in chat.
+5. Admins manage categories, moderation cases, and user blocking.
 
 ## Architecture
 
@@ -25,7 +28,7 @@ The backend runs as one application from `backend/src/index.ts`.
 
 - `auth`: registration, login, refresh tokens, password reset, email verification.
 - `profile`: buyer and seller profile management.
-- `request`: buyer purchase requests and request board.
+- `request`: buyer requests and request discovery board.
 - `offer`: seller offers and offer acceptance.
 - `chat`: buyer-seller conversations and messages.
 - `admin`: categories, moderation, user blocking, dashboard summary.

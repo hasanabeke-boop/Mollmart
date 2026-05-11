@@ -317,7 +317,7 @@ export default function ChatPage() {
       setTimeout(() => {
         updateMessages(activeId, (msgs) => [
           ...msgs,
-          { id: nextId++, from: "seller", text: "Great, deal confirmed! I'll start preparing the shipment.", time: now() },
+          { id: nextId++, from: "seller", text: "Great, request confirmed. Let's finalize details here in chat.", time: now() },
         ]);
       }, 800);
     }

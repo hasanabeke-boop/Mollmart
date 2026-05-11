@@ -5,18 +5,18 @@ export function FinalCtaSection() {
         <div className="relative overflow-hidden rounded-2xl bg-[#0d1b12] px-6 py-24 text-center shadow-2xl sm:px-16 group">
           <div className="relative z-10">
             <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Ready to join the future of commerce?
+              Ready to turn demand into conversations?
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
-              Whether you&apos;re buying your dream item or selling to a waiting crowd, Mollmart makes it seamless.
+              Post a request if you need something, or respond as a seller if you can help. Mollmart keeps the matching and negotiation simple.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
-              <button className="rounded-lg bg-primary px-8 py-4 text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-[var(--primary-hover)] transition-all transform hover:translate-y-[-2px]">
+              <a href="/register" className="rounded-lg bg-primary px-8 py-4 text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-[var(--primary-hover)] transition-all transform hover:translate-y-[-2px]">
                 Get Started Now
-              </button>
+              </a>
               <a
                 className="text-sm font-semibold leading-6 text-white hover:text-primary transition-colors flex items-center gap-1"
-                href="#"
+                href="/help"
               >
                 Learn more <span aria-hidden="true" className="group-hover:translate-x-1 transition-transform">→</span>
               </a>

@@ -45,7 +45,7 @@ export function Header() {
               </span>
               <input
                 className="w-full rounded-lg border-0 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-[#0d1b12] placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:ring-offset-0 transition-all duration-300 shadow-sm focus:shadow-md"
-                placeholder="Search for products or demands..."
+                placeholder="Search requests, categories, or sellers..."
                 type="text"
               />
             </label>
@@ -60,8 +60,8 @@ export function Header() {
             <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/seller/dashboard">
               Sell
             </Link>
-            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/products">
-              Deals
+            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/create-product-request">
+              Post Request
             </Link>
           </nav>
 
@@ -82,13 +82,6 @@ export function Header() {
                 <span className="material-symbols-outlined text-[22px]">notifications</span>
                 <span className="absolute top-2 right-2 size-2 bg-primary rounded-full" />
               </Link>
-              <Link
-                href="/cart"
-                className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
-              >
-                <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
-              </Link>
-
               <div className="relative" ref={menuRef}>
                 <button
                   type="button"
@@ -118,12 +111,12 @@ export function Header() {
                       Profile
                     </Link>
                     <Link
-                      href="/orders"
+                      href="/create-product-request"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
-                      My Orders
+                      <span className="material-symbols-outlined text-[20px]">playlist_add</span>
+                      New Request
                     </Link>
                     <Link
                       href="/seller/dashboard"
