@@ -13,9 +13,6 @@ const SELLER_AVATAR_SM =
 const SELLER_AVATAR_LG =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuDb55AT82h5Z8xhq8JfykywcuNlClUUDZ6C6ndEQ_i3jbjQm6jxLREMz59fGzXACZt77DJ_yFoPWzMhlznY2NB5_HgpCV8UprOzEiNsXfmZ0LK_5behjJbv_wVgyh-ODq37ozLg7RNg6K8q0WYKD5SmpHekun51Cxa27r9EVmzz44UsJA-bkv4TrRw1oVUkxZ1MOfE1Oe97HIMphamIDfi-tErwOyvqt5J-uwkKKKxJYBJno1Wj2noE0rfR1hIcARz59E8eRjLkjl0";
 
-const LENS_IMAGE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDudvtyd1vALlUew4KCxdKDftUTC5Rln2ioWVdCfL2D84Je-m-DcXoSO7dyfV7B3u2so9qbcKGh81abSgHWM1NjO194waQrflvAof3OyfcXucpziUep5izsA1qzLp83P3K58TJavCpVx2Arwh68MlsbQHRl582yiL2EfW0kgbgfMJlVvvWBjlNqlfJcTMiYdf8EKy6sVSF0O1YgXGuX2AFAlAY9RnsdNOpxJqlm_wYgARU246zdtOciLuvYrNW0uTQZFLYUcqz0dyM";
-
 const PRODUCT_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAtYB8aV36wzFnIw4_HdrKS-n2xAIuW1y2YeTCX0mYXASATFhDRF0s1sf_u-nWwS8DkzJarNzdXiS5NP7rsj4OJQaa7j5YL4ty-JuPNEyURywKOra_FZHyOGMkuH0KZfQ0y0hABknw4v1iouRZ8LZKHwzlRmf5n7J9Op8mqaaQc1ZwPJRXSkG16x5ivX5R11f8Po1ZpV0fz4brbhCidQnqQcHbeSpEflcSMUg2REWqyLtjDmYUvRtth71aRvZv0aqwTZYDkmHDyA9k";
 
@@ -40,7 +37,7 @@ type Conversation = {
   timeAgo: string;
   online: boolean;
   unread?: boolean;
-  product: { name: string; price: number; image: string };
+  request: { title: string; offerPrice: number; image: string };
   seller: {
     rating: number;
     reviews: number;
@@ -53,90 +50,16 @@ type Conversation = {
 
 let nextId = 100;
 
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: "photopro22",
-    name: "PhotoPro22",
-    avatar:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCIaDLPQhuNfnTP0jiaFqN3ILWfCKjjQM38XZmHxeHZ5-Ypc0V34jWlvB7TpXZwrsFO-PJuHozlxwRiCU9vAYQ7bH67le6557xrc9O8S667MdzA8DQGuda8wP5q2_v_VRyeGib7p21BFQmzDBoWlm70yaAEQNzr2Ty4IJXb83pE_sgnD7tuAAa0zNKWlssJLaVC2iDVBZhElPmfj7Qs-1zA3s3p3ikOdOgEkXINUbbrpkJBMh-9OvTXTnA_h8Cmi9A3l9_nxKqmXMg",
-    lastMessage: "Great, can you ship it by Friday?",
-    timeAgo: "2m",
-    online: true,
-    unread: true,
-    product: { name: "Canon 50mm f/1.8 STM Lens", price: 120, image: PRODUCT_IMAGE },
-    seller: {
-      rating: 4.8,
-      reviews: 124,
-      joined: "Oct 2021",
-      responseTime: "Within 1 hour",
-      location: "Seattle, WA",
-    },
-    messages: [
-      { id: 1, from: "seller", text: "Hi! Yes, the lens is in mint condition. I barely used it for a year.", time: "10:42 AM" },
-      { id: 2, from: "me", text: "That sounds perfect! Does it come with the original lens cap and box?", time: "10:44 AM" },
-      { id: 3, from: "seller", text: "Absolutely, full original packaging included.", time: "10:45 AM", type: "image", imageUrl: LENS_IMAGE },
-      { id: 4, from: "seller", text: "", time: "10:47 AM", type: "offer-received", offerAmount: 115, offerStatus: "pending" },
-      { id: 5, from: "me", text: "", time: "10:48 AM", type: "offer-sent", offerAmount: 110, offerStatus: "pending" },
-    ],
-  },
-  {
-    id: "alice",
-    name: "Alice Walker",
-    avatar:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDJVSqCtckSBz2VBRQ9Jy4pZjfmo4YOFKRWBREK_4gHwEY-Kkz2XLQ2ngMs0k6QETMbMzmnC12ikmqTqu52W_hK8zBpLKS2hQjpD4A1EkpUVQjuvRpMcv8JRBTgWU4kjcZlfgqfeJzd4YAKcIWvP-64OTPW2u03txfwXXionqEfn4AyFILnNrOTEbygjyy5gOWaUhS_djuwD3h3Cu0SH7UXC3PQDleRrfXT8qFqPV2EjJ00iQlZRjsqj0leFG9-4laPxU_RzbG8gRo",
-    lastMessage: "Is this still available?",
-    timeAgo: "1d",
-    online: false,
-    product: { name: "Vintage Film Camera", price: 250, image: PRODUCT_IMAGE },
-    seller: {
-      rating: 4.5,
-      reviews: 47,
-      joined: "Mar 2022",
-      responseTime: "Within 4 hours",
-      location: "Portland, OR",
-    },
-    messages: [
-      { id: 10, from: "seller", text: "Hi there! I saw your listing for the vintage camera.", time: "Yesterday, 3:12 PM" },
-      { id: 11, from: "seller", text: "Is this still available?", time: "Yesterday, 3:12 PM" },
-    ],
-  },
-  {
-    id: "gadget",
-    name: "Gadget Store",
-    avatar:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAhW_8fAtiif_eqhfcciZ3eq5x5L8xPf_iIX9eyiu8JLm5M9edzGOECdZb65go1Nte2BGMm4Sr4fubY7CcAbue4s51F-u8WmAiEEN203dDzmw0MjBZwbAbcd5wPlbgi4p5-sDD7nvVXhsEPWLZmCspDwbi96cjDpU8wr2K2_GYAx2vxMtSW6cD-WdO6WdObF1COhE3Oa6_oAeUSZwP4ko-Ex2KAH4nIHMh8dFIMW5d39uLTIalKyu35nLo50h1F_k5NiiYZigWtlyM",
-    lastMessage: "Thanks for the offer!",
-    timeAgo: "3d",
-    online: false,
-    product: { name: "Wireless Earbuds Pro", price: 89, image: PRODUCT_IMAGE },
-    seller: {
-      rating: 4.9,
-      reviews: 312,
-      joined: "Jan 2020",
-      responseTime: "Within 30 min",
-      location: "Austin, TX",
-    },
-    messages: [
-      { id: 20, from: "me", text: "Hey, I'm interested in the wireless earbuds.", time: "Mon, 11:00 AM" },
-      { id: 21, from: "seller", text: "Thanks for reaching out! They're brand new, sealed in box.", time: "Mon, 11:15 AM" },
-      { id: 22, from: "me", text: "", time: "Mon, 11:20 AM", type: "offer-sent", offerAmount: 75, offerStatus: "accepted" },
-      { id: 23, from: "seller", text: "Thanks for the offer!", time: "Mon, 11:30 AM" },
-    ],
-  },
-];
-
 function now() {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function ChatPage() {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = useState("photopro22");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeId, setActiveId] = useState("");
   const [input, setInput] = useState("");
   const [chatSearch, setChatSearch] = useState("");
-  const [showOfferInput, setShowOfferInput] = useState(false);
-  const [offerPrice, setOfferPrice] = useState("");
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [apiLoaded, setApiLoaded] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -149,46 +72,66 @@ export default function ChatPage() {
           otherParticipant?: { name: string; avatarUrl?: string };
           lastMessage?: { body: string; createdAt: string };
           unreadCount?: number;
+          buyerId?: string;
+          sellerId?: string;
+          messages?: Array<{ body: string; createdAt: string; senderId: string }>;
+          request?: { title: string };
+          offer?: { price: number };
+        }>;
+        items?: Array<{
+          id: string;
+          buyerId?: string;
+          sellerId?: string;
+          messages?: Array<{ body: string; createdAt: string; senderId: string }>;
+          unreadCount?: number;
           request?: { title: string };
           offer?: { price: number };
         }>;
       }>("/api/v1/conversations", { service: "chat" });
 
-      const items = data.data || (Array.isArray(data) ? data : []);
+      const items = data.data || data.items || (Array.isArray(data) ? data : []);
       if (items.length > 0) {
         const mapped: Conversation[] = (items as Array<{
           id: string;
+          buyerId?: string;
+          sellerId?: string;
           otherParticipant?: { name: string; avatarUrl?: string };
           lastMessage?: { body: string; createdAt: string };
+          messages?: Array<{ body: string; createdAt: string; senderId: string }>;
           unreadCount?: number;
           request?: { title: string };
           offer?: { price: number };
-        }>).map((c) => ({
-          id: c.id,
-          name: c.otherParticipant?.name || "User",
-          avatar: c.otherParticipant?.avatarUrl || SELLER_AVATAR,
-          lastMessage: c.lastMessage?.body || "",
-          timeAgo: c.lastMessage?.createdAt
-            ? new Date(c.lastMessage.createdAt).toLocaleDateString()
-            : "",
-          online: false,
-          unread: (c.unreadCount || 0) > 0,
-          product: {
-            name: c.request?.title || "Item",
-            price: c.offer?.price || 0,
-            image: PRODUCT_IMAGE,
-          },
-          seller: { rating: 0, reviews: 0, joined: "", responseTime: "", location: "" },
-          messages: [],
-        }));
+        }>).map((c) => {
+          const preview = c.lastMessage || c.messages?.[0];
+          const otherId = user?.id === c.buyerId ? c.sellerId : c.buyerId;
+          return {
+            id: c.id,
+            name: c.otherParticipant?.name || (otherId ? `User ${otherId.slice(0, 8)}` : "Conversation"),
+            avatar: c.otherParticipant?.avatarUrl || SELLER_AVATAR,
+            lastMessage: preview?.body || "No messages yet",
+            timeAgo: preview?.createdAt
+              ? new Date(preview.createdAt).toLocaleDateString()
+              : "",
+            online: false,
+            unread: (c.unreadCount || 0) > 0,
+            request: {
+              title: c.request?.title || "Request conversation",
+              offerPrice: c.offer?.price || 0,
+              image: PRODUCT_IMAGE,
+            },
+            seller: { rating: 0, reviews: 0, joined: "", responseTime: "", location: "" },
+            messages: [],
+          };
+        });
         setConversations(mapped);
         setActiveId(mapped[0].id);
-        setApiLoaded(true);
       }
+      setApiLoaded(true);
     } catch {
-      // fall back to mock data
+      setConversations([]);
+      setApiLoaded(true);
     }
-  }, []);
+  }, [user?.id]);
 
   const loadMessages = useCallback(async (convId: string) => {
     if (!apiLoaded) return;
@@ -201,16 +144,23 @@ export default function ChatPage() {
           createdAt: string;
           messageType?: string;
         }>;
+        items?: Array<{
+          id: string;
+          senderId: string;
+          body: string;
+          createdAt: string;
+          messageType?: string;
+        }>;
       }>(`/api/v1/conversations/${convId}/messages`, { service: "chat" });
 
-      const items = data.data || (Array.isArray(data) ? data : []);
+      const items = data.data || data.items || (Array.isArray(data) ? data : []);
       const mapped: ChatMessage[] = (items as Array<{
         id: string;
         senderId: string;
         body: string;
         createdAt: string;
         messageType?: string;
-      }>).map((m, i) => ({
+      }>).slice().reverse().map((m, i) => ({
         id: i + 1,
         from: m.senderId === user?.id ? ("me" as const) : ("seller" as const),
         text: m.body,
@@ -239,7 +189,7 @@ export default function ChatPage() {
     }
   }, [activeId, apiLoaded, loadMessages]);
 
-  const active = conversations.find((c) => c.id === activeId)!;
+  const active = conversations.find((c) => c.id === activeId);
 
   const filteredConversations = useMemo(() => {
     if (!chatSearch.trim()) return conversations;
@@ -293,17 +243,6 @@ export default function ChatPage() {
     }
   };
 
-  const sendOffer = () => {
-    const num = Number(offerPrice);
-    if (!offerPrice || Number.isNaN(num) || num <= 0) return;
-    updateMessages(activeId, (msgs) => [
-      ...msgs,
-      { id: nextId++, from: "me", text: "", time: now(), type: "offer-sent", offerAmount: num, offerStatus: "pending" },
-    ]);
-    setOfferPrice("");
-    setShowOfferInput(false);
-  };
-
   const handleOfferAction = (msgId: number, action: "accept" | "decline" | "cancel") => {
     updateMessages(activeId, (msgs) =>
       msgs.map((m) => {
@@ -326,9 +265,24 @@ export default function ChatPage() {
   const switchChat = (id: string) => {
     setActiveId(id);
     setMobileSidebar(false);
-    setShowOfferInput(false);
     setInput("");
   };
+
+  if (!active) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-[#f5f6f8] px-4">
+        <div className="max-w-md rounded-2xl border border-[#e7f3eb] bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <span className="material-symbols-outlined">forum</span>
+          </div>
+          <h1 className="text-xl font-bold text-[#0d1b12]">No active conversations</h1>
+          <p className="mt-2 text-sm text-[#4c9a66]">
+            Chats appear after a buyer accepts an offer or opens a request conversation.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-4rem)] flex overflow-hidden bg-[#f5f6f8]">
@@ -443,12 +397,12 @@ export default function ChatPage() {
 
         {/* Chat Content */}
         <div ref={listRef} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Safety Tip */}
+          {/* Platform scope */}
           <div className="flex justify-center">
             <div className="bg-[#e7f3eb]/50 px-4 py-2 rounded-lg flex items-start gap-2 max-w-lg">
               <span className="material-symbols-outlined text-[#4c9a66] text-[18px] mt-0.5">shield</span>
               <p className="text-xs text-[#4c9a66] leading-tight">
-                <span className="font-bold text-[#0d1b12]">Safety Tip:</span> Always keep transactions inside Mollmart for your protection. Never transfer money directly.
+                <span className="font-bold text-[#0d1b12]">Platform scope:</span> Mollmart connects buyers and sellers. Final commercial details are agreed outside the system.
               </p>
             </div>
           </div>
@@ -536,7 +490,7 @@ export default function ChatPage() {
                         </span>
                       </div>
                       <div className="p-4 flex flex-col items-center gap-1">
-                        <p className="text-[#4c9a66] text-xs">Your offer for {active.product.name}</p>
+                        <p className="text-[#4c9a66] text-xs">Your offer for {active.request.title}</p>
                         <p className={`text-3xl font-black ${m.offerStatus === "declined" || m.offerStatus === "cancelled" ? "text-[#0d1b12]/40 line-through" : "text-[#0d1b12]"}`}>
                           ${m.offerAmount?.toFixed(2)}
                         </p>
@@ -619,37 +573,6 @@ export default function ChatPage() {
 
         {/* Input Area */}
         <div className="flex-none p-4 bg-white border-t border-[#e7f3eb]">
-          {showOfferInput ? (
-            <div className="flex items-end gap-2 max-w-4xl mx-auto">
-              <button
-                type="button"
-                onClick={() => setShowOfferInput(false)}
-                className="size-10 flex items-center justify-center text-[#4c9a66] hover:text-[#0d1b12] rounded-full hover:bg-[#f5f6f8] transition-colors shrink-0"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-              <div className="flex-1 bg-[#f5f6f8] rounded-2xl border border-primary/50 flex items-center px-4 py-2 min-h-[48px] gap-2">
-                <span className="text-[#4c9a66] font-medium">$</span>
-                <input
-                  type="number"
-                  value={offerPrice}
-                  onChange={(e) => setOfferPrice(e.target.value)}
-                  placeholder="Enter your offer price..."
-                  className="w-full bg-transparent border-none focus:ring-0 p-0 text-[#0d1b12] placeholder:text-[#4c9a66]"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") sendOffer(); }}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={sendOffer}
-                disabled={!offerPrice || Number(offerPrice) <= 0}
-                className="size-12 flex items-center justify-center bg-primary hover:brightness-110 text-white rounded-full shadow-lg shadow-primary/30 transition-all shrink-0 disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-[24px]">send</span>
-              </button>
-            </div>
-          ) : (
             <form
               className="flex items-end gap-2 max-w-4xl mx-auto"
               onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
@@ -674,14 +597,6 @@ export default function ChatPage() {
                   placeholder="Type a message..."
                   className="w-full bg-transparent border-none focus:ring-0 p-0 text-[#0d1b12] placeholder:text-[#4c9a66]"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowOfferInput(true)}
-                  className="text-primary hover:opacity-80 mr-3 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-primary/10 transition-colors shrink-0"
-                >
-                  <span className="material-symbols-outlined text-[20px]">payments</span>
-                  <span className="text-xs font-bold uppercase tracking-tight">Offer</span>
-                </button>
                 <button type="button" className="text-[#4c9a66] hover:text-[#0d1b12] ml-2 shrink-0">
                   <span className="material-symbols-outlined text-[20px]">mood</span>
                 </button>
@@ -693,41 +608,30 @@ export default function ChatPage() {
                 <span className="material-symbols-outlined text-[24px]">send</span>
               </button>
             </form>
-          )}
         </div>
       </main>
 
       {/* Right Sidebar: Context Panel */}
       <aside className="hidden xl:flex w-80 flex-col border-l border-[#e7f3eb] bg-white shrink-0 overflow-y-auto">
-        {/* Product Info */}
+        {/* Request Info */}
         <div className="p-6 border-b border-[#e7f3eb]">
           <h4 className="text-xs font-bold text-[#4c9a66] uppercase tracking-wider mb-4">
-            Related Product
+            Related Request
           </h4>
           <div className="bg-[#f5f6f8] rounded-xl overflow-hidden border border-[#e7f3eb] group cursor-pointer">
             <div
               className="aspect-[4/3] bg-cover bg-center group-hover:scale-105 transition-transform duration-300"
-              style={{ backgroundImage: `url("${active.product.image}")` }}
+              style={{ backgroundImage: `url("${active.request.image}")` }}
             />
             <div className="p-3">
               <h3 className="font-bold text-[#0d1b12] text-lg leading-tight mb-1">
-                {active.product.name}
+                {active.request.title}
               </h3>
-              <p className="text-primary font-bold text-xl">
-                ${active.product.price.toFixed(2)}
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button className="flex-1 bg-primary text-green-950 text-sm font-bold py-2 rounded-lg hover:brightness-110 transition-colors">
-                  Buy Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowOfferInput(true)}
-                  className="flex-1 bg-white border border-[#e7f3eb] text-[#0d1b12] text-sm font-medium py-2 rounded-lg hover:bg-[#f5f6f8] transition-colors"
-                >
-                  Offer
-                </button>
-              </div>
+              {active.request.offerPrice > 0 && (
+                <p className="text-primary font-bold text-xl">
+                  Accepted offer: ${active.request.offerPrice.toFixed(2)}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -772,7 +676,7 @@ export default function ChatPage() {
           <div className="mt-6">
             <button className="w-full text-[#0d1b12] border border-[#e7f3eb] rounded-lg py-2.5 text-sm font-bold hover:bg-[#f5f6f8] transition-colors flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-[20px]">storefront</span>
-              Visit Store
+              View Profile
             </button>
           </div>
         </div>

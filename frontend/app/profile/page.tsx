@@ -119,7 +119,7 @@ export default function UserProfilePage() {
             Profile Info
           </button>
           <Link
-            href="/create-product-request"
+            href="/my-requests"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
           >
             <span className="material-symbols-outlined">playlist_add</span>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetchWithRefresh } from "@/lib/api";
 
-type NotificationCategory = "all" | "orders" | "messages" | "promotions";
+type NotificationCategory = "all" | "requests" | "messages" | "offers";
 
 type NotificationItem = {
   id: string;
@@ -12,22 +12,22 @@ type NotificationItem = {
   body: string;
   time: string;
   unread: boolean;
-  type: "order" | "message" | "promo" | "system";
+  type: "request" | "message" | "offer" | "system";
 };
 
 function categorize(n: { type?: string }): Exclude<NotificationCategory, "all"> {
   const t = n.type || "";
-  if (t.includes("order") || t.includes("request")) return "orders";
+  if (t.includes("request")) return "requests";
   if (t.includes("message") || t.includes("chat")) return "messages";
-  if (t.includes("promo") || t.includes("offer")) return "promotions";
-  return "orders";
+  if (t.includes("offer")) return "offers";
+  return "requests";
 }
 
 function typeIcon(n: { type?: string }): NotificationItem["type"] {
   const t = n.type || "";
-  if (t.includes("order") || t.includes("request")) return "order";
+  if (t.includes("request")) return "request";
   if (t.includes("message") || t.includes("chat")) return "message";
-  if (t.includes("promo") || t.includes("offer")) return "promo";
+  if (t.includes("offer")) return "offer";
   return "system";
 }
 
@@ -42,11 +42,11 @@ function timeAgo(dateStr: string): string {
 }
 
 const FALLBACK_NOTIFICATIONS: NotificationItem[] = [
-  { id: "1", category: "orders", title: "Order #12345 Shipped", body: "Your package is on its way and is estimated to arrive by Friday.", time: "2h ago", unread: true, type: "order" },
-  { id: "2", category: "messages", title: "New Message from TechStore", body: '"Hi there! Regarding your question about the lens compatibility..."', time: "4h ago", unread: true, type: "message" },
-  { id: "3", category: "promotions", title: "20% Off Vintage Cameras", body: "A selection of vintage film cameras is on sale for a limited time. Don't miss out!", time: "1d ago", unread: false, type: "promo" },
-  { id: "4", category: "orders", title: "Order #12340 Delivered", body: "Your package has been delivered to your front porch.", time: "3d ago", unread: false, type: "order" },
-  { id: "5", category: "orders", title: "Security Alert: Login Attempt", body: "We noticed a login from a new device. Was this you?", time: "2d ago", unread: false, type: "system" },
+  { id: "1", category: "requests", title: "Request Published", body: "Your request is live and visible to relevant sellers.", time: "2h ago", unread: true, type: "request" },
+  { id: "2", category: "messages", title: "New Message", body: "A seller replied in one of your request conversations.", time: "4h ago", unread: true, type: "message" },
+  { id: "3", category: "offers", title: "New Offer Received", body: "A seller submitted an offer for your request.", time: "1d ago", unread: false, type: "offer" },
+  { id: "4", category: "requests", title: "Request Updated", body: "One of your requests moved to negotiation.", time: "3d ago", unread: false, type: "request" },
+  { id: "5", category: "requests", title: "Security Alert: Login Attempt", body: "We noticed a login from a new device. Was this you?", time: "2d ago", unread: false, type: "system" },
 ];
 
 export default function NotificationsPage() {
@@ -95,6 +95,7 @@ export default function NotificationsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadNotifications();
   }, [loadNotifications]);
 
@@ -160,9 +161,9 @@ export default function NotificationsPage() {
           <div className="flex gap-6 md:gap-8 overflow-x-auto w-full sm:w-auto no-scrollbar">
             {[
               { id: "all", label: "All" },
-              { id: "orders", label: "Orders" },
+              { id: "requests", label: "Requests" },
               { id: "messages", label: "Messages" },
-              { id: "promotions", label: "Promotions" },
+              { id: "offers", label: "Offers" },
             ].map((tab) => {
               const active = category === tab.id;
               return (
@@ -211,13 +212,13 @@ export default function NotificationsPage() {
                 <div className="absolute top-4 right-4 size-2.5 bg-primary rounded-full" />
               )}
               <div className="flex items-center justify-center rounded-lg shrink-0 size-12 bg-[#e0f2fe] text-blue-600">
-                {item.type === "order" && (
-                  <span className="material-symbols-outlined">local_shipping</span>
+                {item.type === "request" && (
+                  <span className="material-symbols-outlined">playlist_add_check</span>
                 )}
                 {item.type === "message" && (
                   <span className="material-symbols-outlined">chat</span>
                 )}
-                {item.type === "promo" && (
+                {item.type === "offer" && (
                   <span className="material-symbols-outlined">sell</span>
                 )}
                 {item.type === "system" && (

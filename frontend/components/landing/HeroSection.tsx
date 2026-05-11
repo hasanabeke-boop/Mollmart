@@ -65,7 +65,7 @@ export function HeroSection() {
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 uppercase font-semibold">Seller Win</div>
-                    <div className="font-bold text-sm leading-tight">"We answer live requests, not cold leads."</div>
+                    <div className="font-bold text-sm leading-tight">&quot;We answer live requests, not cold leads.&quot;</div>
                   </div>
                 </div>
               </div>

@@ -51,12 +51,12 @@ function formatBudget(min?: number, max?: number): string {
   return "Negotiable";
 }
 
-type FilterTab = "all" | "published" | "open";
+type FilterTab = "all" | "published" | "has_offers";
 
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "all", label: "All Requests" },
   { id: "published", label: "Published" },
-  { id: "open", label: "Open" },
+  { id: "has_offers", label: "Has Offers" },
 ];
 
 function OfferModal({
@@ -70,14 +70,20 @@ function OfferModal({
   const [message, setMessage] = useState("");
   const [delivery, setDelivery] = useState("");
   const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   const [sending, setSending] = useState(false);
 
   const handleSend = async () => {
     const num = Number(price);
     if (!price || Number.isNaN(num) || num <= 0) return;
+    if (message.trim().length < 5) {
+      setSendError("Message must be at least 5 characters.");
+      return;
+    }
 
     setSending(true);
+    setSendError("");
     try {
       await apiFetchWithRefresh("/api/v1/offers", {
         method: "POST",
@@ -86,13 +92,14 @@ function OfferModal({
           requestId: request.id,
           price: num,
           currency: "USD",
-          message: message || undefined,
+          message: message.trim(),
           deliveryDays: delivery ? parseInt(delivery) || undefined : undefined,
         }),
       });
       setSent(true);
-    } catch {
-      setSent(true);
+    } catch (err: unknown) {
+      const e = err as Error;
+      setSendError(e.message || "Failed to send offer.");
     } finally {
       setSending(false);
     }
@@ -178,8 +185,8 @@ function OfferModal({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">
-                Estimated Delivery
+                <label className="block text-sm font-semibold text-slate-700">
+                Estimated availability
               </label>
               <div className="relative">
                 <select
@@ -188,11 +195,10 @@ function OfferModal({
                   className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white text-slate-900"
                 >
                   <option value="">Select timeframe</option>
-                  <option value="1-3">1-3 business days</option>
-                  <option value="3-7">3-7 business days</option>
-                  <option value="1-2w">1-2 weeks</option>
-                  <option value="2-4w">2-4 weeks</option>
-                  <option value="custom">Custom / Contact buyer</option>
+                  <option value="3">Within 3 days</option>
+                  <option value="7">Within 7 days</option>
+                  <option value="14">Within 2 weeks</option>
+                  <option value="28">Within 4 weeks</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-4 top-3.5 text-slate-400 pointer-events-none">
                   expand_more
@@ -203,7 +209,7 @@ function OfferModal({
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
                 Message to Buyer{" "}
-                <span className="text-slate-400 font-normal">(optional)</span>
+                <span className="text-slate-400 font-normal">(required)</span>
               </label>
               <textarea
                 value={message}
@@ -214,10 +220,17 @@ function OfferModal({
               />
             </div>
 
+            {sendError && (
+              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <span className="material-symbols-outlined text-[18px]">error</span>
+                {sendError}
+              </div>
+            )}
+
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={!price || Number(price) <= 0 || sending}
+                disabled={!price || Number(price) <= 0 || message.trim().length < 5 || sending}
                 className="w-full bg-[#607afb] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-[20px]">
@@ -654,11 +667,11 @@ export default function BrowseBuyerRequestsPage() {
                 Pro Seller Tip
               </span>
               <h2 className="text-3xl font-black mb-4 leading-tight">
-                Increase your conversion by 40% with Detailed Proposals.
+                Earn more replies with detailed offers.
               </h2>
               <p className="text-blue-100 mb-6 max-w-md">
                 Buyers are more likely to accept offers that include specific
-                shipping timelines and high-resolution portfolio images.
+                pricing, availability, and a clear next step.
               </p>
               <button className="bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-50 transition-colors">
                 Learn How

@@ -49,7 +49,7 @@ export default function CategoriesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-[#0d1b12]">Categories</h1>
-          <p className="mt-1 text-[#4c9a66]">Manage product categories for the marketplace.</p>
+          <p className="mt-1 text-[#4c9a66]">Manage request categories used for filtering and matching.</p>
         </div>
         <button
           type="button"
@@ -84,7 +84,7 @@ export default function CategoriesPage() {
             ) : categories.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-5 py-12 text-center text-sm text-gray-400">
-                  No categories yet. Click "Add Category" to create one.
+                  No categories yet. Click &quot;Add Category&quot; to create one.
                 </td>
               </tr>
             ) : (

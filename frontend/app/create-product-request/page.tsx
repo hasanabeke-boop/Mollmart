@@ -256,13 +256,13 @@ export default function CreateProductRequestPage() {
             <div className="flex items-start gap-4">
               <div className="bg-blue-50 p-2 rounded-lg">
                 <span className="material-symbols-outlined text-blue-600">
-                  payments
+                  forum
                 </span>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">Secure Payments</h3>
+                <h3 className="font-bold text-slate-900">Direct Negotiation</h3>
                 <p className="text-sm text-slate-500">
-                  Funds are held in escrow until you&apos;re satisfied.
+                  Accept an offer to open a chat and agree on details directly.
                 </p>
               </div>
             </div>
