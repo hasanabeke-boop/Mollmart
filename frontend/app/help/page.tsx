@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type FaqItem = {
@@ -61,14 +62,6 @@ export default function HelpFaqPage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-  };
-
-  const handleStartChat = () => {
-    alert("Opening live chat (demo). You can later link this to /chat.");
-  };
-
-  const handleEmailSupport = () => {
-    alert("Opening email support (demo).");
   };
 
   return (
@@ -249,26 +242,24 @@ export default function HelpFaqPage() {
               questions about requests, offers, chats, and account safety.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button
-                type="button"
-                onClick={handleStartChat}
+              <Link
+                href="/chat"
                 className="flex items-center justify-center gap-2 rounded-lg bg-primary hover:bg-[#0eb545] text-[#0d1b12] px-6 py-3 font-bold transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   chat
                 </span>
-                <span>Start Live Chat</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleEmailSupport}
+                <span>Open Chats</span>
+              </Link>
+              <Link
+                href="/profile"
                 className="flex items-center justify-center gap-2 rounded-lg border border-[#cfe7d7] bg-white hover:bg-gray-50 text-[#0d1b12] px-6 py-3 font-semibold transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">
-                  mail
+                  manage_accounts
                 </span>
-                <span>Email Support</span>
-              </button>
+                <span>Account Settings</span>
+              </Link>
             </div>
           </div>
         </div>

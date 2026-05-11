@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function DemandSection() {
   return (
     <section className="py-16 bg-white border-y border-gray-100">
@@ -12,12 +14,12 @@ export function DemandSection() {
             </p>
           </div>
           <div className="mt-4 flex md:ml-4 md:mt-0">
-            <button
+            <Link
+              href="/browse-buyer-requests"
               className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#0d1b12] shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors"
-              type="button"
             >
               View All Demands
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -49,9 +51,9 @@ export function DemandSection() {
                 Looking for Canon AE-1 and similar models in working condition.
               </p>
             </div>
-            <button className="mt-6 w-full rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all">
+            <Link href="/browse-buyer-requests?category=collectibles" className="mt-6 w-full rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all text-center">
               I have one to sell
-            </button>
+            </Link>
           </div>
 
           <div className="flex flex-col rounded-xl bg-[#f8faff] p-6 shadow-sm border border-gray-100 hover:border-primary/50 transition-all hover:shadow-md">
@@ -81,9 +83,9 @@ export function DemandSection() {
                 High interest in variegated Monstera cuttings and established plants.
               </p>
             </div>
-            <button className="mt-6 w-full rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all">
+            <Link href="/browse-buyer-requests?category=home" className="mt-6 w-full rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all text-center">
               I have one to sell
-            </button>
+            </Link>
           </div>
 
           <div className="flex flex-col rounded-xl bg-[#f8faff] p-6 shadow-sm border border-gray-100 hover:border-primary/50 transition-all hover:shadow-md">
@@ -113,9 +115,9 @@ export function DemandSection() {
                 Constant demand for N64, GameCube, and PS2 consoles.
               </p>
             </div>
-            <button className="mt-6 w-full rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all">
+            <Link href="/browse-buyer-requests?category=electronics" className="mt-6 w-full rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-white hover:border-primary transition-all text-center">
               I have one to sell
-            </button>
+            </Link>
           </div>
         </div>
       </div>

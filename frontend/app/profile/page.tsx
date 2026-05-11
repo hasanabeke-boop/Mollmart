@@ -6,13 +6,17 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 
-type Interest = "Technology" | "Fashion" | "Home Decor" | "Outdoor" | "Books" | "Vintage";
-
 type ProfileData = {
   fullName?: string;
   phone?: string;
   city?: string;
   avatarUrl?: string;
+};
+
+type ProfileStats = {
+  primary: number;
+  secondary: number;
+  conversations: number;
 };
 
 export default function UserProfilePage() {
@@ -25,6 +29,7 @@ export default function UserProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -52,24 +57,46 @@ export default function UserProfilePage() {
     if (user) loadProfile();
   }, [user, loadProfile]);
 
-  const [interests, setInterests] = useState<Interest[]>([
-    "Technology",
-    "Home Decor",
-    "Books",
-  ]);
-  const [notifications, setNotifications] = useState({
-    requestUpdates: true,
-    offerReplies: true,
-    newsletter: false,
-  });
+  const loadStats = useCallback(async () => {
+    if (!user) return;
+    try {
+      const conversations = await apiFetchWithRefresh<{ items?: unknown[]; data?: unknown[] }>(
+        "/api/v1/conversations?limit=100",
+        { service: "chat" },
+      );
+      const conversationCount = conversations.items?.length || conversations.data?.length || 0;
 
-  const toggleInterest = (interest: Interest) => {
-    setInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest],
-    );
-  };
+      if (user.role === "seller") {
+        const offers = await apiFetchWithRefresh<{ items?: Array<{ status: string }>; data?: Array<{ status: string }> }>(
+          "/api/v1/offers/me?limit=100",
+          { service: "offer" },
+        );
+        const items = offers.items || offers.data || [];
+        setStats({
+          primary: items.length,
+          secondary: items.filter((offer) => offer.status === "accepted").length,
+          conversations: conversationCount,
+        });
+      } else {
+        const requests = await apiFetchWithRefresh<{ items?: Array<{ offerCount?: number }>; data?: Array<{ offerCount?: number }> }>(
+          "/api/v1/requests/me?limit=100",
+          { service: "request" },
+        );
+        const items = requests.items || requests.data || [];
+        setStats({
+          primary: items.length,
+          secondary: items.reduce((sum, request) => sum + (request.offerCount || 0), 0),
+          conversations: conversationCount,
+        });
+      }
+    } catch {
+      setStats({ primary: 0, secondary: 0, conversations: 0 });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -102,10 +129,7 @@ export default function UserProfilePage() {
         <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-[#e7f3eb] shadow-sm">
           <div
             className="size-12 rounded-full bg-cover bg-center"
-            style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB9216dvtBHyVswL38uhew32TGK_lwa-Nbxt2f_cDEkrgiikmovrPu8XvUIf4zR62qSsHB53iJBrlocyGE398sOGO9-_TwhQ8He4eGTuz_lQl6Yu8z1Oh0MKFebgSPdpYDNsGn15v974D0c7UqdItCMh6yloXBtGyGMtd5ST2-C40iXzXFyEvOh95LCqdrmW6rDSs3guIRonwuddqdfTmWcd3Xgp_SoQA83_lG4Gd1qq5LS5GvD3w_VUtOL6zmhUYHFVaA8-00xSe0")',
-            }}
+            style={{ backgroundImage: `url("${avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuB9216dvtBHyVswL38uhew32TGK_lwa-Nbxt2f_cDEkrgiikmovrPu8XvUIf4zR62qSsHB53iJBrlocyGE398sOGO9-_TwhQ8He4eGTuz_lQl6Yu8z1Oh0MKFebgSPdpYDNsGn15v974D0c7UqdItCMh6yloXBtGyGMtd5ST2-C40iXzXFyEvOh95LCqdrmW6rDSs3guIRonwuddqdfTmWcd3Xgp_SoQA83_lG4Gd1qq5LS5GvD3w_VUtOL6zmhUYHFVaA8-00xSe0"}")` }}
           />
           <div className="flex flex-col overflow-hidden">
             <h3 className="font-semibold truncate">{name}</h3>
@@ -127,7 +151,7 @@ export default function UserProfilePage() {
           </Link>
           <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
             <span className="material-symbols-outlined">travel_explore</span>
-            Saved Interests
+            Matching Topics
           </button>
           <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
             <span className="material-symbols-outlined">tune</span>
@@ -168,10 +192,7 @@ export default function UserProfilePage() {
               <div className="relative">
                 <div
                   className="size-24 md:size-28 rounded-full bg-cover bg-center border-4 border-[#f5f6f8] shadow-sm"
-                  style={{
-                    backgroundImage:
-                      'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBkhpZwYMkyBPllfR-epIwRc195qP2xQXR05bLLClRJX7QuW1weyF0OHoepiMyBJKTeew7S47wzPkB1ZNRg1ODzSJTHguG-xvz8G41LrfNOJBOgaRA2oR9dN8UBfcjd2EiinPD6cy3MTniWGC9qtOMzed8CqOkdShUlz59UGHlMa1sB4fvyxukc_cKslsr_gE1JprFzfVaYwnqi4IPaXlfNItwxVi9tom8-Nov5PJW8TfL-bP2p_eDpxpgC9uvpKhebAwiYQedrVQ4")',
-                  }}
+                  style={{ backgroundImage: `url("${avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuBkhpZwYMkyBPllfR-epIwRc195qP2xQXR05bLLClRJX7QuW1weyF0OHoepiMyBJKTeew7S47wzPkB1ZNRg1ODzSJTHguG-xvz8G41LrfNOJBOgaRA2oR9dN8UBfcjd2EiinPD6cy3MTniWGC9qtOMzed8CqOkdShUlz59UGHlMa1sB4fvyxukc_cKslsr_gE1JprFzfVaYwnqi4IPaXlfNItwxVi9tom8-Nov5PJW8TfL-bP2p_eDpxpgC9uvpKhebAwiYQedrVQ4"}")` }}
                 />
                 <div className="absolute bottom-1 right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
                   <span className="material-symbols-outlined text-[16px] leading-none block">
@@ -224,26 +245,24 @@ export default function UserProfilePage() {
           </div>
         </section>
 
-        {/* Stats (статичные) */}
+        {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">Active Requests</p>
+            <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Offers Sent" : "My Requests"}</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#0d1b12]">2</span>
+              <span className="text-3xl font-bold text-[#0d1b12]">{stats.primary}</span>
             </div>
           </div>
           <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">Offers Received</p>
+            <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Accepted Offers" : "Offers Received"}</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#0d1b12]">14</span>
-              <span className="text-xs text-[#4c9a66] font-medium">Lifetime</span>
+              <span className="text-3xl font-bold text-[#0d1b12]">{stats.secondary}</span>
             </div>
           </div>
           <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">Reviews Given</p>
+            <p className="text-sm text-[#4c9a66] font-medium">Conversations</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#0d1b12]">35</span>
-              <span className="text-xs text-primary font-medium">High Trust</span>
+              <span className="text-3xl font-bold text-[#0d1b12]">{stats.conversations}</span>
             </div>
           </div>
         </section>
@@ -259,7 +278,7 @@ export default function UserProfilePage() {
               </div>
             </div>
             <p className="text-sm text-[#4c9a66] mb-4">
-              Select topics to improve your recommendations.
+              Open matching requests by topic.
             </p>
             <div className="flex flex-wrap gap-2">
               {[
@@ -270,21 +289,14 @@ export default function UserProfilePage() {
                 "Books",
                 "Vintage",
               ].map((interest) => {
-                const typed = interest as Interest;
-                const active = interests.includes(typed);
                 return (
-                  <button
+                  <Link
                     key={interest}
-                    type="button"
-                    onClick={() => toggleInterest(typed)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      active
-                        ? "bg-primary/20 border-primary text-[#0d1b12]"
-                        : "bg-[#f5f6f8] border-[#e7f3eb] text-[#4c9a66] hover:border-primary hover:text-primary"
-                    }`}
+                    href={`/browse-buyer-requests?q=${encodeURIComponent(interest)}`}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors bg-[#f5f6f8] border-[#e7f3eb] text-[#4c9a66] hover:border-primary hover:text-primary"
                   >
                     {interest}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -297,27 +309,10 @@ export default function UserProfilePage() {
               <h3 className="font-bold">Notifications</h3>
             </div>
             <div className="flex flex-col gap-4">
-              <ToggleRow
-                label="Request Updates"
-                checked={notifications.requestUpdates}
-                onChange={(v) =>
-                  setNotifications((prev) => ({ ...prev, requestUpdates: v }))
-                }
-              />
-              <ToggleRow
-                label="Offer Replies"
-                checked={notifications.offerReplies}
-                onChange={(v) =>
-                  setNotifications((prev) => ({ ...prev, offerReplies: v }))
-                }
-              />
-              <ToggleRow
-                label="Newsletter"
-                checked={notifications.newsletter}
-                onChange={(v) =>
-                  setNotifications((prev) => ({ ...prev, newsletter: v }))
-                }
-              />
+              <ToggleRow label="Request Updates" checked />
+              <ToggleRow label="Offer Replies" checked />
+              <ToggleRow label="Newsletter" checked={false} />
+              <p className="text-xs text-[#4c9a66]">Notification preference API is not available yet, so these controls are read-only.</p>
             </div>
           </div>
         </section>
@@ -329,16 +324,15 @@ export default function UserProfilePage() {
 type ToggleRowProps = {
   label: string;
   checked: boolean;
-  onChange: (value: boolean) => void;
 };
 
-function ToggleRow({ label, checked, onChange }: ToggleRowProps) {
+function ToggleRow({ label, checked }: ToggleRowProps) {
   return (
     <label className="flex items-center justify-between cursor-pointer group">
       <span className="text-sm text-[#0d1b12]">{label}</span>
       <button
         type="button"
-        onClick={() => onChange(!checked)}
+        disabled
         className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
           checked
             ? "bg-primary border-primary"

@@ -41,17 +41,9 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-const FALLBACK_NOTIFICATIONS: NotificationItem[] = [
-  { id: "1", category: "requests", title: "Request Published", body: "Your request is live and visible to relevant sellers.", time: "2h ago", unread: true, type: "request" },
-  { id: "2", category: "messages", title: "New Message", body: "A seller replied in one of your request conversations.", time: "4h ago", unread: true, type: "message" },
-  { id: "3", category: "offers", title: "New Offer Received", body: "A seller submitted an offer for your request.", time: "1d ago", unread: false, type: "offer" },
-  { id: "4", category: "requests", title: "Request Updated", body: "One of your requests moved to negotiation.", time: "3d ago", unread: false, type: "request" },
-  { id: "5", category: "requests", title: "Security Alert: Login Attempt", body: "We noticed a login from a new device. Was this you?", time: "2d ago", unread: false, type: "system" },
-];
-
 export default function NotificationsPage() {
   const [category, setCategory] = useState<NotificationCategory>("all");
-  const [items, setItems] = useState<NotificationItem[]>(FALLBACK_NOTIFICATIONS);
+  const [items, setItems] = useState<NotificationItem[]>([]);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -76,21 +68,19 @@ export default function NotificationsPage() {
       >("/api/v1/notifications", { service: "notification" });
 
       const arr = Array.isArray(data) ? data : (data.data || []);
-      if (arr.length > 0) {
-        setItems(
-          arr.map((n) => ({
-            id: n.id,
-            category: categorize(n),
-            title: n.title || "Notification",
-            body: n.message || n.body || "",
-            time: n.createdAt ? timeAgo(n.createdAt) : "",
-            unread: !n.isRead,
-            type: typeIcon(n),
-          })),
-        );
-      }
+      setItems(
+        arr.map((n) => ({
+          id: n.id,
+          category: categorize(n),
+          title: n.title || "Notification",
+          body: n.message || n.body || "",
+          time: n.createdAt ? timeAgo(n.createdAt) : "",
+          unread: !n.isRead,
+          type: typeIcon(n),
+        })),
+      );
     } catch {
-      // keep fallback
+      setItems([]);
     }
   }, []);
 
@@ -145,15 +135,13 @@ export default function NotificationsPage() {
               Stay updated with your latest account activity.
             </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="text-xs font-bold text-[#4c9a66] bg-[#e7f3eb] px-3 py-2 rounded-lg hover:bg-primary/20 transition-colors"
-              onClick={() => alert("Open notification settings (demo).")}
-            >
-              Settings
-            </button>
-          </div>
+          <button
+            type="button"
+            className="text-xs font-bold text-[#4c9a66] bg-[#e7f3eb] px-3 py-2 rounded-lg hover:bg-primary/20 transition-colors"
+            onClick={loadNotifications}
+          >
+            Refresh
+          </button>
         </div>
 
         {/* Tabs */}

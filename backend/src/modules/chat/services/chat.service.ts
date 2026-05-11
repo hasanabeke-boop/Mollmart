@@ -88,7 +88,17 @@ export class ChatService {
       input.messageType ?? MessageType.text
     );
 
-    await this.chatEventPublisher.publishMessageCreated(message);
+    await this.chatEventPublisher.publishMessageCreated({
+      messageId: message.id,
+      conversationId,
+      senderId: message.senderId,
+      senderRole: message.senderRole,
+      buyerId: conversation.buyerId,
+      sellerId: conversation.sellerId,
+      body: message.body,
+      messageType: message.messageType,
+      createdAt: message.createdAt
+    });
     return message;
   }
 

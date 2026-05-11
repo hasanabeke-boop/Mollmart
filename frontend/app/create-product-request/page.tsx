@@ -188,6 +188,14 @@ export default function CreateProductRequestPage() {
                 ${Number(budget).toLocaleString()}
               </span>
             </div>
+            {createdId && (
+              <div className="flex justify-between">
+                <span className="text-sm text-slate-500">Request ID</span>
+                <span className="text-sm font-semibold text-slate-900">
+                  {createdId}
+                </span>
+              </div>
+            )}
             {images.length > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500">Images</span>

@@ -15,7 +15,13 @@ export class OfferService {
   constructor(
     private readonly offerRepository: OfferRepositoryLike,
     private readonly offerEventPublisher: OfferEventPublisherLike,
-    private readonly requestModuleAdapter: RequestModuleAdapterLike
+    private readonly requestModuleAdapter: RequestModuleAdapterLike,
+    private readonly conversationOpener?: {
+      openConversation(
+        user: AuthUser,
+        input: { requestId: string; offerId: string; sellerId: string }
+      ): Promise<unknown>;
+    }
   ) {}
 
   async createOffer(user: AuthUser, input: CreateOfferInput): Promise<OfferWithRelations> {
@@ -173,6 +179,11 @@ export class OfferService {
     }
 
     await this.offerEventPublisher.publishOfferAccepted(result.acceptedOffer);
+    await this.conversationOpener?.openConversation(user, {
+      requestId: result.acceptedOffer.requestId,
+      offerId: result.acceptedOffer.id,
+      sellerId: result.acceptedOffer.sellerId
+    });
 
     for (const rejected of result.rejectedOffers) {
       await this.offerEventPublisher.publishOfferRejected(rejected);

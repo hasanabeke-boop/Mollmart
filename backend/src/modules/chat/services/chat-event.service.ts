@@ -1,11 +1,11 @@
 import { Conversation, Message } from '@prisma/client';
 import { getRedisClient } from '../../../config/redis';
 import logger from '../../../middleware/logger';
-import { MessageReadEventPayload } from '../types/chat';
+import { MessageCreatedEventPayload, MessageReadEventPayload } from '../types/chat';
 
 export interface ChatEventPublisherLike {
   publishConversationCreated(conversation: Conversation): Promise<void>;
-  publishMessageCreated(message: Message): Promise<void>;
+  publishMessageCreated(payload: MessageCreatedEventPayload): Promise<void>;
   publishMessagesRead(payload: MessageReadEventPayload): Promise<void>;
 }
 
@@ -14,8 +14,8 @@ export class ChatEventPublisher implements ChatEventPublisherLike {
     await this.publish('chat.conversation.created', conversation);
   }
 
-  async publishMessageCreated(message: Message): Promise<void> {
-    await this.publish('chat.message.created', message);
+  async publishMessageCreated(payload: MessageCreatedEventPayload): Promise<void> {
+    await this.publish('chat.message.created', payload);
   }
 
   async publishMessagesRead(payload: MessageReadEventPayload): Promise<void> {

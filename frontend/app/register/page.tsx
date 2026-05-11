@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth, type ApiError } from "@/context/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { API_BASE } from "@/lib/api";
 
 export default function RegisterPage() {
   const { signup, user } = useAuth();
@@ -19,6 +20,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+  const [verificationToken, setVerificationToken] = useState("");
 
   if (user) {
     router.replace("/");
@@ -44,7 +46,8 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await signup(username.trim(), email, password, role);
+      const result = await signup(username.trim(), email, password, role);
+      setVerificationToken(result.verificationToken || "");
       setSuccess(true);
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
@@ -74,6 +77,14 @@ export default function RegisterPage() {
             We&apos;ve sent a verification link to <span className="font-semibold text-slate-900">{email}</span>.
             Please verify your email before logging in.
           </p>
+          {verificationToken && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-800">
+              <p className="font-semibold">Local verification link</p>
+              <Link className="mt-1 block break-all underline" href={`${API_BASE}/api/v1/verify-email/${verificationToken}`}>
+                {API_BASE}/api/v1/verify-email/{verificationToken}
+              </Link>
+            </div>
+          )}
           <div className="pt-4 space-y-3">
             <Link
               href="/login"

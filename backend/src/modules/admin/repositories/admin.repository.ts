@@ -208,36 +208,54 @@ export class AdminRepository implements AdminRepositoryLike {
   }
 
   async blockUser(userId: string, reason: string, blockedBy: string): Promise<BlockedUser> {
-    return this.client.blockedUser.upsert({
-      where: { userId },
-      update: {
-        reason,
-        blockedBy,
-        blockedAt: new Date(),
-        unblockedAt: null
-      },
-      create: {
-        userId,
-        reason,
-        blockedBy
-      }
+    return this.client.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { status: 'blocked' }
+      });
+
+      await tx.refreshToken.deleteMany({
+        where: { userId }
+      });
+
+      return tx.blockedUser.upsert({
+        where: { userId },
+        update: {
+          reason,
+          blockedBy,
+          blockedAt: new Date(),
+          unblockedAt: null
+        },
+        create: {
+          userId,
+          reason,
+          blockedBy
+        }
+      });
     });
   }
 
   async unblockUser(userId: string): Promise<BlockedUser | null> {
-    const existing = await this.client.blockedUser.findUnique({
-      where: { userId }
-    });
+    return this.client.$transaction(async (tx) => {
+      const existing = await tx.blockedUser.findUnique({
+        where: { userId }
+      });
 
-    if (existing == null) {
-      return null;
-    }
-
-    return this.client.blockedUser.update({
-      where: { userId },
-      data: {
-        unblockedAt: new Date()
+      if (existing == null) {
+        return null;
       }
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { status: 'active' }
+      });
+
+      return tx.blockedUser.update({
+        where: { userId },
+        data: {
+          unblockedAt: new Date()
+        }
+      });
     });
   }
 

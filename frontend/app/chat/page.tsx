@@ -503,24 +503,9 @@ export default function ChatPage() {
                           <button
                             type="button"
                             onClick={() => handleOfferAction(m.id, "cancel")}
-                            className="flex-1 py-3 text-xs font-bold text-[#4c9a66] hover:bg-[#f5f6f8] transition-colors border-r border-[#e7f3eb]"
+                            className="flex-1 py-3 text-xs font-bold text-[#4c9a66] hover:bg-[#f5f6f8] transition-colors"
                           >
                             Cancel Offer
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newPrice = prompt("Enter new price:", String(m.offerAmount));
-                              if (!newPrice) return;
-                              const num = Number(newPrice);
-                              if (Number.isNaN(num) || num <= 0) return;
-                              updateMessages(activeId, (msgs) =>
-                                msgs.map((msg) => (msg.id === m.id ? { ...msg, offerAmount: num } : msg)),
-                              );
-                            }}
-                            className="flex-1 py-3 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            Edit Price
                           </button>
                         </div>
                       )}

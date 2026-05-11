@@ -52,6 +52,18 @@ export interface MessageReadEventPayload {
   readByUserId: string;
 }
 
+export interface MessageCreatedEventPayload {
+  messageId: string;
+  conversationId: string;
+  senderId: string;
+  senderRole: SenderRole;
+  buyerId: string;
+  sellerId: string;
+  body: string;
+  messageType: MessageType;
+  createdAt: Date;
+}
+
 export interface ParticipantContext {
   requestId: string;
   offerId?: string;

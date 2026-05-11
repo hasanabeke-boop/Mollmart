@@ -1,6 +1,6 @@
 export type ServiceName = "auth" | "request" | "offer" | "chat" | "profile" | "admin" | "notification";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
 
 let accessToken: string | null = null;
 
@@ -22,7 +22,8 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit & { service?: ServiceName } = {},
 ): Promise<T> {
-  const { service: _service, ...fetchOptions } = options;
+  const fetchOptions: RequestInit & { service?: ServiceName } = { ...options };
+  delete fetchOptions.service;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

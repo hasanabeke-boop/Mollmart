@@ -2,6 +2,8 @@
 
 The backend is now a modular monolith.
 
+Database support is PostgreSQL only. MySQL/MariaDB drivers, connection strings, and Prisma providers are intentionally not part of this project.
+
 One Express application runs all domain modules:
 
 - auth
@@ -44,7 +46,8 @@ backend/
 cp .env.example .env
 npm install
 npm run prisma:generate
-npm run prisma:push
+npm run prisma:migrate
+npm run prisma:seed
 npm run dev
 ```
 

@@ -4,10 +4,13 @@ import { Search } from 'lucide-react';
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user, loading, logout } = useAuth();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,6 +28,12 @@ export function Header() {
     await logout();
   };
 
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    const q = search.trim();
+    router.push(q ? `/browse-buyer-requests?q=${encodeURIComponent(q)}` : "/browse-buyer-requests");
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/90 backdrop-blur-md transition-all duration-300">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -38,7 +47,7 @@ export function Header() {
             </h2>
           </Link>
 
-          <div className="hidden md:flex">
+          <form className="hidden md:flex" onSubmit={handleSearch}>
             <label className="relative flex w-[400px] items-center group">
               <span className="absolute left-3 flex items-center text-gray-400 group-focus-within:text-primary transition-colors">
                 <Search className="w-4 h-4" />
@@ -47,9 +56,11 @@ export function Header() {
                 className="w-full rounded-lg border-0 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-[#0d1b12] placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:ring-offset-0 transition-all duration-300 shadow-sm focus:shadow-md"
                 placeholder="Search requests, categories, or sellers..."
                 type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
               />
             </label>
-          </div>
+          </form>
         </div>
 
         <div className="flex items-center gap-6">
@@ -57,9 +68,11 @@ export function Header() {
             <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/browse-buyer-requests">
               Browse
             </Link>
-            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/seller/dashboard">
-              Sell
-            </Link>
+            {(!user || user.role === "seller" || user.role === "admin") && (
+              <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/seller/dashboard">
+                Sell
+              </Link>
+            )}
             <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/create-product-request">
               Post Request
             </Link>
@@ -111,21 +124,23 @@ export function Header() {
                       Profile
                     </Link>
                     <Link
-                      href="/create-product-request"
+                      href="/my-requests"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                     >
                       <span className="material-symbols-outlined text-[20px]">playlist_add</span>
-                      New Request
+                      My Requests
                     </Link>
-                    <Link
-                      href="/seller/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">storefront</span>
-                      Seller Dashboard
-                    </Link>
+                    {(user.role === "seller" || user.role === "admin") && (
+                      <Link
+                        href="/seller/dashboard"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">storefront</span>
+                        Seller Dashboard
+                      </Link>
+                    )}
                     <div className="border-t border-gray-100 mt-1 pt-1">
                       <button
                         type="button"

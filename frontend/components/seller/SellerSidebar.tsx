@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 type SellerNavId = "dashboard" | "requests" | "offers" | "messages" | "analytics";
 
@@ -14,7 +15,7 @@ const NAV_ITEMS: {
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
-  { id: "offers", icon: "local_offer", label: "Offers", href: "/browse-buyer-requests", badge: 3 },
+  { id: "offers", icon: "local_offer", label: "Offers", href: "/browse-buyer-requests" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];
@@ -25,6 +26,7 @@ type Props = {
 
 export default function SellerSidebar({ active }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <>
@@ -107,7 +109,7 @@ export default function SellerSidebar({ active }: Props) {
               />
               <div className="flex flex-1 flex-col overflow-hidden">
                 <p className="truncate text-sm font-bold text-[#0d1b12]">
-                  Alex Morgan
+                  {user?.name || user?.email || "Seller"}
                 </p>
                 <p className="truncate text-xs text-gray-500">Seller Account</p>
               </div>

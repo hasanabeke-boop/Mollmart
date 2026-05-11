@@ -18,7 +18,7 @@ The project uses a web frontend and a modular monolith backend. Backend domains 
 
 - **Frontend:** Next.js, React, TypeScript.
 - **Backend:** Node.js, Express, TypeScript modular monolith.
-- **Database:** one PostgreSQL database managed with Prisma.
+- **Database:** one PostgreSQL database managed with Prisma. MySQL/MariaDB are not used or supported by this project.
 - **Realtime/events:** Redis pub/sub used internally by the backend.
 - **Containerization:** Docker Compose for local development/demo.
 
@@ -70,6 +70,7 @@ cp .env.example .env
 npm install
 npm run prisma:generate
 npm run prisma:migrate
+npm run prisma:seed
 npm run dev
 ```
 

@@ -34,12 +34,22 @@ type AuthState = {
     email: string,
     password: string,
     role: "buyer" | "seller",
-  ) => Promise<void>;
+  ) => Promise<{ message: string; verificationToken?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
+
+type MeResponse =
+  | User
+  | {
+      user: User;
+    };
+
+function unwrapUser(data: MeResponse): User {
+  return "user" in data ? data.user : data;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -47,19 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchMe = useCallback(async () => {
     try {
-      const data = await apiFetchWithRefresh<{
-        id: string;
-        name: string;
-        email: string;
-        role: string;
-        status: string;
-      }>("/api/v1/auth/me", { service: "auth" });
+      const data = await apiFetchWithRefresh<MeResponse>("/api/v1/auth/me", { service: "auth" });
+      const me = unwrapUser(data);
       setUser({
-        id: data.id,
-        name: data.name || "",
-        email: data.email || "",
-        role: (data.role as User["role"]) || "buyer",
-        status: (data.status as User["status"]) || "active",
+        id: me.id,
+        name: me.name || "",
+        email: me.email || "",
+        role: (me.role as User["role"]) || "buyer",
+        status: (me.status as User["status"]) || "active",
       });
     } catch {
       setUser(null);
@@ -91,13 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     setAccessToken(data.accessToken);
     try {
-      const me = await apiFetch<{
-        id: string;
-        name: string;
-        email: string;
-        role: string;
-        status: string;
-      }>("/api/v1/auth/me", { service: "auth" });
+      const data = await apiFetch<MeResponse>("/api/v1/auth/me", { service: "auth" });
+      const me = unwrapUser(data);
       setUser({
         id: me.id,
         name: me.name || "",
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       role: "buyer" | "seller",
     ) => {
-      await apiFetch<{ message: string }>("/api/v1/auth/signup", {
+      return await apiFetch<{ message: string; verificationToken?: string }>("/api/v1/auth/signup", {
         method: "POST",
         service: "auth",
         body: JSON.stringify({ username, email, password, role }),

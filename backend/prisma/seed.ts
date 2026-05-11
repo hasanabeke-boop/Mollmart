@@ -1,23 +1,23 @@
 import prisma from '../src/config/prisma';
 
 async function main(): Promise<void> {
-  await prisma.category.upsert({
-    where: { slug: 'electronics' },
-    update: {},
-    create: {
-      name: 'Electronics',
-      slug: 'electronics'
-    }
-  });
+  const categories = [
+    { name: 'Electronics', slug: 'electronics' },
+    { name: 'Home', slug: 'home' },
+    { name: 'Home & Furniture', slug: 'home-furniture' },
+    { name: 'Fashion & Apparel', slug: 'fashion' },
+    { name: 'Collectibles', slug: 'collectibles' },
+    { name: 'Services', slug: 'services' },
+    { name: 'Sustainability', slug: 'sustainability' }
+  ];
 
-  await prisma.category.upsert({
-    where: { slug: 'home' },
-    update: {},
-    create: {
-      name: 'Home',
-      slug: 'home'
-    }
-  });
+  for (const category of categories) {
+    await prisma.category.upsert({
+      where: { slug: category.slug },
+      update: { name: category.name, isActive: true },
+      create: category
+    });
+  }
 }
 
 main()

@@ -160,6 +160,14 @@ model User {
   refreshTokens          RefreshToken[]
   resetToken             ResetToken[]
   emailVerificationToken EmailVerificationToken[]
+  profile                UserProfile?
+  requests               Request[]          @relation("BuyerRequests")
+  offers                 Offer[]            @relation("SellerOffers")
+  buyerConversations     Conversation[]     @relation("BuyerConversations")
+  sellerConversations    Conversation[]     @relation("SellerConversations")
+  sentMessages           Message[]          @relation("SentMessages")
+  messageReadStates      MessageReadState[]
+  notifications          Notification[]
 }
 
 model RefreshToken {
@@ -200,6 +208,7 @@ model UserProfile {
   updatedAt     DateTime       @updatedAt
   sellerProfile SellerProfile?
   buyerProfile  BuyerProfile?
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([role, createdAt(sort: Desc)])
 }
@@ -247,8 +256,11 @@ model Request {
   updatedAt     DateTime               @updatedAt
   publishedAt   DateTime?
   closedAt      DateTime?
+  buyer         User                   @relation("BuyerRequests", fields: [buyerId], references: [id], onDelete: Cascade)
   attachments   RequestAttachment[]
   statusHistory RequestStatusHistory[]
+  offers        Offer[]
+  conversations Conversation[]
 
   @@index([buyerId, createdAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -296,7 +308,10 @@ model Offer {
   updatedAt     DateTime             @updatedAt
   acceptedAt    DateTime?
   withdrawnAt   DateTime?
+  request       Request              @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  seller        User                 @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
   statusHistory OfferStatusHistory[]
+  conversations Conversation[]
 
   @@index([requestId, createdAt(sort: Desc)])
   @@index([sellerId, createdAt(sort: Desc)])
@@ -327,6 +342,10 @@ model Conversation {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   lastMessageAt DateTime?
+  request       Request            @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  offer         Offer?             @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  buyer         User               @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller        User               @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
   messages      Message[]
 
   @@unique([requestId, buyerId, sellerId])
@@ -343,6 +362,7 @@ model Message {
   messageType    MessageType        @default(text)
   createdAt      DateTime           @default(now())
   conversation   Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User               @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   readStates     MessageReadState[]
 
   @@index([conversationId, createdAt(sort: Desc)])
@@ -354,6 +374,7 @@ model MessageReadState {
   userId    String
   readAt    DateTime @default(now())
   message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([messageId, userId])
   @@index([userId, readAt(sort: Desc)])
@@ -440,6 +461,7 @@ model Notification {
   isRead        Boolean                   @default(false)
   createdAt     DateTime                  @default(now())
   readAt        DateTime?
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead, createdAt(sort: Desc)])

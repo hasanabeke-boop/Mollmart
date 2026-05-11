@@ -259,6 +259,8 @@ export default function BrowseBuyerRequestsPage() {
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (activeTab !== "all") params.set("status", activeTab);
+      if (search.trim().length >= 2) params.set("q", search.trim());
+      if (selectedCategory) params.set("categoryId", selectedCategory);
 
       const data = await apiFetchWithRefresh<{
         data?: Array<{
@@ -326,7 +328,13 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab]);
+  }, [activeTab, search, selectedCategory]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setSearch(params.get("q") || "");
+    setSelectedCategory(params.get("category") || "");
+  }, []);
 
   useEffect(() => {
     loadRequests();
@@ -502,7 +510,11 @@ export default function BrowseBuyerRequestsPage() {
         request{filteredRequests.length !== 1 ? "s" : ""}
       </p>
 
-      {filteredRequests.length === 0 ? (
+      {loadingData ? (
+        <div className="rounded-2xl border border-[#dfe7f2] bg-white p-6 text-center text-sm font-semibold text-slate-500">
+          Loading live requests...
+        </div>
+      ) : filteredRequests.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-slate-400 text-3xl">
