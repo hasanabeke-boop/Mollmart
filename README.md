@@ -88,10 +88,21 @@ http://localhost:4040/health
 
 ## Run With Docker
 
-From `backend/`:
+For the whole stack from the repository root:
 
 ```bash
+cp .env.deploy.example .env
 docker compose up --build
 ```
 
-This starts one backend container, one PostgreSQL container, and one Redis container.
+This starts the frontend, backend, one PostgreSQL container, and one Redis container.
+
+Local URLs:
+
+```text
+Frontend: http://localhost:3000
+Backend:  http://localhost:4040
+Health:   http://localhost:4040/health
+```
+
+The backend container runs Prisma migrations and category seed on startup.

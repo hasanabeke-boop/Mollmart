@@ -16,8 +16,8 @@ import {
 export function createAdminRouter(controller: AdminController): Router {
   const router = Router();
 
-  router.use(authenticate);
-  router.use(requireAdmin);
+  router.use('/admin', authenticate);
+  router.use('/admin', requireAdmin);
 
   router.post('/admin/categories', validate(categoryCreateSchema), asyncHandler(controller.createCategory));
   router.get('/admin/categories', asyncHandler(controller.listCategories));

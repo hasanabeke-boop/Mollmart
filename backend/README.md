@@ -65,7 +65,7 @@ http://localhost:4040/health
 
 ## Docker
 
-From `backend/`:
+Backend-only from `backend/`:
 
 ```bash
 docker compose up --build
@@ -76,3 +76,10 @@ Docker now starts:
 - one backend app on `localhost:4040`
 - one PostgreSQL database on `localhost:54320`
 - one Redis instance on `localhost:6380`
+
+Full-stack deployment is available from the repository root:
+
+```bash
+cp .env.deploy.example .env
+docker compose up --build
+```

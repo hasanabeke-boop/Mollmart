@@ -1,4 +1,5 @@
 import { sign, type SignOptions } from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import config from '../../../config/config';
 import type { AuthTokenUser } from '../types/types';
 
@@ -20,7 +21,8 @@ export const createAccessToken = (user: AuthTokenUser): string => {
       name: user.name,
       email: user.email,
       role: user.role,
-      status: user.status
+      status: user.status,
+      jti: randomUUID()
     },
     config.jwt.access_token.secret,
     tokenOptions(config.jwt.access_token.expire, user.id)
@@ -38,7 +40,8 @@ export const createRefreshToken = (user: AuthTokenUser): string => {
     {
       userId: user.id,
       role: user.role,
-      status: user.status
+      status: user.status,
+      jti: randomUUID()
     },
     config.jwt.refresh_token.secret,
     tokenOptions(config.jwt.refresh_token.expire, user.id)
