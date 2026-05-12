@@ -6,11 +6,15 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - '${POSTGRES_PORT:-54320}:5432'
+      - "${POSTGRES_PORT:-54320}:5432"
     volumes:
       - backend_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mollmart}']
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mollmart}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,9 +23,9 @@ services:
   backend-redis:
     image: redis:7-alpine
     ports:
-      - '${REDIS_PORT:-6380}:6379'
+      - "${REDIS_PORT:-6380}:6379"
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,7 +47,7 @@ services:
       SERVER_URL: ${SERVER_URL:-http://localhost:4040}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
-      - '4040:4040'
+      - "4040:4040"
     depends_on:
       backend-postgres:
         condition: service_healthy

@@ -10,7 +10,6 @@ type ProfileData = {
   fullName?: string;
   phone?: string;
   city?: string;
-  avatarUrl?: string;
 };
 
 type ProfileStats = {
@@ -26,7 +25,6 @@ export default function UserProfilePage() {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
@@ -45,7 +43,6 @@ export default function UserProfilePage() {
       if (data.fullName) setName(data.fullName);
       if (data.city) setLocation(data.city);
       if (data.phone) setPhone(data.phone);
-      if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
     } catch {
       if (user) {
         setName(user.name || user.email || "User");
@@ -126,17 +123,6 @@ export default function UserProfilePage() {
     <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 md:px-10 py-8 min-h-[calc(100vh-80px)]">
       {/* Sidebar */}
       <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-6">
-        <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-[#e7f3eb] shadow-sm">
-          <div
-            className="size-12 rounded-full bg-cover bg-center"
-            style={{ backgroundImage: `url("${avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuB9216dvtBHyVswL38uhew32TGK_lwa-Nbxt2f_cDEkrgiikmovrPu8XvUIf4zR62qSsHB53iJBrlocyGE398sOGO9-_TwhQ8He4eGTuz_lQl6Yu8z1Oh0MKFebgSPdpYDNsGn15v974D0c7UqdItCMh6yloXBtGyGMtd5ST2-C40iXzXFyEvOh95LCqdrmW6rDSs3guIRonwuddqdfTmWcd3Xgp_SoQA83_lG4Gd1qq5LS5GvD3w_VUtOL6zmhUYHFVaA8-00xSe0"}")` }}
-          />
-          <div className="flex flex-col overflow-hidden">
-            <h3 className="font-semibold truncate">{name}</h3>
-            <p className="text-xs text-[#4c9a66]">Member since 2021</p>
-          </div>
-        </div>
-
         <nav className="flex flex-col gap-1 bg-white p-2 rounded-xl border border-[#e7f3eb] shadow-sm">
           <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 font-medium text-sm">
             <span className="material-symbols-outlined">person</span>
@@ -190,10 +176,9 @@ export default function UserProfilePage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex items-center gap-5">
               <div className="relative">
-                <div
-                  className="size-24 md:size-28 rounded-full bg-cover bg-center border-4 border-[#f5f6f8] shadow-sm"
-                  style={{ backgroundImage: `url("${avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuBkhpZwYMkyBPllfR-epIwRc195qP2xQXR05bLLClRJX7QuW1weyF0OHoepiMyBJKTeew7S47wzPkB1ZNRg1ODzSJTHguG-xvz8G41LrfNOJBOgaRA2oR9dN8UBfcjd2EiinPD6cy3MTniWGC9qtOMzed8CqOkdShUlz59UGHlMa1sB4fvyxukc_cKslsr_gE1JprFzfVaYwnqi4IPaXlfNItwxVi9tom8-Nov5PJW8TfL-bP2p_eDpxpgC9uvpKhebAwiYQedrVQ4"}")` }}
-                />
+                <div className="size-24 md:size-28 rounded-full border-4 border-[#f5f6f8] shadow-sm flex items-center justify-center bg-[#e7f3eb] text-2xl font-bold text-[#4c9a66]">
+                  {(name.trim().charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || "U").toUpperCase()}
+                </div>
                 <div className="absolute bottom-1 right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
                   <span className="material-symbols-outlined text-[16px] leading-none block">
                     verified

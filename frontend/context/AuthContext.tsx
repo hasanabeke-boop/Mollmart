@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import {
   apiFetch,
   apiFetchWithRefresh,
+  getAccessToken,
   refreshAccessToken,
   setAccessToken,
   type ApiError,
@@ -68,16 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } catch {
       setUser(null);
+      setAccessToken(null);
     }
   }, []);
 
   const refreshUser = useCallback(async () => {
-    const token = await refreshAccessToken();
-    if (token) {
-      await fetchMe();
-    } else {
+    await refreshAccessToken();
+    if (!getAccessToken()) {
       setUser(null);
+      return;
     }
+    await fetchMe();
   }, [fetchMe]);
 
   useEffect(() => {
