@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -54,8 +55,10 @@ function now() {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatPage() {
+function ChatPageContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const prefConversationId = searchParams.get("c");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState("");
   const [input, setInput] = useState("");
@@ -124,14 +127,22 @@ export default function ChatPage() {
           };
         });
         setConversations(mapped);
-        setActiveId(mapped[0].id);
+        const pick =
+          prefConversationId && mapped.some((x) => x.id === prefConversationId)
+            ? prefConversationId
+            : mapped[0].id;
+        setActiveId(pick);
+      } else {
+        setConversations([]);
+        setActiveId("");
       }
       setApiLoaded(true);
     } catch {
       setConversations([]);
+      setActiveId("");
       setApiLoaded(true);
     }
-  }, [user?.id]);
+  }, [user?.id, prefConversationId]);
 
   const loadMessages = useCallback(async (convId: string) => {
     if (!apiLoaded) return;
@@ -667,5 +678,19 @@ export default function ChatPage() {
         </div>
       </aside>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex flex-1 justify-center py-16 px-4">
+          <p className="text-sm text-[#4c9a66]">Loading chat…</p>
+        </main>
+      }
+    >
+      <ChatPageContent />
+    </Suspense>
   );
 }

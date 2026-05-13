@@ -47,6 +47,11 @@ export class RequestController {
     const request = await this.requestService.cancelRequest(req.user!, req.params.id);
     res.status(httpStatus.OK).json(request);
   };
+
+  deleteDraft = async (req: Request, res: Response): Promise<void> => {
+    await this.requestService.deleteDraft(req.user!, req.params.id);
+    res.status(httpStatus.NO_CONTENT).send();
+  };
 }
 
 export default RequestController;

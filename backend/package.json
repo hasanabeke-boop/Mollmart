@@ -15,7 +15,8 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:seed": "ts-node --files --project tsconfig.json prisma/seed.ts"
+    "prisma:seed": "ts-node --files --project tsconfig.json src/scripts/seed.ts",
+    "prisma:seed:prod": "node dist/scripts/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

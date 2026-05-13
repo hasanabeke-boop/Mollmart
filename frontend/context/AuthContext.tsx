@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   apiFetch,
   apiFetchWithRefresh,
@@ -29,7 +30,7 @@ export type User = {
 type AuthState = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   signup: (
     username: string,
     email: string,
@@ -57,6 +58,7 @@ function unwrapUser(data: MeResponse): User {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<User> => {
     const data = await apiFetch<{ accessToken: string }>(
       "/api/v1/auth/login",
       {
@@ -101,19 +103,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     );
     setAccessToken(data.accessToken);
+    let nextUser: User;
     try {
-      const data = await apiFetch<MeResponse>("/api/v1/auth/me", { service: "auth" });
-      const me = unwrapUser(data);
-      setUser({
+      const meRes = await apiFetch<MeResponse>("/api/v1/auth/me", { service: "auth" });
+      const me = unwrapUser(meRes);
+      nextUser = {
         id: me.id,
         name: me.name || "",
         email: me.email || "",
         role: (me.role as User["role"]) || "buyer",
         status: (me.status as User["status"]) || "active",
-      });
+      };
     } catch {
-      setUser({ id: "", name: "", email, role: "buyer", status: "active" });
+      nextUser = { id: "", name: "", email, role: "buyer", status: "active" };
     }
+    setUser(nextUser);
+    return nextUser;
   }, []);
 
   const signup = useCallback(
@@ -144,7 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setAccessToken(null);
     setUser(null);
-  }, []);
+    router.replace("/");
+  }, [router]);
 
   const value = useMemo(
     () => ({ user, loading, login, signup, logout, refreshUser }),

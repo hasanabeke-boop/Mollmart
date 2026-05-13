@@ -62,6 +62,7 @@ export interface RequestRepositoryLike {
   transitionStatus(id: string, toStatus: RequestStatus, actorId: string, note?: string): Promise<RequestWithRelations>;
   listOwnerRequests(buyerId: string, query: OwnerRequestQuery): Promise<RequestListResult<RequestWithRelations>>;
   listSellerBoard(query: RequestBoardQuery): Promise<RequestListResult<RequestWithRelations>>;
+  deleteById(id: string): Promise<void>;
 }
 
 export class RequestRepository implements RequestRepositoryLike {
@@ -225,6 +226,12 @@ export class RequestRepository implements RequestRepositoryLike {
       items,
       meta: buildPageMeta(query.page, query.limit, total)
     };
+  }
+
+  async deleteById(id: string): Promise<void> {
+    await this.client.request.delete({
+      where: { id }
+    });
   }
 
   async listSellerBoard(query: RequestBoardQuery): Promise<RequestListResult<RequestWithRelations>> {

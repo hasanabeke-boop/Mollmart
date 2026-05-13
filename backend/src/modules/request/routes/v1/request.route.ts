@@ -44,6 +44,12 @@ export function createRequestRouter(controller: RequestController): Router {
     validate(requestIdParamSchema),
     asyncHandler(controller.cancel)
   );
+  router.delete(
+    '/:id',
+    requireRoles('buyer', 'admin'),
+    validate(requestIdParamSchema),
+    asyncHandler(controller.deleteDraft)
+  );
 
   return router;
 }

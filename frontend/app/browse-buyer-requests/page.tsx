@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 type BuyerRequest = {
   id: string;
@@ -246,6 +248,8 @@ function OfferModal({
 }
 
 export default function BrowseBuyerRequestsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -253,6 +257,13 @@ export default function BrowseBuyerRequestsPage() {
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user?.role === "buyer") {
+      router.replace("/my-requests");
+    }
+  }, [authLoading, user, router]);
 
   const loadRequests = useCallback(async () => {
     setLoadingData(true);
@@ -337,8 +348,9 @@ export default function BrowseBuyerRequestsPage() {
   }, []);
 
   useEffect(() => {
+    if (authLoading || user?.role === "buyer") return;
     loadRequests();
-  }, [loadRequests]);
+  }, [loadRequests, authLoading, user]);
 
   const filteredRequests = useMemo(() => {
     let data = requests;
@@ -366,6 +378,10 @@ export default function BrowseBuyerRequestsPage() {
   const allCategories = Array.from(
     new Set(requests.map((r) => r.category)),
   ).filter(Boolean);
+
+  if (!authLoading && user?.role === "buyer") {
+    return null;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

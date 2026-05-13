@@ -31,6 +31,10 @@ export function Header() {
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     const q = search.trim();
+    if (user?.role === "buyer") {
+      router.push(q ? `/my-requests` : "/my-requests");
+      return;
+    }
     router.push(q ? `/browse-buyer-requests?q=${encodeURIComponent(q)}` : "/browse-buyer-requests");
   };
 
@@ -65,17 +69,28 @@ export function Header() {
 
         <div className="flex items-center gap-6">
           <nav className="hidden items-center gap-6 lg:flex">
-            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/browse-buyer-requests">
-              Browse
-            </Link>
+            {user?.role === "buyer" ? (
+              <Link
+                className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                href="/my-requests"
+              >
+                My requests
+              </Link>
+            ) : (
+              <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/browse-buyer-requests">
+                Browse
+              </Link>
+            )}
             {(!user || user.role === "seller" || user.role === "admin") && (
               <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/seller/dashboard">
                 Sell
               </Link>
             )}
-            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/create-product-request">
-              Post Request
-            </Link>
+            {(!user || user.role === "buyer" || user.role === "admin") && (
+              <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/create-product-request">
+                Post Request
+              </Link>
+            )}
           </nav>
 
           {loading ? (

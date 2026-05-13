@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import SellerSidebar from "../../../components/seller/SellerSidebar";
 import { apiFetchWithRefresh } from "@/lib/api";
 
 type RequestLead = {
@@ -113,10 +112,8 @@ export default function SellerDashboardPage() {
     .slice(0, 3);
 
   return (
-    <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
-      <SellerSidebar active="dashboard" />
-
-      <main className="flex h-full flex-1 flex-col overflow-y-auto">
+    <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
+      <main className="flex min-h-[calc(100vh-4rem)] flex-1 flex-col overflow-y-auto">
         <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-6 backdrop-blur">
           <div className="hidden max-w-md flex-1 md:flex">
             <div className="relative w-full">

@@ -21,4 +21,4 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY prisma ./prisma
 EXPOSE 4040
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed:prod && node dist/index.js"]
