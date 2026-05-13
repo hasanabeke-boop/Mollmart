@@ -10,7 +10,10 @@ export default function SellerShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (loading || user?.role !== "seller") {
+  const showSellerChrome =
+    user?.role === "seller" || (user?.role === "admin" && pathname.startsWith("/seller"));
+
+  if (loading || !showSellerChrome) {
     return <>{children}</>;
   }
 

@@ -5,12 +5,13 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
-type AdminNavId = "dashboard" | "categories" | "moderation" | "users";
+type AdminNavId = "dashboard" | "categories" | "moderation" | "users" | "orders";
 
 function getActiveNav(pathname: string): AdminNavId {
   if (pathname.startsWith("/admin/categories")) return "categories";
   if (pathname.startsWith("/admin/moderation")) return "moderation";
   if (pathname.startsWith("/admin/users")) return "users";
+  if (pathname.startsWith("/admin/orders")) return "orders";
   return "dashboard";
 }
 

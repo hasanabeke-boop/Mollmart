@@ -24,7 +24,8 @@ export const updateSellerProfileSchema = {
     description: Joi.string().trim().max(3000).allow('').optional(),
     businessType: Joi.string().trim().max(80).allow('').optional(),
     website: urlOrEmpty.optional(),
-    instagramUrl: urlOrEmpty.optional()
+    instagramUrl: urlOrEmpty.optional(),
+    preferencesJson: Joi.object().unknown(true).optional()
   }).min(1)
 };
 

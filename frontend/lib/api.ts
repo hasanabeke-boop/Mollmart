@@ -1,4 +1,13 @@
-export type ServiceName = "auth" | "request" | "offer" | "chat" | "profile" | "admin" | "notification";
+export type ServiceName =
+  | "auth"
+  | "request"
+  | "offer"
+  | "chat"
+  | "profile"
+  | "admin"
+  | "notification"
+  | "catalog"
+  | "shop";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
 
@@ -46,20 +55,34 @@ export async function apiFetch<T = unknown>(
   const fetchOptions: RequestInit & { service?: ServiceName } = { ...options };
   delete fetchOptions.service;
 
+  const isFormData =
+    typeof FormData !== "undefined" && fetchOptions.body != null && fetchOptions.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(fetchOptions.headers as Record<string, string>),
   };
+
+  if (!isFormData && headers["Content-Type"] == null) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (accessToken) {
     headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...fetchOptions,
-    headers,
-    credentials: "include",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...fetchOptions,
+      headers,
+      credentials: "include",
+    });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw err;
+    }
+    throw err;
+  }
 
   if (res.status === 204) return undefined as T;
 
@@ -67,10 +90,10 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok) {
     const msg = data.message || data.error || `Request failed (${res.status})`;
-    const err = new Error(msg) as Error & { status: number; data: ApiError };
-    err.status = res.status;
-    err.data = data;
-    throw err;
+    const apiErr = new Error(msg) as Error & { status: number; data: ApiError };
+    apiErr.status = res.status;
+    apiErr.data = data;
+    throw apiErr;
   }
 
   return data as T;
@@ -104,6 +127,9 @@ export async function apiFetchWithRefresh<T = unknown>(
   try {
     return await apiFetch<T>(path, options);
   } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw err;
+    }
     const error = err as Error & { status?: number };
     if (error.status === 401 || error.status === 403) {
       await refreshAccessToken();

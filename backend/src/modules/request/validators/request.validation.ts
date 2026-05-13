@@ -63,6 +63,7 @@ export const ownerListSchema = {
 export const sellerBoardSchema = {
   query: Joi.object({
     categoryId: Joi.string().trim().optional(),
+    recommended: Joi.string().valid('true', 'false').optional(),
     currency: currency.optional(),
     location: Joi.string().trim().optional(),
     q: Joi.string().trim().min(2).max(150).optional(),

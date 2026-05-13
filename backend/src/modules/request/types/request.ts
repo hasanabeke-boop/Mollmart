@@ -23,6 +23,8 @@ export interface UpdateRequestInput extends Partial<CreateRequestInput> {}
 
 export interface RequestBoardQuery {
   categoryId?: string;
+  /** When set, OR match on these category keys (slug and/or id). */
+  categoryIdsIn?: string[];
   currency?: string;
   location?: string;
   q?: string;
@@ -35,6 +37,8 @@ export interface RequestBoardQuery {
   limit: number;
   sortBy: 'publishedAt' | 'createdAt' | 'deadlineAt' | 'budgetMin' | 'budgetMax';
   sortOrder: 'asc' | 'desc';
+  /** From query string; parsed in service. */
+  recommended?: boolean | string;
 }
 
 export interface OwnerRequestQuery {

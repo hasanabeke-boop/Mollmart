@@ -29,7 +29,7 @@ export interface ProfileRepositoryLike {
   ensureBaseProfile(input: EnsureProfileInput): Promise<FullProfile>;
   findByUserId(userId: string): Promise<FullProfile | null>;
   updateBaseProfile(userId: string, data: Partial<Pick<UserProfile, 'fullName' | 'phone' | 'city' | 'avatarUrl'>>): Promise<FullProfile>;
-  upsertSellerProfile(userId: string, data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl'>>): Promise<FullProfile>;
+  upsertSellerProfile(userId: string, data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl' | 'preferencesJson'>>): Promise<FullProfile>;
   upsertBuyerProfile(userId: string, data: Partial<Pick<BuyerProfile, 'displayName' | 'city' | 'preferencesJson'>>): Promise<FullProfile>;
   listPublicSellers(query: SellerListQuery): Promise<RequestListResult<FullProfile>>;
 }
@@ -131,8 +131,15 @@ export class ProfileRepository implements ProfileRepositoryLike {
 
   async upsertSellerProfile(
     userId: string,
-    data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl'>>
+    data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl' | 'preferencesJson'>>
   ): Promise<FullProfile> {
+    const preferencesJson =
+      data.preferencesJson === undefined
+        ? undefined
+        : data.preferencesJson === null
+          ? Prisma.JsonNull
+          : (data.preferencesJson as Prisma.InputJsonValue);
+
     return this.client.$transaction(async (tx) => {
       const fallbackName =
         data.displayName != null && data.displayName.trim().length > 0
@@ -141,14 +148,22 @@ export class ProfileRepository implements ProfileRepositoryLike {
 
       await tx.sellerProfile.upsert({
         where: { userId },
-        update: data,
+        update: {
+          ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
+          ...(data.description !== undefined ? { description: data.description } : {}),
+          ...(data.businessType !== undefined ? { businessType: data.businessType } : {}),
+          ...(data.website !== undefined ? { website: data.website } : {}),
+          ...(data.instagramUrl !== undefined ? { instagramUrl: data.instagramUrl } : {}),
+          ...(preferencesJson !== undefined ? { preferencesJson } : {})
+        },
         create: {
           userId,
           displayName: fallbackName,
           ...(data.description !== undefined ? { description: data.description } : {}),
           ...(data.businessType !== undefined ? { businessType: data.businessType } : {}),
           ...(data.website !== undefined ? { website: data.website } : {}),
-          ...(data.instagramUrl !== undefined ? { instagramUrl: data.instagramUrl } : {})
+          ...(data.instagramUrl !== undefined ? { instagramUrl: data.instagramUrl } : {}),
+          ...(preferencesJson !== undefined ? { preferencesJson } : {})
         }
       });
 

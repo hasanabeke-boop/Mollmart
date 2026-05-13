@@ -13,6 +13,7 @@ export interface UpdateSellerProfileInput {
   businessType?: string;
   website?: string;
   instagramUrl?: string;
+  preferencesJson?: Prisma.JsonValue;
 }
 
 export interface UpdateBuyerProfileInput {

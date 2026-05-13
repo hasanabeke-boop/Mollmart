@@ -3,6 +3,7 @@
 import { Search } from 'lucide-react';
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { fetchShopCart } from "@/lib/shop";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +12,28 @@ export function Header() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [cartCount, setCartCount] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setCartCount(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const d = await fetchShopCart();
+        const n = (d.items ?? []).reduce((s, i) => s + i.quantity, 0);
+        if (!cancelled) setCartCount(n);
+      } catch {
+        if (!cancelled) setCartCount(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -81,9 +103,31 @@ export function Header() {
                 Browse
               </Link>
             )}
+            <Link
+              className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+              href="/products"
+            >
+              Catalog
+            </Link>
+            {user && (
+              <Link
+                className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                href="/orders"
+              >
+                Orders
+              </Link>
+            )}
             {(!user || user.role === "seller" || user.role === "admin") && (
               <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/seller/dashboard">
                 Sell
+              </Link>
+            )}
+            {(user?.role === "seller" || user?.role === "admin") && (
+              <Link
+                className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                href="/seller/products/new"
+              >
+                New catalog product
               </Link>
             )}
             {(!user || user.role === "buyer" || user.role === "admin") && (
@@ -97,6 +141,18 @@ export function Header() {
             <div className="w-20 h-8 bg-gray-100 rounded-lg animate-pulse" />
           ) : user ? (
             <div className="flex items-center gap-3">
+              <Link
+                href="/cart"
+                className="relative flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
+                aria-label="Shopping cart"
+              >
+                <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+                {cartCount != null && cartCount > 0 ? (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black border-2 border-white">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                ) : null}
+              </Link>
               <Link
                 href="/chat"
                 className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
@@ -131,6 +187,22 @@ export function Header() {
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
                     <Link
+                      href="/cart"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
+                      Cart
+                    </Link>
+                    <Link
+                      href="/orders"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+                      My orders
+                    </Link>
+                    <Link
                       href="/profile"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
@@ -154,6 +226,16 @@ export function Header() {
                       >
                         <span className="material-symbols-outlined text-[20px]">storefront</span>
                         Seller Dashboard
+                      </Link>
+                    )}
+                    {(user.role === "seller" || user.role === "admin") && (
+                      <Link
+                        href="/seller/products/new"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+                        New catalog product
                       </Link>
                     )}
                     <div className="border-t border-gray-100 mt-1 pt-1">

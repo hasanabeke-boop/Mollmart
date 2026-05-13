@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import { apiFetchWithRefresh } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 
 type ProfileStats = {
@@ -20,6 +20,13 @@ function roleLabel(role: string | undefined) {
   return "Buyer";
 }
 
+function readRecommendedCategoryIds(prefs: unknown): string[] {
+  if (prefs == null || typeof prefs !== "object") return [];
+  const raw = (prefs as { recommendedCategoryIds?: unknown }).recommendedCategoryIds;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((x) => String(x)).filter((s) => s.length > 0);
+}
+
 export default function UserProfilePage() {
   const { user, loading: authLoading, refreshUser } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -32,6 +39,24 @@ export default function UserProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
 
   const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
+  const [catalogCategories, setCatalogCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await apiFetch<Array<{ id: string; name: string; slug: string }>>("/api/v1/catalog/categories", {
+          service: "catalog",
+        });
+        if (!cancelled && Array.isArray(rows)) setCatalogCategories(rows);
+      } catch {
+        if (!cancelled) setCatalogCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -121,6 +146,17 @@ export default function UserProfilePage() {
     await refreshUser();
     toastSuccess("Profile updated.");
   }, [loadProfile, refreshUser, toastSuccess]);
+
+  const preferenceLabels = useMemo(() => {
+    const prefs =
+      user?.role === "seller"
+        ? profileData?.sellerProfile?.preferencesJson
+        : profileData?.buyerProfile?.preferencesJson;
+    const ids = readRecommendedCategoryIds(prefs);
+    return ids
+      .map((id) => catalogCategories.find((c) => c.id === id)?.name)
+      .filter((x): x is string => Boolean(x));
+  }, [user?.role, profileData, catalogCategories]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 md:px-10 py-8 min-h-[calc(100vh-80px)]">
@@ -281,27 +317,35 @@ export default function UserProfilePage() {
               </div>
             </div>
             <p className="text-sm text-[#4c9a66] mb-4">
-              Open matching requests by topic.
+              Categories selected for personalized recommendations. Your requests and catalog listings also influence
+              suggestions when this list is empty.
             </p>
             <div className="flex flex-wrap gap-2">
-              {[
-                "Technology",
-                "Fashion",
-                "Home Decor",
-                "Outdoor",
-                "Books",
-                "Vintage",
-              ].map((interest) => {
-                return (
-                  <Link
-                    key={interest}
-                    href={`/browse-buyer-requests?q=${encodeURIComponent(interest)}`}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors bg-[#f5f6f8] border-[#e7f3eb] text-[#4c9a66] hover:border-primary hover:text-primary"
+              {preferenceLabels.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  None selected yet. Use <span className="font-semibold">Edit profile</span> to pick catalog categories.
+                </p>
+              ) : (
+                preferenceLabels.map((name) => (
+                  <span
+                    key={name}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium border bg-[#f5f6f8] border-[#e7f3eb] text-[#4c9a66]"
                   >
-                    {interest}
-                  </Link>
-                );
-              })}
+                    {name}
+                  </span>
+                ))
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold text-primary">
+              {user?.role === "seller" ? (
+                <Link href="/browse-buyer-requests" className="hover:underline">
+                  Browse buyer requests
+                </Link>
+              ) : (
+                <Link href="/products" className="hover:underline">
+                  Browse catalog
+                </Link>
+              )}
             </div>
           </div>
 

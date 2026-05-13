@@ -126,6 +126,19 @@ enum NotificationReferenceType {
   moderation_case
 }
 
+enum CatalogProductStatus {
+  draft
+  published
+  archived
+}
+
+enum CatalogOrderStatus {
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
 model Account {
   id                String   @id @default(cuid())
   userId            String
@@ -168,6 +181,10 @@ model User {
   sentMessages           Message[]          @relation("SentMessages")
   messageReadStates      MessageReadState[]
   notifications          Notification[]
+  catalogProducts        CatalogProduct[] @relation("SellerCatalogProducts")
+  cartItems              CartItem[]
+  catalogOrdersAsBuyer   CatalogOrder[]   @relation("BuyerCatalogOrders")
+  catalogOrdersAsSeller  CatalogOrder[]   @relation("SellerCatalogOrders")
 }
 
 model RefreshToken {
@@ -221,6 +238,7 @@ model SellerProfile {
   businessType        String?
   website             String?
   instagramUrl        String?
+  preferencesJson     Json?
   verificationStatus  VerificationStatus @default(unverified)
   ratingAverage       Decimal            @default(0) @db.Decimal(3, 2)
   completedDealsCount Int                @default(0)
@@ -389,10 +407,92 @@ model Category {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryTree")
+  children        Category[]       @relation("CategoryTree")
+  catalogProducts CatalogProduct[]
 
   @@index([parentId])
   @@index([isActive, createdAt(sort: Desc)])
+}
+
+model CatalogProduct {
+  id             String               @id @default(cuid())
+  sellerId       String
+  title          String
+  description    String               @db.Text
+  categoryId     String
+  slug           String               @unique
+  price          Decimal              @db.Decimal(12, 2)
+  compareAtPrice Decimal?             @db.Decimal(12, 2)
+  currency       String               @db.VarChar(3)
+  imageUrl       String
+  galleryUrls    Json?
+  quantity       Int                  @default(0)
+  status         CatalogProductStatus @default(draft)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  seller         User                 @relation("SellerCatalogProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+  category       Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cartItems      CartItem[]
+  orderLines     CatalogOrderLine[]
+
+  @@index([sellerId, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([categoryId, status])
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  buyerId   String
+  productId String
+  quantity  Int            @default(1)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  buyer     User           @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([buyerId, productId])
+  @@index([buyerId])
+}
+
+model CatalogOrder {
+  id              String             @id @default(cuid())
+  buyerId         String
+  sellerId        String
+  status          CatalogOrderStatus @default(processing)
+  currency        String             @db.VarChar(3)
+  subtotal        Decimal            @db.Decimal(14, 2)
+  shippingAmount  Decimal            @default(0) @db.Decimal(14, 2)
+  total           Decimal            @db.Decimal(14, 2)
+  shippingName    String?
+  shippingPhone   String?
+  shippingAddress String?            @db.Text
+  trackingNumber  String?
+  carrier         String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  buyer           User               @relation("BuyerCatalogOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller          User               @relation("SellerCatalogOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  lines           CatalogOrderLine[]
+
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@index([sellerId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model CatalogOrderLine {
+  id          String         @id @default(cuid())
+  orderId     String
+  productId   String
+  productSlug String
+  title       String
+  imageUrl    String
+  unitPrice   Decimal        @db.Decimal(12, 2)
+  currency    String         @db.VarChar(3)
+  quantity    Int
+  order       CatalogOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     CatalogProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
 }
 
 model ModerationCase {

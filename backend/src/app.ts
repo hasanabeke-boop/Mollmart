@@ -1,6 +1,7 @@
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import authLimiter from './modules/auth/middleware/authLimiter';
@@ -10,6 +11,8 @@ import { authRouter, passwordRouter, verifyEmailRouter } from './modules/auth/ro
 import adminRoutes from './modules/admin/routes/v1';
 import chatRoutes from './modules/chat/routes/v1';
 import notificationRoutes from './modules/notification/routes/v1';
+import catalogRoutes from './modules/catalog/routes/v1';
+import shopRoutes from './modules/shop/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
 import profileRoutes from './modules/profile/routes/v1';
 import requestRoutes from './modules/request/routes/v1';
@@ -19,8 +22,9 @@ import { requestLogger } from './middleware/logger';
 
 const app: Express = express();
 
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(xssMiddleware());
@@ -33,7 +37,7 @@ app.get('/health', (_req, res) => {
     status: 'ok',
     service: 'mollmart-backend',
     architecture: 'modular-monolith',
-    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'admin', 'notification']
+    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'admin', 'notification', 'catalog', 'shop']
   });
 });
 
@@ -50,6 +54,8 @@ app.use('/api/v1', requestRoutes);
 app.use('/api/v1', offerRoutes);
 app.use('/api/v1', chatRoutes);
 app.use('/api/v1', notificationRoutes);
+app.use('/api/v1/catalog', catalogRoutes);
+app.use('/api/v1/shop', shopRoutes);
 
 app.get('/secret', isAuth, (_req, res) => {
   res.json({

@@ -18,6 +18,8 @@ import {
   ensureTransitionAllowed
 } from '../utils/requestState';
 import { RequestEventPublisherLike } from './request-event.service';
+import { getSellerRequestRecommendationCategoryKeys } from '../../recommendations/recommendationSignals';
+import { buildPageMeta } from '../utils/pagination';
 
 export class RequestService {
   constructor(
@@ -66,7 +68,35 @@ export class RequestService {
       throw forbidden('Only sellers and admins can browse the request board');
     }
 
-    return this.requestRepository.listSellerBoard(query);
+    const rawRec = query.recommended;
+    const recommended = rawRec === true || rawRec === 'true';
+
+    if (!recommended) {
+      return this.requestRepository.listSellerBoard(query);
+    }
+
+    const keys = await getSellerRequestRecommendationCategoryKeys(user.id);
+    if (keys.length === 0) {
+      return {
+        items: [],
+        meta: buildPageMeta(query.page, query.limit, 0),
+        hasRecommendationSignals: false
+      };
+    }
+
+    const { recommended: _drop, ...rest } = query;
+    void _drop;
+    const boardQuery: RequestBoardQuery = {
+      ...rest,
+      categoryId: undefined,
+      categoryIdsIn: keys
+    };
+
+    const result = await this.requestRepository.listSellerBoard(boardQuery);
+    return {
+      ...result,
+      hasRecommendationSignals: true
+    };
   }
 
   async getRequestById(user: AuthUser, requestId: string): Promise<RequestWithRelations> {

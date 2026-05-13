@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-export type SellerNavId = "dashboard" | "requests" | "offers" | "messages" | "analytics";
+export type SellerNavId = "dashboard" | "catalog" | "requests" | "offers" | "messages" | "analytics";
 
 export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/seller/analytics")) return "analytics";
-  if (pathname.startsWith("/seller/dashboard") || pathname.startsWith("/seller")) return "dashboard";
+  if (pathname.startsWith("/seller/products")) return "catalog";
+  if (pathname.startsWith("/seller/dashboard")) return "dashboard";
+  if (pathname.startsWith("/seller")) return "dashboard";
   if (pathname.startsWith("/browse-buyer-requests")) return "requests";
   if (pathname.startsWith("/chat")) return "messages";
   return "dashboard";
@@ -21,6 +23,7 @@ const NAV_ITEMS: {
   badge?: number;
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
+  { id: "catalog", icon: "inventory_2", label: "Catalog listing", href: "/seller/products/new" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
   { id: "offers", icon: "local_offer", label: "Offers", href: "/browse-buyer-requests" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },

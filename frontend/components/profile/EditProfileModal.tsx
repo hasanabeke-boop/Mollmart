@@ -18,6 +18,7 @@ export type ProfileMeResponse = {
     businessType: string | null;
     website: string | null;
     instagramUrl: string | null;
+    preferencesJson?: unknown;
     verificationStatus: string;
     ratingAverage: number;
     completedDealsCount: number;
@@ -42,6 +43,15 @@ function emptyToUndefined(s: string): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
+function readRecommendedCategoryIds(prefs: unknown): string[] {
+  if (prefs == null || typeof prefs !== "object") return [];
+  const raw = (prefs as { recommendedCategoryIds?: unknown }).recommendedCategoryIds;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((x) => String(x)).filter((s) => s.length > 0);
+}
+
+type CatalogCategoryRow = { id: string; name: string; slug: string };
+
 export default function EditProfileModal({ open, onClose, user, profile, onSaved }: Props) {
   const { error: toastError, info: toastInfo } = useToast();
   const [fullName, setFullName] = useState("");
@@ -57,6 +67,9 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
 
   const [buyerDisplayName, setBuyerDisplayName] = useState("");
   const [buyerCity, setBuyerCity] = useState("");
+  const [buyerRecCategoryIds, setBuyerRecCategoryIds] = useState<string[]>([]);
+  const [sellerRecCategoryIds, setSellerRecCategoryIds] = useState<string[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategoryRow[]>([]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -102,9 +115,17 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
           : profile.buyerProfile.displayName;
       setBuyerDisplayName(bd);
       setBuyerCity(profile.buyerProfile.city ?? "");
+      setBuyerRecCategoryIds(readRecommendedCategoryIds(profile.buyerProfile.preferencesJson));
     } else {
       setBuyerDisplayName("");
       setBuyerCity("");
+      setBuyerRecCategoryIds([]);
+    }
+
+    if (profile.sellerProfile) {
+      setSellerRecCategoryIds(readRecommendedCategoryIds(profile.sellerProfile.preferencesJson));
+    } else {
+      setSellerRecCategoryIds([]);
     }
 
     setCurrentPassword("");
@@ -118,6 +139,32 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
       resetFromProfile();
     }
   }, [open, profile, resetFromProfile]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await apiFetchWithRefresh<CatalogCategoryRow[]>("/api/v1/catalog/categories", {
+          service: "catalog",
+        });
+        if (!cancelled && Array.isArray(rows)) setCatalogCategories(rows);
+      } catch {
+        if (!cancelled) setCatalogCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const toggleBuyerCategory = (id: string) => {
+    setBuyerRecCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const toggleSellerCategory = (id: string) => {
+    setSellerRecCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   const handleSave = async () => {
     setError("");
@@ -164,7 +211,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     const av = avatarUrl.trim();
     if (av.length > 0) baseBody.avatarUrl = av;
 
-    const sellerBody: Record<string, string> = {};
+    const sellerBody: Record<string, unknown> = {};
     if (user.role === "seller" && profile.sellerProfile) {
       const dn = sellerDisplayName.trim();
       if (dn.length >= 2) sellerBody.displayName = dn;
@@ -176,14 +223,30 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
       if (w.length > 0) sellerBody.website = w;
       const ig = sellerInstagramUrl.trim();
       if (ig.length > 0) sellerBody.instagramUrl = ig;
+      const prevPrefs =
+        profile.sellerProfile.preferencesJson != null && typeof profile.sellerProfile.preferencesJson === "object"
+          ? (profile.sellerProfile.preferencesJson as Record<string, unknown>)
+          : {};
+      sellerBody.preferencesJson = {
+        ...prevPrefs,
+        recommendedCategoryIds: sellerRecCategoryIds,
+      };
     }
 
-    const buyerBody: Record<string, string> = {};
+    const buyerBody: Record<string, unknown> = {};
     if (user.role === "buyer" && profile.buyerProfile) {
       const dn = buyerDisplayName.trim();
       if (dn.length >= 2) buyerBody.displayName = dn;
       const bc = buyerCity.trim();
       if (bc.length > 0) buyerBody.city = bc;
+      const prevPrefs =
+        profile.buyerProfile.preferencesJson != null && typeof profile.buyerProfile.preferencesJson === "object"
+          ? (profile.buyerProfile.preferencesJson as Record<string, unknown>)
+          : {};
+      buyerBody.preferencesJson = {
+        ...prevPrefs,
+        recommendedCategoryIds: buyerRecCategoryIds,
+      };
     }
 
     const willPatchBase = Object.keys(baseBody).length > 0;
@@ -369,6 +432,32 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                   className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </label>
+              <div className="space-y-2 border-t border-[#e7f3eb] pt-3">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Selling categories</h4>
+                <p className="text-xs text-gray-500">
+                  Used for the Recommendations tab when browsing buyer requests (with your published catalog categories if empty).
+                </p>
+                <div className="max-h-44 overflow-y-auto flex flex-wrap gap-2 rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] p-2">
+                  {catalogCategories.length === 0 ? (
+                    <span className="text-xs text-gray-500">Categories could not be loaded.</span>
+                  ) : (
+                    catalogCategories.map((c) => (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#e7f3eb] bg-white px-2.5 py-1 text-xs font-medium text-[#0d1b12]"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-[#e7f3eb] text-primary focus:ring-primary"
+                          checked={sellerRecCategoryIds.includes(c.id)}
+                          onChange={() => toggleSellerCategory(c.id)}
+                        />
+                        {c.name}
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
             </section>
           )}
 
@@ -394,6 +483,32 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
               <p className="text-xs text-gray-500">
                 You also have a general city field above; use buyer city for matching preferences if you keep them different.
               </p>
+              <div className="space-y-2 border-t border-[#e7f3eb] pt-3">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Shopping categories</h4>
+                <p className="text-xs text-gray-500">
+                  Used for the Recommendations view in the catalog (with your requests if you leave this empty).
+                </p>
+                <div className="max-h-44 overflow-y-auto flex flex-wrap gap-2 rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] p-2">
+                  {catalogCategories.length === 0 ? (
+                    <span className="text-xs text-gray-500">Categories could not be loaded.</span>
+                  ) : (
+                    catalogCategories.map((c) => (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#e7f3eb] bg-white px-2.5 py-1 text-xs font-medium text-[#0d1b12]"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-[#e7f3eb] text-primary focus:ring-primary"
+                          checked={buyerRecCategoryIds.includes(c.id)}
+                          onChange={() => toggleBuyerCategory(c.id)}
+                        />
+                        {c.name}
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
             </section>
           )}
 
