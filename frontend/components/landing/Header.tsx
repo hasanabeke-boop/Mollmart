@@ -86,9 +86,11 @@ export function Header() {
                 Sell
               </Link>
             )}
-            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/create-product-request">
-              Post Request
-            </Link>
+            {(!user || user.role === "buyer" || user.role === "admin") && (
+              <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/create-product-request">
+                Post Request
+              </Link>
+            )}
           </nav>
 
           {loading ? (

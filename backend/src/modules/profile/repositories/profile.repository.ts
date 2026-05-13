@@ -34,17 +34,48 @@ export interface ProfileRepositoryLike {
   listPublicSellers(query: SellerListQuery): Promise<RequestListResult<FullProfile>>;
 }
 
+async function defaultDisplayLabel(tx: Prisma.TransactionClient, userId: string): Promise<string> {
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    select: { name: true }
+  });
+  const label = (user?.name ?? '').trim();
+  return label.length > 0 ? label : 'User';
+}
+
 export class ProfileRepository implements ProfileRepositoryLike {
   constructor(private readonly client: PrismaClient = prisma) {}
 
   async ensureBaseProfile(input: EnsureProfileInput): Promise<FullProfile> {
     return this.client.$transaction(async (tx) => {
+      const displayLabel = await defaultDisplayLabel(tx, input.userId);
+
       const existing = await tx.userProfile.findUnique({
         where: { userId: input.userId },
         include: profileInclude
       });
 
       if (existing != null) {
+        const data: Prisma.UserProfileUpdateInput = {};
+
+        if (existing.fullName === existing.userId) {
+          data.fullName = displayLabel;
+        }
+        if (existing.sellerProfile != null && existing.sellerProfile.displayName === existing.userId) {
+          data.sellerProfile = { update: { displayName: displayLabel } };
+        }
+        if (existing.buyerProfile != null && existing.buyerProfile.displayName === existing.userId) {
+          data.buyerProfile = { update: { displayName: displayLabel } };
+        }
+
+        if (Object.keys(data).length > 0) {
+          return tx.userProfile.update({
+            where: { userId: input.userId },
+            data,
+            include: profileInclude
+          });
+        }
+
         return existing;
       }
 
@@ -52,12 +83,12 @@ export class ProfileRepository implements ProfileRepositoryLike {
         data: {
           userId: input.userId,
           role: input.role,
-          fullName: input.userId,
+          fullName: displayLabel,
           ...(input.role === 'seller'
             ? {
                 sellerProfile: {
                   create: {
-                    displayName: input.userId,
+                    displayName: displayLabel,
                     verificationStatus: VerificationStatus.unverified
                   }
                 }
@@ -67,7 +98,7 @@ export class ProfileRepository implements ProfileRepositoryLike {
             ? {
                 buyerProfile: {
                   create: {
-                    displayName: input.userId
+                    displayName: displayLabel
                   }
                 }
               }
@@ -103,12 +134,17 @@ export class ProfileRepository implements ProfileRepositoryLike {
     data: Partial<Pick<SellerProfile, 'displayName' | 'description' | 'businessType' | 'website' | 'instagramUrl'>>
   ): Promise<FullProfile> {
     return this.client.$transaction(async (tx) => {
+      const fallbackName =
+        data.displayName != null && data.displayName.trim().length > 0
+          ? data.displayName.trim()
+          : await defaultDisplayLabel(tx, userId);
+
       await tx.sellerProfile.upsert({
         where: { userId },
         update: data,
         create: {
           userId,
-          displayName: data.displayName ?? userId,
+          displayName: fallbackName,
           ...(data.description !== undefined ? { description: data.description } : {}),
           ...(data.businessType !== undefined ? { businessType: data.businessType } : {}),
           ...(data.website !== undefined ? { website: data.website } : {}),
@@ -135,6 +171,11 @@ export class ProfileRepository implements ProfileRepositoryLike {
           : (data.preferencesJson as Prisma.InputJsonValue);
 
     return this.client.$transaction(async (tx) => {
+      const fallbackName =
+        data.displayName != null && data.displayName.trim().length > 0
+          ? data.displayName.trim()
+          : await defaultDisplayLabel(tx, userId);
+
       await tx.buyerProfile.upsert({
         where: { userId },
         update: {
@@ -144,7 +185,7 @@ export class ProfileRepository implements ProfileRepositoryLike {
         },
         create: {
           userId,
-          displayName: data.displayName ?? userId,
+          displayName: fallbackName,
           ...(data.city !== undefined ? { city: data.city } : {}),
           ...(preferencesJson !== undefined ? { preferencesJson } : {})
         }

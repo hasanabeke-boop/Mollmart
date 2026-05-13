@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from "react";
-import { useAuth, type ApiError } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth, type ApiError, type User } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+function postLoginPath(role: User["role"]): string {
+  if (role === "seller") return "/browse-buyer-requests";
+  if (role === "buyer") return "/my-requests";
+  return "/";
+}
 
 export default function LoginPage() {
   const { login, user } = useAuth();
   const router = useRouter();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,8 +25,29 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+
+  useEffect(() => {
+    if (forgotOpen) {
+      setForgotEmail(email.trim());
+      setForgotError("");
+    }
+  }, [forgotOpen, email]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("forgot") === "1") {
+      setForgotOpen(true);
+      router.replace("/login", { scroll: false });
+    }
+  }, [router]);
+
   if (user) {
-    router.replace("/");
+    router.replace(postLoginPath(user.role));
     return null;
   }
 
@@ -36,8 +66,8 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await login(email, password);
-      router.push("/");
+      const loggedIn = await login(email, password);
+      router.push(postLoginPath(loggedIn.role));
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
       if (apiErr.data?.errors) {
@@ -51,6 +81,37 @@ export default function LoginPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError("");
+    if (!forgotEmail.trim()) {
+      setForgotError("Email is required");
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      await apiFetch("/api/v1/forgot-password", {
+        method: "POST",
+        service: "auth",
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      toastSuccess("If this email is registered, we sent reset instructions.");
+      setForgotOpen(false);
+    } catch (err: unknown) {
+      const apiErr = err as Error & { status?: number; data?: ApiError };
+      if (apiErr.status === 404) {
+        toastSuccess("If this email is registered, we sent reset instructions.");
+        setForgotOpen(false);
+        return;
+      }
+      const msg = apiErr.data?.message || apiErr.message || "Could not send reset email";
+      setForgotError(msg);
+      toastError(msg);
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -189,9 +250,13 @@ export default function LoginPage() {
                 >
                   Password
                 </label>
-                <Link className="text-sm font-bold text-primary hover:text-primary/80 transition-colors" href="/forgot-password">
+                <button
+                  type="button"
+                  onClick={() => setForgotOpen(true)}
+                  className="text-sm font-bold text-primary hover:text-primary/80 transition-colors"
+                >
                   Forgot password?
-                </Link>
+                </button>
               </div>
               <div className="relative group">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -302,6 +367,89 @@ export default function LoginPage() {
           <a className="hover:text-slate-600" href="#">Help Center</a>
         </div>
       </div>
+
+      {forgotOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+            aria-label="Close"
+            onClick={() => !forgotLoading && setForgotOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="forgot-password-title"
+            className="relative z-[121] w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl"
+          >
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="forgot-password-title" className="text-xl font-bold text-slate-900">
+                  Forgot password?
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Enter your email — we&apos;ll send a link to reset your password.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={forgotLoading}
+                onClick={() => setForgotOpen(false)}
+                className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+                aria-label="Close dialog"
+              >
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+            </div>
+
+            {forgotError && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <span className="material-symbols-outlined shrink-0 text-[20px]">error</span>
+                {forgotError}
+              </div>
+            )}
+
+            <form className="space-y-5" onSubmit={handleForgotSubmit}>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="forgot-email">
+                  Email
+                </label>
+                <div className="relative group">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 group-focus-within:text-primary">
+                    <span className="material-symbols-outlined text-[20px]">mail</span>
+                  </span>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    autoComplete="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+                <button
+                  type="button"
+                  disabled={forgotLoading}
+                  onClick={() => setForgotOpen(false)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {forgotLoading ? "Sending…" : "Send reset link"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

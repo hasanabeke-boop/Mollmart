@@ -1,10 +1,17 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
-type SellerNavId = "dashboard" | "requests" | "offers" | "messages" | "analytics";
+export type SellerNavId = "dashboard" | "requests" | "offers" | "messages" | "analytics";
+
+export function getSellerActiveNav(pathname: string): SellerNavId {
+  if (pathname.startsWith("/seller/analytics")) return "analytics";
+  if (pathname.startsWith("/seller/dashboard") || pathname.startsWith("/seller")) return "dashboard";
+  if (pathname.startsWith("/browse-buyer-requests")) return "requests";
+  if (pathname.startsWith("/chat")) return "messages";
+  return "dashboard";
+}
 
 const NAV_ITEMS: {
   id: SellerNavId;
@@ -22,91 +29,80 @@ const NAV_ITEMS: {
 
 type Props = {
   active: SellerNavId;
+  open: boolean;
+  onClose: () => void;
 };
 
-export default function SellerSidebar({ active }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function SellerSidebar({ active, open, onClose }: Props) {
   const { user } = useAuth();
 
   return (
     <>
-      {/* Невидимая область у левого края для открытия */}
-      <div
-        className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-2 z-30 lg:block hidden"
-        onMouseEnter={() => setIsOpen(true)}
-      />
+      {open && (
+        <div
+          className="fixed inset-0 top-16 z-30 bg-black/30 lg:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
+      )}
 
-      {/* Сам сайдбар с анимацией выезда */}
       <aside
-        className={`fixed left-0 top-16 z-40 hidden h-[calc(100vh-4rem)] w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 lg:flex ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed left-0 top-16 z-40 flex h-[calc(100vh-4rem)] w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 ${
+          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
-        onMouseLeave={() => setIsOpen(false)}
       >
         <div className="flex h-full flex-col justify-between p-4">
-          <div className="flex flex-col gap-6">
-            {/* Brand */}
-            <div className="flex items-center gap-3 px-2 py-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-black">
-                <span className="material-symbols-outlined text-2xl">storefront</span>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-[#0d1b12]">Mollmart</h1>
-            </div>
-            {/* Nav */}
-            <nav className="flex flex-col gap-2">
-              {NAV_ITEMS.map((item) => {
-                const isActive = active === item.id;
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                      isActive
-                        ? "bg-primary/10 text-black"
-                        : "text-gray-600 hover:bg-gray-50"
+          <nav className="flex flex-col gap-2 pt-1">
+            {NAV_ITEMS.map((item) => {
+              const isActive = active === item.id;
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={onClose}
+                  className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                    isActive
+                      ? "bg-primary/10 text-black"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span
+                    className={`material-symbols-outlined ${
+                      isActive ? "text-green-700" : ""
                     }`}
                   >
-                    <span
-                      className={`material-symbols-outlined ${
-                        isActive ? "text-green-700" : ""
-                      }`}
-                    >
-                      {item.icon}
+                    {item.icon}
+                  </span>
+                  <span
+                    className={`text-sm ${
+                      isActive ? "font-semibold" : "font-medium"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                  {item.badge && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black">
+                      {item.badge}
                     </span>
-                    <span
-                      className={`text-sm ${
-                        isActive ? "font-semibold" : "font-medium"
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    {item.badge && (
-                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
           {/* Bottom user card */}
           <div className="flex flex-col gap-2">
             <Link
               href="/profile"
+              onClick={onClose}
               className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-600 hover:bg-gray-50 transition-all"
             >
               <span className="material-symbols-outlined">settings</span>
               <span className="text-sm font-medium">Settings</span>
             </Link>
             <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
-              <div
-                className="h-10 w-10 overflow-hidden rounded-full bg-gray-200 bg-center bg-cover"
-                style={{
-                  backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBwpsKPou9QRuZh6en26Wt8HPM_95MuH3oTKjCjJYtWM8eeYpVNMk-ijQrBBfqWfnwxxcLrd0mYSNWNHwsAr0X8hcrPU4W5MY55btA-2Ct_6CWsOczzf1xb8qUfxcq0jUCl9d9vQHUlPe3T40b_DZ5TvOuLmx5E4rJ-R8fBk1n_TY-2TYtPhwukYQIHNT6YgVOgOmPzJrcSX56U93uxuOELjiQdX7uEV7VBctbFqHvNHGYpm4gFXHKasBtoXQHdQS0n17pumj0PhDY")',
-                }}
-              />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
+              </div>
               <div className="flex flex-1 flex-col overflow-hidden">
                 <p className="truncate text-sm font-bold text-[#0d1b12]">
                   {user?.name || user?.email || "Seller"}

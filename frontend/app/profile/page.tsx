@@ -4,13 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { apiFetchWithRefresh } from "@/lib/api";
-
-type ProfileData = {
-  fullName?: string;
-  phone?: string;
-  city?: string;
-};
+import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 
 type ProfileStats = {
   primary: number;
@@ -18,15 +14,23 @@ type ProfileStats = {
   conversations: number;
 };
 
+function roleLabel(role: string | undefined) {
+  if (role === "seller") return "Seller";
+  if (role === "admin") return "Admin";
+  return "Buyer";
+}
+
 export default function UserProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
 
-  const [name, setName] = useState("");
+  const [profileData, setProfileData] = useState<ProfileMeResponse | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [location, setLocation] = useState("");
-  const [phone, setPhone] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState("");
+  const [phoneDisplay, setPhoneDisplay] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+
   const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
 
   useEffect(() => {
@@ -35,20 +39,37 @@ export default function UserProfilePage() {
     }
   }, [user, authLoading, router]);
 
+  const applyProfileToDisplay = useCallback(
+    (data: ProfileMeResponse, u: typeof user) => {
+      const fromApi = (data.fullName ?? "").trim();
+      const looksLikePlaceholderId = u != null && fromApi === u.id;
+      let name = fromApi;
+      if (looksLikePlaceholderId || !name) {
+        name = u?.name?.trim() || u?.email?.split("@")[0] || "User";
+      }
+      setDisplayName(name);
+      setLocation((data.city ?? "").trim());
+      setPhoneDisplay((data.phone ?? "").trim());
+    },
+    [],
+  );
+
   const loadProfile = useCallback(async () => {
+    if (!user) return;
     try {
-      const data = await apiFetchWithRefresh<ProfileData>("/api/v1/profiles/me", {
+      const data = await apiFetchWithRefresh<ProfileMeResponse>("/api/v1/profiles/me", {
         service: "profile",
       });
-      if (data.fullName) setName(data.fullName);
-      if (data.city) setLocation(data.city);
-      if (data.phone) setPhone(data.phone);
+      setProfileData(data);
+      applyProfileToDisplay(data, user);
     } catch {
-      if (user) {
-        setName(user.name || user.email || "User");
-      }
+      setProfileData(null);
+      setDisplayName(user.name || user.email?.split("@")[0] || "User");
+      setLocation("");
+      setPhoneDisplay("");
+      toastError("Could not load profile.");
     }
-  }, [user]);
+  }, [user, applyProfileToDisplay, toastError]);
 
   useEffect(() => {
     if (user) loadProfile();
@@ -95,32 +116,24 @@ export default function UserProfilePage() {
     loadStats();
   }, [loadStats]);
 
-  const handleSaveProfile = async () => {
-    setSaving(true);
-    setSaveMsg("");
-    try {
-      const body: Record<string, string> = {};
-      if (name.trim()) body.fullName = name.trim();
-      if (location.trim()) body.city = location.trim();
-      if (phone.trim()) body.phone = phone.trim();
-
-      await apiFetchWithRefresh("/api/v1/profiles/me", {
-        method: "PATCH",
-        service: "profile",
-        body: JSON.stringify(body),
-      });
-      setSaveMsg("Profile saved!");
-      setTimeout(() => setSaveMsg(""), 3000);
-    } catch (err: unknown) {
-      const e = err as Error;
-      setSaveMsg(e.message || "Failed to save");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const handleSaved = useCallback(async () => {
+    await loadProfile();
+    await refreshUser();
+    toastSuccess("Profile updated.");
+  }, [loadProfile, refreshUser, toastSuccess]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 md:px-10 py-8 min-h-[calc(100vh-80px)]">
+      {user && (
+        <EditProfileModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          user={user}
+          profile={profileData}
+          onSaved={handleSaved}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-6">
         <nav className="flex flex-col gap-1 bg-white p-2 rounded-xl border border-[#e7f3eb] shadow-sm">
@@ -177,54 +190,57 @@ export default function UserProfilePage() {
             <div className="flex items-center gap-5">
               <div className="relative">
                 <div className="size-24 md:size-28 rounded-full border-4 border-[#f5f6f8] shadow-sm flex items-center justify-center bg-[#e7f3eb] text-2xl font-bold text-[#4c9a66]">
-                  {(name.trim().charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || "U").toUpperCase()}
+                  {(displayName.trim().charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || "U").toUpperCase()}
                 </div>
-                <div className="absolute bottom-1 right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
-                  <span className="material-symbols-outlined text-[16px] leading-none block">
+                <div
+                  className="absolute bottom-1 right-1 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-blue-500 text-white shadow-sm"
+                  aria-hidden
+                >
+                  <span className="material-symbols-outlined block text-[17px] leading-none text-white">
                     verified
                   </span>
                 </div>
               </div>
               <div>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="text-2xl md:text-3xl font-bold mb-1 bg-transparent border-b border-transparent focus:border-primary focus:outline-none"
-                />
+                <h1 className="text-2xl md:text-3xl font-bold mb-1 text-[#0d1b12]">
+                  {displayName || "—"}
+                </h1>
+                {user?.email && (
+                  <p className="text-sm text-gray-500 mb-2">{user.email}</p>
+                )}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#4c9a66]">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-[18px]">
                       verified_user
                     </span>
-                    Verified Buyer
+                    {roleLabel(user?.role)} account
                   </span>
-                  <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[18px]">
-                      location_on
+                  {location ? (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[18px]">
+                        location_on
+                      </span>
+                      {location}
                     </span>
-                    <input
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="bg-transparent border-b border-transparent focus:border-primary focus:outline-none text-xs"
-                    />
-                  </span>
+                  ) : null}
+                  {phoneDisplay ? (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[18px]">call</span>
+                      {phoneDisplay}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {saveMsg && (
-                <span className={`text-sm font-medium ${saveMsg.includes("saved") ? "text-green-600" : "text-red-500"}`}>
-                  {saveMsg}
-                </span>
-              )}
+            <div className="flex w-full flex-col items-stretch gap-3 md:w-auto md:items-end">
               <button
                 type="button"
-                onClick={handleSaveProfile}
-                disabled={saving}
-                className="w-full md:w-auto px-5 py-2.5 rounded-lg bg-[#f5f6f8] hover:bg-[#e7f3eb] border border-[#e7f3eb] text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                onClick={() => setEditOpen(true)}
+                disabled={!profileData}
+                className="w-full md:w-auto px-5 py-2.5 rounded-lg bg-primary text-black text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0fd650] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="material-symbols-outlined text-[18px]">save</span>
-                {saving ? "Saving..." : "Save Profile"}
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+                Edit profile
               </button>
             </div>
           </div>
@@ -333,4 +349,3 @@ function ToggleRow({ label, checked }: ToggleRowProps) {
     </label>
   );
 }
-

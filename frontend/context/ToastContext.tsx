@@ -212,7 +212,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
       <div
 
-        className="pointer-events-none fixed bottom-4 right-4 z-[110] flex max-w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed bottom-4 right-4 z-[200] flex max-w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
 
         aria-live="polite"
 

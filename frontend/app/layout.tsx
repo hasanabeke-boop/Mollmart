@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/landing/Header";
+import SellerShell from "@/components/seller/SellerShell";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 
@@ -27,7 +28,9 @@ export default function RootLayout({
           <ToastProvider>
             <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
               <Header />
-              <main className="flex-1">{children}</main>
+              <main className="flex min-h-0 flex-1 flex-col">
+                <SellerShell>{children}</SellerShell>
+              </main>
             </div>
           </ToastProvider>
         </AuthProvider>
