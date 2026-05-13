@@ -90,7 +90,7 @@ async function main() {
   });
 
   for (const role of ['buyer', 'seller', 'admin', 'outsider', 'block-target', 'unverified']) {
-    await req(`auth signup ${role}`, 'POST', '/api/v1/auth/signup', {
+    const signupResponse = await req(`auth signup ${role}`, 'POST', '/api/v1/auth/signup', {
       body: {
         username: `Smoke ${role}`,
         email: email(role),
@@ -99,15 +99,20 @@ async function main() {
       },
       expect: [201]
     });
+    state.requiresEmailVerification =
+      state.requiresEmailVerification ||
+      Boolean(signupResponse.data?.requiresEmailVerification || signupResponse.data?.verificationToken);
   }
 
-  await req('auth login unverified denied', 'POST', '/api/v1/auth/login', {
-    body: { email: email('unverified'), password },
-    expect: [401]
-  });
+  if (state.requiresEmailVerification) {
+    await req('auth login unverified denied', 'POST', '/api/v1/auth/login', {
+      body: { email: email('unverified'), password },
+      expect: [401]
+    });
 
-  for (const role of ['buyer', 'seller', 'admin', 'outsider', 'block-target']) {
-    await verifyUserByEmail(email(role));
+    for (const role of ['buyer', 'seller', 'admin', 'outsider', 'block-target']) {
+      await verifyUserByEmail(email(role));
+    }
   }
 
   const adminUser = await prisma.user.update({

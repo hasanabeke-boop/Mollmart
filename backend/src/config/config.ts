@@ -33,6 +33,10 @@ const envSchema = Joi.object({
     .falsy('0')
     .default(false),
   SUBSCRIBE_MODERATION_EVENTS: Joi.boolean().truthy('true').truthy('1').falsy('false').falsy('0').default(true),
+  REQUIRE_EMAIL_VERIFICATION: Joi.string()
+    .lowercase()
+    .valid('auto', 'true', 'false', '1', '0')
+    .default('auto'),
   SMTP_HOST: Joi.string().default('smtp.example.com'),
   SMTP_PORT: Joi.string().default('587'),
   SMTP_USERNAME: Joi.string().default('user@example.com'),
@@ -72,6 +76,16 @@ if (error != null) {
 const accessSecret = (value.JWT_ACCESS_SECRET ?? value.ACCESS_TOKEN_SECRET) as string;
 const refreshSecret = (value.JWT_REFRESH_SECRET ?? value.REFRESH_TOKEN_SECRET) as string;
 const nodeEnv = value.NODE_ENV as 'development' | 'production' | 'test';
+const emailEnabled =
+  value.SMTP_HOST !== 'smtp.example.com' &&
+  value.SMTP_USERNAME !== 'user@example.com' &&
+  value.SMTP_PASSWORD !== 'password';
+const requireEmailVerificationSetting = value.REQUIRE_EMAIL_VERIFICATION as string;
+const requireEmailVerification =
+  requireEmailVerificationSetting === 'auto'
+    ? emailEnabled
+    : requireEmailVerificationSetting === 'true' ||
+      requireEmailVerificationSetting === '1';
 
 const config = {
   nodeEnv,
@@ -111,11 +125,11 @@ const config = {
   subscriptions: {
     moderationEvents: Boolean(value.SUBSCRIBE_MODERATION_EVENTS)
   },
+  auth: {
+    requireEmailVerification
+  },
   email: {
-    enabled:
-      value.SMTP_HOST !== 'smtp.example.com' &&
-      value.SMTP_USERNAME !== 'user@example.com' &&
-      value.SMTP_PASSWORD !== 'password',
+    enabled: emailEnabled,
     smtp: {
       host: value.SMTP_HOST as string,
       port: value.SMTP_PORT as string,

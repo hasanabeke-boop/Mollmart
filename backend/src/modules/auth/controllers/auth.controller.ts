@@ -117,6 +117,15 @@ const createVerificationToken = async (userId: string): Promise<string> => {
   return token;
 };
 
+const createEmailVerificationResponse = (
+  message: string,
+  verificationToken?: string
+) => ({
+  message,
+  requiresEmailVerification: true,
+  ...(verificationToken ? { verificationToken } : {})
+});
+
 /**
  * This function handles the signup process for new users. It expects a request object with the following properties:
  *
@@ -163,24 +172,36 @@ export const handleSignUp = async (
         data: {
           name: username,
           password: hashedPassword,
-          role
+          role,
+          ...(!config.auth.requireEmailVerification
+            ? { emailVerified: new Date() }
+            : {})
         }
       });
+
+      if (!config.auth.requireEmailVerification) {
+        await prismaClient.emailVerificationToken.deleteMany({
+          where: { userId: checkUserEmail.id }
+        });
+
+        return res.status(httpStatus.OK).json({
+          message: 'Account updated. You can now log in.',
+          requiresEmailVerification: false
+        });
+      }
 
       const token = await createVerificationToken(checkUserEmail.id);
       const emailSent = await sendVerifyEmail(email, token);
 
       return res.status(httpStatus.OK).json(
         emailSent
-          ? {
-              message:
-                'User already exists but is not verified. A new verification email was sent.'
-            }
-          : {
-              message:
-                'User already exists but is not verified. Verification email is disabled.',
-              verificationToken: token
-            }
+          ? createEmailVerificationResponse(
+              'User already exists but is not verified. A new verification email was sent.'
+            )
+          : createEmailVerificationResponse(
+              'User already exists but is not verified. Verification email is disabled.',
+              token
+            )
       );
     } catch (err) {
       logger.error(err);
@@ -198,9 +219,19 @@ export const handleSignUp = async (
         name: username,
         email,
         password: hashedPassword,
-        role
+        role,
+        ...(!config.auth.requireEmailVerification
+          ? { emailVerified: new Date() }
+          : {})
       }
     });
+
+    if (!config.auth.requireEmailVerification) {
+      return res.status(httpStatus.CREATED).json({
+        message: 'New user created',
+        requiresEmailVerification: false
+      });
+    }
 
     const token = await createVerificationToken(newUser.id);
 
@@ -209,11 +240,13 @@ export const handleSignUp = async (
 
     return res.status(httpStatus.CREATED).json(
       emailSent
-        ? { message: 'New user created' }
-        : {
-            message: 'New user created. Verification email is disabled.',
-            verificationToken: token
-          }
+        ? createEmailVerificationResponse(
+            'New user created. Please verify your email before logging in.'
+          )
+        : createEmailVerificationResponse(
+            'New user created. Verification email is disabled.',
+            token
+          )
     );
   } catch (err) {
     logger.error(err);
@@ -264,18 +297,18 @@ export const handleLogin = async (
 
     const isPasswordValid = await argon2.verify(user.password, password);
 
-    // Check if email is verified
-    // Check for verified email after verifying the password to prevent user enumeration attacks
-    if (!user.emailVerified) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        message: 'Your email is not verified! Please confirm your email!'
-      });
-    }
-
     // If password is invalid, return unauthorized
     if (!isPasswordValid) {
       return res.status(httpStatus.UNAUTHORIZED).json({
         message: 'Invalid email or password!'
+      });
+    }
+
+    // Check if email is verified
+    // Check for verified email after verifying the password to prevent user enumeration attacks
+    if (config.auth.requireEmailVerification && !user.emailVerified) {
+      return res.status(httpStatus.UNAUTHORIZED).json({
+        message: 'Your email is not verified! Please confirm your email!'
       });
     }
 

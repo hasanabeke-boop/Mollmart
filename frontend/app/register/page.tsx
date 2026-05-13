@@ -20,6 +20,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+  const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
   const [verificationToken, setVerificationToken] = useState("");
 
   if (user) {
@@ -48,6 +49,7 @@ export default function RegisterPage() {
     try {
       const result = await signup(username.trim(), email, password, role);
       setVerificationToken(result.verificationToken || "");
+      setRequiresEmailVerification(Boolean(result.requiresEmailVerification));
       setSuccess(true);
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
@@ -66,17 +68,30 @@ export default function RegisterPage() {
   };
 
   if (success) {
+    const title = requiresEmailVerification ? "Check your email" : "Account created";
+    const message = requiresEmailVerification
+      ? (
+          <>
+            We&apos;ve sent a verification link to <span className="font-semibold text-slate-900">{email}</span>.
+            Please verify your email before logging in.
+          </>
+        )
+      : (
+          <>
+            Your Mollmart account is ready. You can log in with <span className="font-semibold text-slate-900">{email}</span>.
+          </>
+        );
+
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8] p-8">
         <div className="w-full max-w-md text-center space-y-6 animate-[fadeIn_0.5s_ease-out]">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <span className="material-symbols-outlined text-4xl text-green-600">mark_email_read</span>
+            <span className="material-symbols-outlined text-4xl text-green-600">
+              {requiresEmailVerification ? "mark_email_read" : "check_circle"}
+            </span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">Check your email</h2>
-          <p className="text-slate-600">
-            We&apos;ve sent a verification link to <span className="font-semibold text-slate-900">{email}</span>.
-            Please verify your email before logging in.
-          </p>
+          <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+          <p className="text-slate-600">{message}</p>
           {verificationToken && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-800">
               <p className="font-semibold">Local verification link</p>

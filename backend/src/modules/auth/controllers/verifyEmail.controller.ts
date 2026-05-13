@@ -5,6 +5,7 @@ import prismaClient from '../../../config/prisma';
 import type { EmailRequestBody, TypedRequest } from '../types/types';
 import { sendVerifyEmail } from '../utils/sendEmail.util';
 import logger from '../../../middleware/logger';
+import config from '../../../config/config';
 
 /**
  * Sends Verification email
@@ -41,6 +42,21 @@ export const sendVerificationEmail = async (
     return res
       .status(httpStatus.CONFLICT)
       .json({ error: 'Email already verified' });
+  }
+
+  if (!config.auth.requireEmailVerification) {
+    await prismaClient.user.update({
+      where: { id: user.id },
+      data: { emailVerified: new Date() }
+    });
+
+    await prismaClient.emailVerificationToken.deleteMany({
+      where: { userId: user.id }
+    });
+
+    return res.status(httpStatus.OK).json({
+      message: 'Email verification is disabled. Account is ready to use.'
+    });
   }
 
   // Check if there is an existing verification token that has not expired
