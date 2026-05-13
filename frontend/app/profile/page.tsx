@@ -141,13 +141,15 @@ export default function UserProfilePage() {
             <span className="material-symbols-outlined">person</span>
             Profile Info
           </button>
-          <Link
-            href="/my-requests"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
-          >
-            <span className="material-symbols-outlined">playlist_add</span>
-            My Requests
-          </Link>
+          {user?.role !== "seller" && (
+            <Link
+              href="/my-requests"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
+            >
+              <span className="material-symbols-outlined">playlist_add</span>
+              My Requests
+            </Link>
+          )}
           <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
             <span className="material-symbols-outlined">travel_explore</span>
             Matching Topics
