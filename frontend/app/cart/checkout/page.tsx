@@ -109,7 +109,7 @@ export default function CheckoutPage() {
         <p className="text-slate-600 mb-6">
           Your cart is empty.{" "}
           <Link href="/products" className="text-primary font-semibold underline">
-            Browse catalog
+            Browse showcase
           </Link>
         </p>
       ) : (
@@ -129,7 +129,7 @@ export default function CheckoutPage() {
               ))}
             </select>
             <p className="text-xs text-slate-500 mt-2">
-              Line prices are converted from each product&apos;s listing currency at current rates (same as catalog).
+              Line prices are converted from each product&apos;s listing currency at current rates (same as showcase listings).
             </p>
           </section>
 

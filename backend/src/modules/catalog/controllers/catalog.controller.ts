@@ -45,6 +45,11 @@ export class CatalogController {
     res.status(httpStatus.OK).json(product);
   };
 
+  remove = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.catalogService.remove(req.user!, req.params.id);
+    res.status(httpStatus.OK).json(result);
+  };
+
   uploadImage = async (req: Request, res: Response): Promise<void> => {
     const file = req.file;
     if (file == null) {

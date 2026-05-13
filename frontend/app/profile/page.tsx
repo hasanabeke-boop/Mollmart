@@ -396,8 +396,8 @@ export default function UserProfilePage() {
                   </div>
                 </div>
                 <p className="text-sm text-[#4c9a66] mb-4">
-                  Categories you use for personalized recommendations. Your buyer requests or published catalog items
-                  still help when nothing is selected here.
+                  Categories you use for personalized recommendations. Your buyer requests or published showcase
+                  listings still help when nothing is selected here.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {preferenceLabels.length === 0 ? (
@@ -429,7 +429,7 @@ export default function UserProfilePage() {
                     </Link>
                   ) : (
                     <Link href="/products" className="hover:underline">
-                      Browse catalog
+                      Browse showcase
                     </Link>
                   )}
                 </div>
@@ -463,8 +463,8 @@ export default function UserProfilePage() {
               <>
                 <p className="text-sm text-[#4c9a66] mb-6 max-w-2xl">
                   {prefsMode === "buyer"
-                    ? "Pick catalog categories you care about. They power the Recommendations view on the products page. If you clear everything, we still infer categories from your buyer requests when possible."
-                    : "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published catalog products when possible."}
+                    ? "Pick categories you care about. They power the Recommendations view on the showcase page. If you clear everything, we still infer categories from your buyer requests when possible."
+                    : "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published showcase listings when possible."}
                 </p>
                 {prefError ? (
                   <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -504,7 +504,7 @@ export default function UserProfilePage() {
                     href={prefsMode === "seller" ? "/browse-buyer-requests" : "/products"}
                     className="text-sm font-bold text-[#4c9a66] hover:underline"
                   >
-                    {prefsMode === "seller" ? "Open buyer requests" : "Open catalog"}
+                    {prefsMode === "seller" ? "Open buyer requests" : "Open showcase"}
                   </Link>
                 </div>
               </>

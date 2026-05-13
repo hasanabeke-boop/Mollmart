@@ -78,6 +78,18 @@ export class CatalogRepository {
     });
   }
 
+  async countOrderLinesForProduct(productId: string): Promise<number> {
+    return this.client.catalogOrderLine.count({
+      where: { productId }
+    });
+  }
+
+  async deleteById(id: string): Promise<void> {
+    await this.client.catalogProduct.delete({
+      where: { id }
+    });
+  }
+
   async findPublishedBySlug(slug: string): Promise<CatalogDetailRow | null> {
     return this.client.catalogProduct.findFirst({
       where: { slug, status: CatalogProductStatus.published },

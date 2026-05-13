@@ -67,7 +67,7 @@ export default function AdminCatalogOrdersPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-black text-[#0d1b12]">Catalog orders</h1>
+        <h1 className="text-2xl font-black text-[#0d1b12]">Shop orders</h1>
         <p className="text-sm text-gray-600 mt-1">
           Update fulfillment status and tracking. Buyers see changes on My orders and Tracking.
         </p>

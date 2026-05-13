@@ -140,7 +140,7 @@ export function Header() {
                 className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 href="/products"
               >
-                Catalog
+                Showcase
               </Link>
             )}
             {user && (
@@ -159,9 +159,17 @@ export function Header() {
             {(user?.role === "seller" || user?.role === "admin") && (
               <Link
                 className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                href="/seller/showcase"
+              >
+                My showcase
+              </Link>
+            )}
+            {(user?.role === "seller" || user?.role === "admin") && (
+              <Link
+                className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 href="/seller/products/new"
               >
-                New catalog product
+                New showcase listing
               </Link>
             )}
             {(!user || user.role === "buyer" || user.role === "admin") && (
@@ -274,12 +282,22 @@ export function Header() {
                     )}
                     {(user.role === "seller" || user.role === "admin") && (
                       <Link
+                        href="/seller/showcase"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">grid_view</span>
+                        My showcase
+                      </Link>
+                    )}
+                    {(user.role === "seller" || user.role === "admin") && (
+                      <Link
                         href="/seller/products/new"
                         onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[20px]">inventory_2</span>
-                        New catalog product
+                        New showcase listing
                       </Link>
                     )}
                     <div className="border-t border-gray-100 mt-1 pt-1">

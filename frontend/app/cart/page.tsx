@@ -221,9 +221,9 @@ export default function CartPage() {
 
           {!loading && items.length === 0 && (
             <p className="text-sm text-gray-500 mt-2">
-              Your cart is empty. Add products from the{" "}
+              Your cart is empty. Add items from the{" "}
               <Link href="/products" className="text-primary font-semibold underline">
-                catalog
+                showcase
               </Link>
               .
             </p>

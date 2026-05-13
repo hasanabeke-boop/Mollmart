@@ -184,13 +184,13 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
 
     const buyerBody =
       firstLineTitle != null
-        ? `Your catalog order is confirmed (${totalLabel}). Includes: ${firstLineTitle}.`
-        : `Your catalog order is confirmed (${totalLabel}).`;
+        ? `Your shop order is confirmed (${totalLabel}). Includes: ${firstLineTitle}.`
+        : `Your shop order is confirmed (${totalLabel}).`;
 
     const sellerBody =
       firstLineTitle != null
-        ? `You have a new catalog sale (${totalLabel}). First item: ${firstLineTitle}.`
-        : `You have a new catalog sale (${totalLabel}).`;
+        ? `You have a new sale from checkout (${totalLabel}). First item: ${firstLineTitle}.`
+        : `You have a new sale from checkout (${totalLabel}).`;
 
     return [
       {
@@ -205,7 +205,7 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
       {
         userId: sellerId,
         type: 'shop_order_placed',
-        title: 'New catalog sale',
+        title: 'New sale (checkout)',
         body: sellerBody,
         referenceType: 'catalog_order',
         referenceId: orderId,
@@ -226,7 +226,7 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
       return [];
     }
 
-    const body = `Catalog order status changed from "${previousStatus}" to "${newStatus}".`;
+    const body = `Shop order status changed from "${previousStatus}" to "${newStatus}".`;
 
     return [
       {

@@ -1,15 +1,13 @@
 'use client';
 
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/context/ToastContext";
 import { apiFetch } from "@/lib/api";
-import { addToShopCart } from "@/lib/shop";
-import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
+import { normalizeCatalogCurrencyCode } from "@/lib/catalog";
 
-type CatalogProductDetail = {
+type ShowcaseDetail = {
   id: string;
   slug: string;
   title: string;
@@ -26,23 +24,17 @@ type CatalogProductDetail = {
   seller: { id: string; name: string };
 };
 
-export default function ProductDetailsPage() {
+export default function ShowcaseDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useAuth();
-  const toast = useToast();
   const slug = typeof params.slug === "string" ? params.slug : "";
-  const displayCurrency = useMemo(
-    () => normalizeCatalogCurrencyCode(searchParams.get("currency")),
-    [searchParams],
-  );
+  const displayCurrency = useMemo(() => normalizeCatalogCurrencyCode("USD"), []);
 
-  const [product, setProduct] = useState<CatalogProductDetail | null>(null);
+  const [product, setProduct] = useState<ShowcaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [addingCart, setAddingCart] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -53,7 +45,7 @@ export default function ProductDetailsPage() {
       try {
         const qs = new URLSearchParams();
         qs.set("currency", displayCurrency);
-        const data = await apiFetch<CatalogProductDetail>(
+        const data = await apiFetch<ShowcaseDetail>(
           `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}?${qs.toString()}`,
           { service: "catalog" },
         );
@@ -65,7 +57,7 @@ export default function ProductDetailsPage() {
         const err = e as Error & { status?: number };
         if (!cancelled) {
           setProduct(null);
-          setError(err.status === 404 ? "Product not found." : err.message || "Failed to load product");
+          setError(err.status === 404 ? "Listing not found." : err.message || "Failed to load listing");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -85,10 +77,15 @@ export default function ProductDetailsPage() {
 
   const mainImage = images[activeIndex] ?? "";
 
+  const requestHref = useMemo(() => {
+    if (!product?.slug) return "/create-product-request";
+    return `/create-product-request?fromShowcase=${encodeURIComponent(product.slug)}`;
+  }, [product?.slug]);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 py-16 text-center text-slate-500">
-        Loading product…
+        Loading…
       </div>
     );
   }
@@ -96,44 +93,15 @@ export default function ProductDetailsPage() {
   if (error || !product) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-slate-700 mb-4">{error || "Product unavailable."}</p>
+        <p className="text-slate-700 mb-4">{error || "Listing unavailable."}</p>
         <Link href="/products" className="text-primary font-semibold hover:underline">
-          Back to catalog
+          Back to showcase
         </Link>
       </div>
     );
   }
 
-  const discountPct =
-    product.compareAtPrice != null && product.compareAtPrice > product.price
-      ? Math.round((1 - product.price / product.compareAtPrice) * 100)
-      : null;
-
   const isOwnListing = user?.id === product.seller.id;
-
-  const handleAddToCart = async () => {
-    if (!user) {
-      router.push(`/login?returnUrl=${encodeURIComponent(`/products/${slug}?currency=${displayCurrency}`)}`);
-      return;
-    }
-    if (product.quantity < 1) {
-      toast.error("This product is out of stock.");
-      return;
-    }
-    if (isOwnListing) {
-      toast.error("You cannot add your own product to the cart.");
-      return;
-    }
-    setAddingCart(true);
-    try {
-      await addToShopCart(product.id, 1);
-      toast.success("Added to cart.");
-    } catch (e: unknown) {
-      toast.error((e as Error).message || "Could not add to cart");
-    } finally {
-      setAddingCart(false);
-    }
-  };
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 md:px-10 lg:px-20 py-6">
@@ -143,7 +111,7 @@ export default function ProductDetailsPage() {
         </Link>
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
         <Link href="/products" className="text-[#4c9a66] text-sm font-medium hover:underline">
-          Catalog
+          Showcase
         </Link>
         {product.category && (
           <>
@@ -199,43 +167,10 @@ export default function ProductDetailsPage() {
             <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">{product.title}</h1>
           </div>
 
-          <div className="p-5 rounded-xl bg-white border border-[#e7f3eb] shadow-sm">
-            <p className="text-[#4c9a66] text-xs font-bold uppercase tracking-wider">Price</p>
-            <div className="flex items-end gap-3 flex-wrap mt-1">
-              <p className="text-[#0d1b12] text-4xl font-black tracking-tight">
-                {formatCatalogMoney(product.price, product.currency, 2)}
-              </p>
-              {product.compareAtPrice != null && product.compareAtPrice > product.price && (
-                <>
-                  <p className="text-[#4c9a66] text-lg line-through mb-1.5">
-                    {formatCatalogMoney(product.compareAtPrice, product.currency, 2)}
-                  </p>
-                  {discountPct != null && (
-                    <span className="mb-2 px-2 py-0.5 rounded-full bg-primary/20 text-[#0d1b12] text-xs font-bold">
-                      −{discountPct}%
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-            {product.listedPrice != null &&
-              product.listedCurrency &&
-              product.listedCurrency.trim().toUpperCase() !== product.currency.trim().toUpperCase() && (
-                <p className="mt-2 text-xs text-[#4c9a66]">
-                  Listed at{" "}
-                  <span className="font-semibold text-[#0d1b12]">
-                    {formatCatalogMoney(product.listedPrice, product.listedCurrency, 2)}
-                  </span>
-                </p>
-              )}
-            <p className="mt-3 text-sm text-[#0d1b12]/80">
-              {product.quantity > 0 ? (
-                <span>
-                  <span className="font-semibold text-emerald-700">In stock:</span> {product.quantity} available
-                </span>
-              ) : (
-                <span className="font-semibold text-amber-800">Out of stock</span>
-              )}
+          <div className="p-5 rounded-xl bg-[#f6faf7] border border-[#e7f3eb]">
+            <p className="text-[#0d1b12] text-sm leading-relaxed">
+              This is a <span className="font-bold">seller showcase</span> — not a buy-now price. On Mollmart you set
+              your budget in a <span className="font-bold">buyer request</span>; sellers respond with offers.
             </p>
           </div>
 
@@ -245,32 +180,41 @@ export default function ProductDetailsPage() {
                 {product.seller.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-col">
-                <p className="text-[#0d1b12] font-bold text-sm">Sold by {product.seller.name}</p>
-                <p className="text-xs text-[#4c9a66]">Catalog seller</p>
+                <p className="text-[#0d1b12] font-bold text-sm">{product.seller.name}</p>
+                <p className="text-xs text-[#4c9a66]">Seller</p>
               </div>
             </div>
-            <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-              <div className="flex flex-wrap gap-2 w-full sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => void handleAddToCart()}
-                  disabled={addingCart || product.quantity < 1 || isOwnListing}
-                  className="flex-1 sm:flex-none min-h-10 px-4 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-[#0fd650] disabled:opacity-50"
-                >
-                  {addingCart ? "Adding…" : "Add to cart"}
-                </button>
-                <Link
-                  href="/cart"
-                  className="flex-1 sm:flex-none min-h-10 px-4 rounded-lg border border-[#e7f3eb] text-[#0d1b12] text-sm font-bold flex items-center justify-center hover:bg-[#f6f8f6]"
-                >
-                  View cart
-                </Link>
-              </div>
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[200px]">
+              {isOwnListing ? (
+                <p className="text-sm text-slate-600">This is your listing.</p>
+              ) : (
+                <>
+                  <Link
+                    href={user ? requestHref : `/login?returnUrl=${encodeURIComponent(requestHref)}`}
+                    className="min-h-10 px-4 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-[#0fd650] flex items-center justify-center text-center"
+                  >
+                    Request something like this
+                  </Link>
+                  <p className="text-xs text-[#4c9a66] text-center sm:text-right">
+                    You choose the price in the next step.
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
           <div className="pt-4 border-t border-[#e7f3eb] text-[#0d1b12]/80 text-sm space-y-3 whitespace-pre-wrap">
             {product.description}
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => router.push("/products")}
+              className="text-primary font-semibold hover:underline"
+            >
+              ← More showcase
+            </button>
           </div>
         </div>
       </div>

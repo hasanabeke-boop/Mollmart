@@ -6,6 +6,7 @@ import { catalogUploadSingle } from '../../middleware/catalogImageUpload';
 import CatalogController from '../../controllers/catalog.controller';
 import {
   catalogCreateSchema,
+  catalogIdParamSchema,
   catalogListQuerySchema,
   catalogMineQuerySchema,
   catalogSlugParamsSchema,
@@ -50,6 +51,13 @@ export function createCatalogRouter(controller: CatalogController): Router {
     requireRoles('seller', 'admin'),
     validate(catalogUpdateSchema),
     asyncHandler(controller.update)
+  );
+  router.delete(
+    '/products/:id',
+    authenticate,
+    requireRoles('seller', 'admin'),
+    validate(catalogIdParamSchema),
+    asyncHandler(controller.remove)
   );
 
   return router;

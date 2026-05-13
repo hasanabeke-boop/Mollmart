@@ -399,7 +399,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                 You also have a general city field above; use buyer city for matching preferences if you keep them different.
               </p>
               <p className="text-xs text-gray-500">
-                Shopping categories for catalog recommendations are under <span className="font-semibold">Preferences</span> on your profile page.
+                Shopping categories for showcase recommendations are under <span className="font-semibold">Preferences</span> on your profile page.
               </p>
             </section>
           )}

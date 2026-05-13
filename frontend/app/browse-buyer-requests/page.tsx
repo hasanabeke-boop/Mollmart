@@ -56,7 +56,7 @@ function formatBudget(min?: number, max?: number): string {
 type FilterTab = "recommendations" | "all" | "published" | "has_offers";
 
 const SELLER_REC_HINT =
-  "To see recommended buyer requests, publish catalog products in your categories or choose selling preferences in your profile settings.";
+  "To see recommended buyer requests, publish showcase listings in your categories or choose selling preferences in your profile settings.";
 
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "recommendations", label: "Recommendations" },
@@ -561,7 +561,7 @@ export default function BrowseBuyerRequestsPage() {
           <p className="text-slate-600 text-sm mb-4">{SELLER_REC_HINT}</p>
           <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
             <Link href="/seller/products/new" className="text-blue-600 hover:underline">
-              List a product
+              Add a showcase listing
             </Link>
             <Link href="/profile" className="text-blue-600 hover:underline">
               Profile settings

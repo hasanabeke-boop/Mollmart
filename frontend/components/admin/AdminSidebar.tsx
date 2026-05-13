@@ -13,7 +13,7 @@ const NAV_ITEMS: {
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/admin" },
   { id: "categories", icon: "category", label: "Categories", href: "/admin/categories" },
-  { id: "orders", icon: "receipt_long", label: "Catalog orders", href: "/admin/orders" },
+  { id: "orders", icon: "receipt_long", label: "Shop orders", href: "/admin/orders" },
   { id: "moderation", icon: "gavel", label: "Moderation", href: "/admin/moderation" },
   { id: "users", icon: "group", label: "Users", href: "/admin/users" },
 ];

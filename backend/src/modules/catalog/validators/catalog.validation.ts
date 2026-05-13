@@ -55,6 +55,12 @@ export const catalogCreateSchema = {
   })
 };
 
+export const catalogIdParamSchema = {
+  params: Joi.object({
+    id: Joi.string().trim().required()
+  })
+};
+
 export const catalogUpdateSchema = {
   params: Joi.object({
     id: Joi.string().trim().required()

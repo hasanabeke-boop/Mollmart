@@ -271,6 +271,26 @@ export class CatalogService {
     return this.serializeListRow(row);
   }
 
+  async remove(user: AuthUser, id: string): Promise<{ outcome: 'deleted' | 'archived' }> {
+    const current = await this.repo.findById(id);
+    if (current == null) {
+      throw notFound('Product not found');
+    }
+
+    if (user.role !== 'admin' && current.sellerId !== user.id) {
+      throw forbidden('Not allowed to delete this product');
+    }
+
+    const lines = await this.repo.countOrderLinesForProduct(id);
+    if (lines > 0) {
+      await this.repo.update(id, { status: CatalogProductStatus.archived });
+      return { outcome: 'archived' };
+    }
+
+    await this.repo.deleteById(id);
+    return { outcome: 'deleted' };
+  }
+
   private parseStatus(s?: string | null): CatalogProductStatus {
     if (s === 'published') {
       return CatalogProductStatus.published;

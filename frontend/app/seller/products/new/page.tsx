@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetchWithRefresh } from "@/lib/api";
-import { CATALOG_CURRENCIES, uploadCatalogImage } from "@/lib/catalog";
+import { uploadCatalogImage } from "@/lib/catalog";
 
 type Category = {
   id: string;
@@ -35,10 +35,6 @@ export default function NewCatalogProductPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [price, setPrice] = useState("");
-  const [compareAtPrice, setCompareAtPrice] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [quantity, setQuantity] = useState("1");
   const [imageUrl, setImageUrl] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [galleryUrlLines, setGalleryUrlLines] = useState("");
@@ -165,20 +161,14 @@ export default function NewCatalogProductPage() {
           title: title.trim(),
           description: description.trim(),
           categoryId,
-          price: Number(price),
-          currency: currency.trim().toUpperCase(),
+          price: 0.01,
+          currency: "USD",
           imageUrl: imageUrl.trim(),
           status,
           galleryUrls: mergedGallery,
-          quantity: Math.max(0, Math.floor(Number(quantity) || 0)),
+          quantity: 0,
+          compareAtPrice: null,
         };
-
-        const cap = compareAtPrice.trim();
-        if (cap.length > 0) {
-          body.compareAtPrice = Number(cap);
-        } else {
-          body.compareAtPrice = null;
-        }
 
         const created = await apiFetchWithRefresh<{ slug: string }>("/api/v1/catalog/products", {
           method: "POST",
@@ -200,13 +190,9 @@ export default function NewCatalogProductPage() {
       title,
       description,
       categoryId,
-      price,
-      compareAtPrice,
-      currency,
       imageUrl,
       galleryUrls,
       galleryUrlLines,
-      quantity,
       status,
       router,
     ],
@@ -219,7 +205,7 @@ export default function NewCatalogProductPage() {
   if (!canUse) {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-slate-700 mb-4">Only seller or admin accounts can list catalog products.</p>
+        <p className="text-slate-700 mb-4">Only seller or admin accounts can add showcase listings.</p>
         <Link href="/login" className="text-primary font-semibold hover:underline">
           Log in
         </Link>
@@ -230,9 +216,10 @@ export default function NewCatalogProductPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 pb-16">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#0d1b12]">New catalog product</h1>
+        <h1 className="text-2xl font-bold text-[#0d1b12]">New showcase listing</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Upload images from your computer or paste HTTPS links. Published items appear in the catalog.
+          Show buyers what you can deliver — photos and story only. Buyers post requests with their own budget; this
+          page is for inspiration, not fixed prices. (Cart and orders stay available elsewhere for later use.)
         </p>
       </div>
 
@@ -276,65 +263,6 @@ export default function NewCatalogProductPage() {
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Price</label>
-            <input
-              required
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Quantity in stock</label>
-            <input
-              required
-              type="number"
-              min="0"
-              step="1"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-            />
-            <p className="mt-1 text-xs text-slate-500">Use 0 if this is a digital or made-to-order listing.</p>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Compare-at price (optional)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={compareAtPrice}
-            onChange={(e) => setCompareAtPrice(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-          />
-          <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-            Optional higher &quot;was&quot; price (for example old retail) so the catalog can show a discount vs your
-            real selling price. Leave empty if you do not need a crossed-out reference price.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-          >
-            {CATALOG_CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.label}
               </option>
             ))}
           </select>
@@ -553,7 +481,7 @@ export default function NewCatalogProductPage() {
             onChange={(e) => setStatus(e.target.value as typeof status)}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
           >
-            <option value="published">Published (visible in catalog)</option>
+            <option value="published">Published (visible in showcase)</option>
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </select>
@@ -565,7 +493,7 @@ export default function NewCatalogProductPage() {
             disabled={submitting || !imageUrl.trim()}
             className="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-white shadow hover:opacity-95 disabled:opacity-50"
           >
-            {submitting ? "Saving…" : "Create product"}
+            {submitting ? "Saving…" : "Publish listing"}
           </button>
           <Link
             href="/products"

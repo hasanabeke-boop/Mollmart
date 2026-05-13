@@ -122,8 +122,8 @@ export default function OrdersPage() {
         </h1>
         <p className="text-[#4c9a66]">
           {isSellerView
-            ? "Catalog orders from buyers who purchased your listings — track status and fulfillment."
-            : "Catalog purchases — track delivery and order details."}
+            ? "Shop orders from buyers who used checkout on your listings — track status and fulfillment."
+            : "Shop purchases — track delivery and order details."}
         </p>
       </div>
 
@@ -241,7 +241,7 @@ export default function OrdersPage() {
                       </Link>
                     ) : (
                       <Link href="/products" className="text-primary font-semibold underline">
-                        Shop catalog
+                        Browse showcase
                       </Link>
                     )}
                   </td>
