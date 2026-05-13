@@ -145,6 +145,15 @@ export class RequestService {
     return this.requestRepository.transitionStatus(requestId, 'cancelled', user.id, 'Cancelled by buyer');
   }
 
+  async deleteDraft(user: AuthUser, requestId: string): Promise<void> {
+    const current = await this.getOwnedRequest(user, requestId);
+    if (current.status !== 'draft') {
+      throw badRequest('Only draft requests can be permanently deleted');
+    }
+
+    await this.requestRepository.deleteById(requestId);
+  }
+
   async transitionSystemStatus(
     actorId: string,
     requestId: string,
@@ -205,7 +214,7 @@ export class RequestService {
   }
 
   private validateDeadline(deadlineAt?: string): void {
-    if (deadlineAt == null) {
+    if (deadlineAt == null || deadlineAt.trim() === '') {
       return;
     }
 

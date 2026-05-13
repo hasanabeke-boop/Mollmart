@@ -13,6 +13,13 @@ const CATEGORIES = [
   { value: "sustainability", label: "Sustainability" },
 ];
 
+const CURRENCIES = [
+  { code: "USD", label: "USD — US Dollar" },
+  { code: "EUR", label: "EUR — Euro" },
+  { code: "RUB", label: "RUB — Russian Ruble" },
+  { code: "KZT", label: "KZT — Kazakhstani Tenge" },
+];
+
 const MAX_DESC = 1000;
 const MAX_FILES = 3;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -32,7 +39,10 @@ type ImagePreview = {
 export default function CreateProductRequestPage() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
+  const [currency, setCurrency] = useState("USD");
   const [budget, setBudget] = useState("");
+  const [deadlineLocal, setDeadlineLocal] = useState("");
+  const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImagePreview[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -66,14 +76,20 @@ export default function CreateProductRequestPage() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         title: title.trim(),
         description: description.trim(),
         categoryId: category,
         budgetMax: Number(budget),
-        currency: "USD",
+        currency,
         isNegotiable: true,
       };
+      if (deadlineLocal.trim()) {
+        body.deadlineAt = new Date(deadlineLocal).toISOString();
+      }
+      if (location.trim()) {
+        body.location = location.trim().slice(0, 150);
+      }
 
       const created = await apiFetchWithRefresh<{ id: string }>("/api/v1/requests", {
         method: "POST",
@@ -82,15 +98,6 @@ export default function CreateProductRequestPage() {
       });
 
       setCreatedId(created.id);
-
-      try {
-        await apiFetchWithRefresh(`/api/v1/requests/${created.id}/publish`, {
-          method: "POST",
-          service: "request",
-        });
-      } catch {
-        // publish might not be required; request is still created
-      }
 
       setSubmitted(true);
     } catch (err: unknown) {
@@ -137,7 +144,10 @@ export default function CreateProductRequestPage() {
   const reset = () => {
     setTitle("");
     setCategory("");
+    setCurrency("USD");
     setBudget("");
+    setDeadlineLocal("");
+    setLocation("");
     setDescription("");
     images.forEach((img) => URL.revokeObjectURL(img.url));
     setImages([]);
@@ -155,18 +165,17 @@ export default function CreateProductRequestPage() {
             </span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 mb-3">
-            Request Posted!
+            Draft saved
           </h1>
           <p className="text-slate-500 mb-2 text-lg">
-            Your request for{" "}
-            <span className="font-bold text-slate-800">
-              &ldquo;{title}&rdquo;
-            </span>{" "}
-            is now live.
+            &ldquo;{title}&rdquo; is saved as a{" "}
+            <span className="font-bold text-slate-800">draft</span>. Sellers
+            don&apos;t see it until you publish from{" "}
+            <span className="font-semibold text-slate-700">My Requests</span>.
           </p>
           <p className="text-slate-400 text-sm mb-8">
-            Verified sellers will start sending you offers. You&apos;ll get a
-            notification when someone responds.
+            You can edit or delete the draft anytime. Publish when you&apos;re
+            ready for offers.
           </p>
 
           <div className="bg-slate-50 rounded-2xl p-6 mb-8 text-left space-y-3">
@@ -185,9 +194,36 @@ export default function CreateProductRequestPage() {
             <div className="flex justify-between">
               <span className="text-sm text-slate-500">Budget</span>
               <span className="text-sm font-semibold text-slate-900">
-                ${Number(budget).toLocaleString()}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency,
+                  maximumFractionDigits: 0,
+                }).format(Number(budget))}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-slate-500">Currency</span>
+              <span className="text-sm font-semibold text-slate-900">{currency}</span>
+            </div>
+            {deadlineLocal && (
+              <div className="flex justify-between gap-4">
+                <span className="text-sm text-slate-500 shrink-0">Deadline</span>
+                <span className="text-sm font-semibold text-slate-900 text-right">
+                  {new Date(deadlineLocal).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+              </div>
+            )}
+            {location.trim() && (
+              <div className="flex justify-between gap-4">
+                <span className="text-sm text-slate-500 shrink-0">Location</span>
+                <span className="text-sm font-semibold text-slate-900 text-right">
+                  {location.trim()}
+                </span>
+              </div>
+            )}
             {createdId && (
               <div className="flex justify-between">
                 <span className="text-sm text-slate-500">Request ID</span>
@@ -208,13 +244,13 @@ export default function CreateProductRequestPage() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
-              href="/browse-buyer-requests"
+              href="/my-requests"
               className="flex-1 bg-[#607afb] text-white py-3.5 rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-[20px]">
-                visibility
+                inventory_2
               </span>
-              Browse Requests
+              Open My Requests
             </Link>
             <button
               type="button"
@@ -379,28 +415,55 @@ export default function CreateProductRequestPage() {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Your Budget / Target Price
+                    Currency
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-3.5 text-slate-400 font-medium">
-                      $
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-4 top-3.5 text-slate-400 pointer-events-none">
+                      expand_more
                     </span>
-                    <input
-                      type="number"
-                      value={budget}
-                      onChange={(e) => {
-                        setBudget(e.target.value);
-                        if (errors.budget)
-                          setErrors((p) => ({ ...p, budget: undefined }));
-                      }}
-                      className={`w-full pl-8 pr-4 py-3 rounded-xl border transition-all outline-none text-slate-900 ${
-                        errors.budget
-                          ? "border-red-400 focus:ring-2 focus:ring-red-400"
-                          : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                      placeholder="0.00"
-                    />
                   </div>
+                  <p className="text-xs text-slate-400">
+                    Budget will be stored in this currency.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Budget / target price ({currency})
+                  </label>
+                  <input
+                    type="number"
+                    value={budget}
+                    onChange={(e) => {
+                      setBudget(e.target.value);
+                      if (errors.budget)
+                        setErrors((p) => ({ ...p, budget: undefined }));
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl border transition-all outline-none text-slate-900 ${
+                      errors.budget
+                        ? "border-red-400 focus:ring-2 focus:ring-red-400"
+                        : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    }`}
+                    placeholder="0"
+                    min={0}
+                    step={0.01}
+                  />
+                  <p className="text-xs text-slate-400">
+                    Enter the amount in the currency you selected above.
+                  </p>
                   {errors.budget && (
                     <p className="text-xs text-red-500 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">
@@ -409,6 +472,37 @@ export default function CreateProductRequestPage() {
                       {errors.budget}
                     </p>
                   )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Deadline{" "}
+                    <span className="font-normal text-slate-400">(optional)</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={deadlineLocal}
+                    onChange={(e) => setDeadlineLocal(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-400">
+                    Must be in the future when you publish the request.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    City / region{" "}
+                    <span className="font-normal text-slate-400">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value.slice(0, 150))}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. Berlin, Germany"
+                  />
                 </div>
               </div>
             </div>
@@ -577,11 +671,11 @@ export default function CreateProductRequestPage() {
                 className="w-full bg-[#607afb] hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
-                  <span>Posting...</span>
+                  <span>Saving...</span>
                 ) : (
                   <>
-                    <span>Post Request</span>
-                    <span className="material-symbols-outlined text-[20px]">send</span>
+                    <span>Save as draft</span>
+                    <span className="material-symbols-outlined text-[20px]">save</span>
                   </>
                 )}
               </button>

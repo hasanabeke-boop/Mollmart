@@ -1,4 +1,4 @@
-import prisma from '../src/config/prisma';
+import prisma from '../config/prisma';
 
 async function main(): Promise<void> {
   const categories = [

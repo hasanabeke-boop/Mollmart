@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/landing/Header";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 export const metadata: Metadata = {
   title: "Mollmart",
@@ -23,10 +24,12 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <AuthProvider>
-          <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
-            <Header />
-            <main className="flex-1">{children}</main>
-          </div>
+          <ToastProvider>
+            <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
+              <Header />
+              <main className="flex-1">{children}</main>
+            </div>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>
