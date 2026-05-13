@@ -1,6 +1,8 @@
 import config from '../../../config/config';
+import prisma from '../../../config/prisma';
 import { getRedisSubscriber } from '../../../config/redis';
 import logger from '../../../middleware/logger';
+import { sendNotificationEmail } from '../../auth/utils/sendEmail.util';
 import { NotificationRepositoryLike } from '../repositories/notification.repository';
 import { EventEnvelope } from '../types/notification';
 import { NotificationEventMapperLike } from './notification-event-mapper.service';
@@ -10,7 +12,9 @@ const baseChannels = [
   'offer.created',
   'offer.accepted',
   'chat.message.created',
-  'user.blocked'
+  'user.blocked',
+  'shop.order.placed',
+  'shop.order.status_changed'
 ] as const;
 
 export class NotificationWorker {
@@ -62,7 +66,22 @@ export class NotificationWorker {
 
     for (const notification of mapped) {
       try {
-        await this.notificationRepository.createIfNotExists(notification);
+        const created = await this.notificationRepository.createIfNotExists(notification);
+        if (created != null) {
+          try {
+            const recipient = await prisma.user.findUnique({
+              where: { id: notification.userId },
+              select: { email: true }
+            });
+            if (recipient?.email != null && recipient.email.length > 0) {
+              await sendNotificationEmail(recipient.email, notification.title, notification.body);
+            }
+          } catch (emailError) {
+            logger.warn(
+              `notification-worker.email_failed user=${notification.userId}: ${(emailError as Error).message}`
+            );
+          }
+        }
       } catch (error) {
         logger.warn(
           `Failed to persist notification for ${notification.userId} on ${input.channel}: ${(error as Error).message}`

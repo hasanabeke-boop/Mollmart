@@ -3,6 +3,7 @@ import type { AuthUser } from '../../request/types/express';
 import { badRequest, forbidden, notFound } from '../../request/utils/apiError';
 import { convertUsdQuoted, getUsdQuoteRates, roundCatalogMoney } from '../../catalog/services/exchangeRates';
 import ShopRepository, { type CartRow, type OrderRow } from '../repositories/shop.repository';
+import ShopEventPublisher, { type ShopEventPublisherLike } from './shop-event.service';
 
 const CHECKOUT_CURRENCIES = new Set(['USD', 'EUR', 'RUB', 'KZT']);
 
@@ -20,7 +21,10 @@ export type AdminPatchOrderInput = {
 };
 
 export class ShopService {
-  constructor(private readonly repo: ShopRepository) {}
+  constructor(
+    private readonly repo: ShopRepository,
+    private readonly events: ShopEventPublisherLike = new ShopEventPublisher()
+  ) {}
 
   async getCart(user: AuthUser) {
     const rows = await this.repo.findCartRows(user.id);
@@ -178,6 +182,18 @@ export class ShopService {
         }
       }
 
+      for (const o of orders) {
+        const firstTitle = o.lines[0]?.title;
+        await this.events.publishOrderPlaced({
+          orderId: o.id,
+          buyerId: o.buyerId,
+          sellerId: o.sellerId,
+          total: Number(o.total),
+          currency: o.currency,
+          ...(firstTitle !== undefined ? { firstLineTitle: firstTitle } : {})
+        });
+      }
+
       return { orders: orders.map((o) => this.serializeOrder(o)) };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '';
@@ -190,6 +206,13 @@ export class ShopService {
 
   async listMyOrders(user: AuthUser, page: number, limit: number, status?: string) {
     const st = this.parseOrderStatus(status);
+    if (user.role === 'seller') {
+      const result = await this.repo.listOrdersForSeller(user.id, page, limit, st);
+      return {
+        items: result.items.map((o: OrderRow) => this.serializeOrder(o)),
+        meta: result.meta
+      };
+    }
     const result = await this.repo.listOrdersForBuyer(user.id, page, limit, st);
     return {
       items: result.items.map((o: OrderRow) => this.serializeOrder(o)),
@@ -198,7 +221,10 @@ export class ShopService {
   }
 
   async getMyOrder(user: AuthUser, orderId: string) {
-    const row = await this.repo.getOrderForBuyer(orderId, user.id);
+    const row =
+      user.role === 'seller'
+        ? await this.repo.getOrderForSeller(orderId, user.id)
+        : await this.repo.getOrderForBuyer(orderId, user.id);
     if (row == null) {
       throw notFound('Order not found');
     }
@@ -219,6 +245,8 @@ export class ShopService {
     if (current == null) {
       throw notFound('Order not found');
     }
+
+    const previousStatus = current.status;
 
     const data: {
       status?: CatalogOrderStatus;
@@ -244,6 +272,17 @@ export class ShopService {
     if (updated == null) {
       throw notFound('Order not found');
     }
+
+    if (input.status !== undefined && updated.status !== previousStatus) {
+      await this.events.publishOrderStatusChanged({
+        orderId: updated.id,
+        buyerId: updated.buyerId,
+        sellerId: updated.sellerId,
+        previousStatus,
+        newStatus: updated.status
+      });
+    }
+
     return this.serializeOrder(updated);
   }
 

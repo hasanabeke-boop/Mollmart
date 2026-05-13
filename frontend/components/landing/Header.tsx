@@ -3,6 +3,7 @@
 import { Search } from 'lucide-react';
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetchWithRefresh } from "@/lib/api";
 import { fetchShopCart } from "@/lib/shop";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -13,10 +14,11 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [cartCount, setCartCount] = useState<number | null>(null);
+  const [notifCount, setNotifCount] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || user.role === "seller") {
       setCartCount(null);
       return;
     }
@@ -32,6 +34,36 @@ export function Header() {
     })();
     return () => {
       cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setNotifCount(null);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const d = await apiFetchWithRefresh<{ count?: number }>("/api/v1/notifications/unread-count", {
+          service: "notification",
+        });
+        const c = typeof d?.count === "number" ? d.count : 0;
+        if (!cancelled) setNotifCount(c);
+      } catch {
+        if (!cancelled) setNotifCount(null);
+      }
+    };
+    void load();
+    const t = setInterval(load, 60_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [user]);
 
@@ -103,18 +135,20 @@ export function Header() {
                 Browse
               </Link>
             )}
-            <Link
-              className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
-              href="/products"
-            >
-              Catalog
-            </Link>
+            {user?.role !== "seller" && (
+              <Link
+                className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                href="/products"
+              >
+                Catalog
+              </Link>
+            )}
             {user && (
               <Link
                 className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 href="/orders"
               >
-                Orders
+                {user.role === "seller" ? "Shop orders" : "Orders"}
               </Link>
             )}
             {(!user || user.role === "seller" || user.role === "admin") && (
@@ -141,18 +175,20 @@ export function Header() {
             <div className="w-20 h-8 bg-gray-100 rounded-lg animate-pulse" />
           ) : user ? (
             <div className="flex items-center gap-3">
-              <Link
-                href="/cart"
-                className="relative flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
-                aria-label="Shopping cart"
-              >
-                <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
-                {cartCount != null && cartCount > 0 ? (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black border-2 border-white">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                ) : null}
-              </Link>
+              {user.role !== "seller" && (
+                <Link
+                  href="/cart"
+                  className="relative flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
+                  aria-label="Shopping cart"
+                >
+                  <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+                  {cartCount != null && cartCount > 0 ? (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black border-2 border-white">
+                      {cartCount > 99 ? "99+" : cartCount}
+                    </span>
+                  ) : null}
+                </Link>
+              )}
               <Link
                 href="/chat"
                 className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
@@ -161,10 +197,14 @@ export function Header() {
               </Link>
               <Link
                 href="/notifications"
-                className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12] relative"
+                className="relative flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
               >
                 <span className="material-symbols-outlined text-[22px]">notifications</span>
-                <span className="absolute top-2 right-2 size-2 bg-primary rounded-full" />
+                {notifCount != null && notifCount > 0 ? (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black border-2 border-white">
+                    {notifCount > 99 ? "99+" : notifCount}
+                  </span>
+                ) : null}
               </Link>
               <div className="relative" ref={menuRef}>
                 <button
@@ -186,21 +226,23 @@ export function Header() {
                       <p className="text-sm font-semibold text-[#0d1b12] truncate">{user.name || "User"}</p>
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
-                    <Link
-                      href="/cart"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
-                      Cart
-                    </Link>
+                    {user.role !== "seller" && (
+                      <Link
+                        href="/cart"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
+                        Cart
+                      </Link>
+                    )}
                     <Link
                       href="/orders"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                     >
                       <span className="material-symbols-outlined text-[20px]">receipt_long</span>
-                      My orders
+                      {user.role === "seller" ? "Shop orders" : "My orders"}
                     </Link>
                     <Link
                       href="/profile"
@@ -210,14 +252,16 @@ export function Header() {
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Profile
                     </Link>
-                    <Link
-                      href="/my-requests"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">playlist_add</span>
-                      My Requests
-                    </Link>
+                    {user.role !== "seller" && (
+                      <Link
+                        href="/my-requests"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">playlist_add</span>
+                        My Requests
+                      </Link>
+                    )}
                     {(user.role === "seller" || user.role === "admin") && (
                       <Link
                         href="/seller/dashboard"

@@ -5,6 +5,7 @@ import { NotificationRecordInput } from '../types/notification';
 export interface NotificationRepositoryLike {
   createIfNotExists(input: NotificationRecordInput): Promise<Notification | null>;
   listForUser(userId: string, isRead?: boolean): Promise<Notification[]>;
+  countUnread(userId: string): Promise<number>;
   markRead(userId: string, notificationId: string): Promise<Notification | null>;
   markAllRead(userId: string): Promise<number>;
 }
@@ -47,6 +48,12 @@ export class NotificationRepository implements NotificationRepositoryLike {
       orderBy: {
         createdAt: 'desc'
       }
+    });
+  }
+
+  async countUnread(userId: string): Promise<number> {
+    return this.client.notification.count({
+      where: { userId, isRead: false }
     });
   }
 

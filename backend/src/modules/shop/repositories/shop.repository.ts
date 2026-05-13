@@ -131,6 +131,41 @@ export class ShopRepository {
     });
   }
 
+  async listOrdersForSeller(sellerId: string, page: number, limit: number, status?: CatalogOrderStatus) {
+    const p = normalizePage(page);
+    const l = normalizeLimit(limit);
+    const where: Prisma.CatalogOrderWhereInput = {
+      sellerId,
+      ...(status != null ? { status } : {})
+    };
+    const [items, total] = await Promise.all([
+      this.client.catalogOrder.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (p - 1) * l,
+        take: l,
+        include: {
+          lines: true,
+          seller: { select: { id: true, name: true } },
+          buyer: { select: { id: true, name: true } }
+        }
+      }),
+      this.client.catalogOrder.count({ where })
+    ]);
+    return { items, meta: buildPageMeta(p, l, total) };
+  }
+
+  async getOrderForSeller(orderId: string, sellerId: string): Promise<OrderRow | null> {
+    return this.client.catalogOrder.findFirst({
+      where: { id: orderId, sellerId },
+      include: {
+        lines: true,
+        seller: { select: { id: true, name: true } },
+        buyer: { select: { id: true, name: true } }
+      }
+    });
+  }
+
   async listOrdersAdmin(page: number, limit: number, status?: CatalogOrderStatus) {
     const p = normalizePage(page);
     const l = normalizeLimit(limit);

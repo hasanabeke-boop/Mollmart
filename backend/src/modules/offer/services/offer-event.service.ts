@@ -3,7 +3,7 @@ import { getRedisClient } from '../../../config/redis';
 import logger from '../../../middleware/logger';
 
 export interface OfferEventPublisherLike {
-  publishOfferCreated(offer: OfferWithRelations): Promise<void>;
+  publishOfferCreated(offer: OfferWithRelations, buyerId: string): Promise<void>;
   publishOfferUpdated(offer: OfferWithRelations): Promise<void>;
   publishOfferWithdrawn(offer: OfferWithRelations): Promise<void>;
   publishOfferAccepted(offer: OfferWithRelations): Promise<void>;
@@ -11,8 +11,8 @@ export interface OfferEventPublisherLike {
 }
 
 export class OfferEventPublisher implements OfferEventPublisherLike {
-  async publishOfferCreated(offer: OfferWithRelations): Promise<void> {
-    await this.publish('offer.created', offer);
+  async publishOfferCreated(offer: OfferWithRelations, buyerId: string): Promise<void> {
+    await this.publish('offer.created', offer, { buyerId });
   }
 
   async publishOfferUpdated(offer: OfferWithRelations): Promise<void> {
@@ -31,7 +31,11 @@ export class OfferEventPublisher implements OfferEventPublisherLike {
     await this.publish('offer.rejected', offer);
   }
 
-  private async publish(channel: string, offer: OfferWithRelations): Promise<void> {
+  private async publish(
+    channel: string,
+    offer: OfferWithRelations,
+    extra?: Record<string, unknown>
+  ): Promise<void> {
     const client = getRedisClient();
 
     if (client == null) {
@@ -52,7 +56,8 @@ export class OfferEventPublisher implements OfferEventPublisherLike {
           status: offer.status,
           acceptedAt: offer.acceptedAt,
           withdrawnAt: offer.withdrawnAt,
-          updatedAt: offer.updatedAt
+          updatedAt: offer.updatedAt,
+          ...(extra ?? {})
         })
       );
     } catch (error) {

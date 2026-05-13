@@ -92,6 +92,8 @@ export default function OrdersPage() {
     setPage(1);
   };
 
+  const isSellerView = user?.role === "seller";
+
   const totalPages = Math.max(1, meta.totalPages);
   const startIndex = (meta.page - 1) * meta.limit;
 
@@ -115,8 +117,14 @@ export default function OrdersPage() {
   return (
     <div className="flex-1 w-full max-w-[1280px] mx-auto px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-[#0d1b12] mb-2 tracking-tight">My orders</h1>
-        <p className="text-[#4c9a66]">Catalog purchases — track delivery and order details.</p>
+        <h1 className="text-3xl font-black text-[#0d1b12] mb-2 tracking-tight">
+          {isSellerView ? "Shop orders" : "My orders"}
+        </h1>
+        <p className="text-[#4c9a66]">
+          {isSellerView
+            ? "Catalog orders from buyers who purchased your listings — track status and fulfillment."
+            : "Catalog purchases — track delivery and order details."}
+        </p>
       </div>
 
       {error ? (
@@ -186,7 +194,8 @@ export default function OrdersPage() {
                     <td className="px-6 py-4">
                       <div className="font-bold text-[#0d1b12] line-clamp-2">{title}</div>
                       <div className="text-xs text-[#4c9a66] mt-1">
-                        Seller: {order.seller.name} ·{" "}
+                        {isSellerView ? "Buyer" : "Seller"}:{" "}
+                        {isSellerView ? order.buyer.name : order.seller.name} ·{" "}
                         <span className="font-mono text-[10px] sm:text-xs">{order.id.slice(0, 12)}…</span>
                       </div>
                     </td>
@@ -226,9 +235,15 @@ export default function OrdersPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#4c9a66]">
                     No orders yet.{" "}
-                    <Link href="/products" className="text-primary font-semibold underline">
-                      Shop catalog
-                    </Link>
+                    {isSellerView ? (
+                      <Link href="/seller/products/new" className="text-primary font-semibold underline">
+                        List a product
+                      </Link>
+                    ) : (
+                      <Link href="/products" className="text-primary font-semibold underline">
+                        Shop catalog
+                      </Link>
+                    )}
                   </td>
                 </tr>
               )}

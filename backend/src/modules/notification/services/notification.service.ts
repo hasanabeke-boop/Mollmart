@@ -24,6 +24,11 @@ export class NotificationService {
     const updatedCount = await this.notificationRepository.markAllRead(user.id);
     return { updatedCount };
   }
+
+  async countUnread(user: AuthUser): Promise<{ count: number }> {
+    const count = await this.notificationRepository.countUnread(user.id);
+    return { count };
+  }
 }
 
 export default NotificationService;

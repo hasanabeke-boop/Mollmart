@@ -116,6 +116,8 @@ enum NotificationType {
   chat_message_created
   user_blocked
   moderation_case_created
+  shop_order_placed
+  shop_order_status_changed
 }
 
 enum NotificationReferenceType {
@@ -124,6 +126,7 @@ enum NotificationReferenceType {
   conversation
   user
   moderation_case
+  catalog_order
 }
 
 enum CatalogProductStatus {

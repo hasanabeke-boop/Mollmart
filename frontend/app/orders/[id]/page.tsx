@@ -64,6 +64,8 @@ export default function OrderDetailsPage() {
 
   if (!user) return null;
 
+  const isSellerView = user.role === "seller";
+
   if (loading) {
     return <div className="mx-auto max-w-[1280px] px-6 py-16 text-center text-slate-500">Loading order…</div>;
   }
@@ -105,7 +107,7 @@ export default function OrderDetailsPage() {
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-[#0d1b12] tracking-tight mb-2">Order details</h1>
           <p className="text-[#4c9a66]">
-            Placed {placedOn} · {order.lines.length} line{order.lines.length === 1 ? "" : "s"} ·{" "}
+            {isSellerView ? "Sale" : "Placed"} {placedOn} · {order.lines.length} line{order.lines.length === 1 ? "" : "s"} ·{" "}
             {formatCatalogMoney(order.total, order.currency, 2)}
           </p>
           <p className="text-xs font-mono text-slate-500 mt-1">{order.id}</p>
@@ -166,8 +168,10 @@ export default function OrderDetailsPage() {
 
         <div className="lg:col-span-1 flex flex-col gap-6">
           <div className="bg-white rounded-xl border border-[#e7f3eb] p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#0d1b12] mb-4">Seller</h3>
-            <p className="text-sm font-semibold text-[#0d1b12]">{order.seller.name}</p>
+            <h3 className="text-lg font-bold text-[#0d1b12] mb-4">{isSellerView ? "Buyer" : "Seller"}</h3>
+            <p className="text-sm font-semibold text-[#0d1b12]">
+              {isSellerView ? order.buyer.name : order.seller.name}
+            </p>
           </div>
 
           <div className="bg-white rounded-xl border border-[#e7f3eb] p-6 shadow-sm">
