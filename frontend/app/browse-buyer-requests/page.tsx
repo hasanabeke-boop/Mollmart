@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { formatMoney, normalizeCurrency } from "@/lib/currency";
+import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -149,7 +151,8 @@ function timeAgo(dateStr: string): string {
   return `Posted ${days}d ago`;
 }
 
-function formatBudget(min?: unknown, max?: unknown, currency = "USD"): string {
+function formatBudget(min?: unknown, max?: unknown, currency?: string): string {
+  const cur = normalizeCurrency(currency);
   const toNum = (v: unknown): number | undefined => {
     if (v == null || v === "") return undefined;
     const n = typeof v === "number" ? v : Number(v);
@@ -157,20 +160,9 @@ function formatBudget(min?: unknown, max?: unknown, currency = "USD"): string {
   };
   const minN = toNum(min);
   const maxN = toNum(max);
-  const fmt = (n: number) => {
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 0,
-      }).format(n);
-    } catch {
-      return `${currency} ${n.toLocaleString()}`;
-    }
-  };
-  if (minN != null && maxN != null) return `${fmt(minN)} - ${fmt(maxN)}`;
-  if (maxN != null) return fmt(maxN);
-  if (minN != null) return `${fmt(minN)}+`;
+  if (minN != null && maxN != null) return `${formatMoney(minN, cur)} – ${formatMoney(maxN, cur)}`;
+  if (maxN != null) return formatMoney(maxN, cur);
+  if (minN != null) return `${formatMoney(minN, cur)}+`;
   return "Negotiable";
 }
 
@@ -217,13 +209,45 @@ function OfferModal({
   request: BuyerRequest;
   onClose: () => void;
 }) {
+  const reqCur = normalizeCurrency(request.currency);
   const [price, setPrice] = useState("");
+  const [offerCurrency, setOfferCurrency] = useState(reqCur);
   const [message, setMessage] = useState("");
   const [delivery, setDelivery] = useState("");
   const [sent, setSent] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [equivHint, setEquivHint] = useState<string | null>(null);
 
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    setOfferCurrency(reqCur);
+  }, [reqCur, request.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const n = Number(price);
+      if (!price || !Number.isFinite(n) || n <= 0 || offerCurrency === reqCur) {
+        setEquivHint(null);
+        return;
+      }
+      try {
+        const data = await fetchLatestRates(reqCur);
+        const conv = convertViaBase(n, offerCurrency, reqCur, data.base, data.rates);
+        if (cancelled || conv == null) return;
+        setEquivHint(
+          `≈ ${formatMoney(conv, reqCur)} in the buyer’s currency (rates from ${data.fetchedAt.slice(0, 10)}, refreshed hourly on server).`,
+        );
+      } catch {
+        if (!cancelled) setEquivHint(null);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [price, offerCurrency, reqCur]);
 
   const handleSend = async () => {
     const num = Number(price);
@@ -242,9 +266,9 @@ function OfferModal({
         body: JSON.stringify({
           requestId: request.id,
           price: num,
-          currency: request.currency || "USD",
+          currency: normalizeCurrency(offerCurrency),
           message: message.trim(),
-          deliveryDays: delivery ? parseInt(delivery) || undefined : undefined,
+          deliveryDays: delivery ? parseInt(delivery, 10) || undefined : undefined,
         }),
       });
       setSent(true);
@@ -289,7 +313,7 @@ function OfferModal({
             <p className="text-slate-500 text-sm mb-2">
               Your offer of{" "}
               <span className="font-bold text-slate-900">
-                {request.currency} {Number(price).toFixed(2)}
+                {formatMoney(Number(price), offerCurrency)}
               </span>{" "}
               for
             </p>
@@ -321,21 +345,35 @@ function OfferModal({
 
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Your Price
+                Your price
               </label>
-              <div className="relative">
-                <span className="absolute left-4 top-3.5 text-slate-400 font-medium">
-                  {request.currency}
-                </span>
+              <div className="flex gap-2">
+                <select
+                  value={offerCurrency}
+                  onChange={(e) => setOfferCurrency(e.target.value)}
+                  className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Offer currency"
+                >
+                  {["KZT", "USD", "EUR", "RUB"].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
                 <input
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-full pl-16 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900"
-                  placeholder="0.00"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  placeholder="0"
+                  min={0}
+                  step={0.01}
                   autoFocus
                 />
               </div>
+              {equivHint && (
+                <p className="text-xs text-slate-500 leading-relaxed">{equivHint}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -485,9 +523,9 @@ export default function BrowseBuyerRequestsPage() {
           category: categoryLabelFromId(catalogCategories, r.categoryId),
           categoryId: r.categoryId,
           ...style,
-          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency || "USD"),
+          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency),
           budgetMax: maxVal,
-          currency: r.currency || "USD",
+          currency: normalizeCurrency(r.currency),
           description: r.description,
           postedAgo: timeAgo(r.createdAt),
           offerCount: r.offerCount || 0,

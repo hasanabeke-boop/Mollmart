@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
+import { demoWithdrawWallet, fetchWalletMe } from "@/lib/shop";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 
 type ProfileStats = {
@@ -27,7 +28,7 @@ function readRecommendedCategoryIds(prefs: unknown): string[] {
   return raw.map((x) => String(x)).filter((s) => s.length > 0);
 }
 
-type ProfileMainTab = "overview" | "preferences";
+type ProfileMainTab = "overview" | "preferences" | "balance";
 
 function navButtonClass(active: boolean) {
   return `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
@@ -52,6 +53,9 @@ export default function UserProfilePage() {
 
   const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
   const [catalogCategories, setCatalogCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletWithdraw, setWalletWithdraw] = useState("");
+  const [walletBusy, setWalletBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +156,22 @@ export default function UserProfilePage() {
   useEffect(() => {
     loadStats();
   }, [loadStats]);
+
+  const loadWallet = useCallback(async () => {
+    if (!user || user.role !== "seller") return;
+    try {
+      const w = await fetchWalletMe();
+      setWalletBalance(typeof w.balance === "number" ? w.balance : 0);
+    } catch {
+      setWalletBalance(0);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (mainTab === "balance" && user?.role === "seller") {
+      void loadWallet();
+    }
+  }, [mainTab, user?.role, loadWallet]);
 
   const handleSaved = useCallback(async () => {
     await loadProfile();
@@ -292,6 +312,16 @@ export default function UserProfilePage() {
             <span className="material-symbols-outlined">tune</span>
             Preferences
           </button>
+          {user?.role === "seller" && (
+            <button
+              type="button"
+              onClick={() => setMainTab("balance")}
+              className={navButtonClass(mainTab === "balance")}
+            >
+              <span className="material-symbols-outlined">account_balance_wallet</span>
+              Balance
+            </button>
+          )}
         </nav>
 
         <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[#102216] to-[#1a2e22] text-white">
@@ -338,7 +368,11 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66] mb-1">
-                  {mainTab === "preferences" ? "Preferences" : "Overview"}
+                  {mainTab === "preferences"
+                    ? "Preferences"
+                    : mainTab === "balance"
+                      ? "Balance"
+                      : "Overview"}
                 </p>
                 <h1 className="text-2xl md:text-3xl font-bold mb-1 text-[#0d1b12]">
                   {displayName || "—"}
@@ -471,7 +505,7 @@ export default function UserProfilePage() {
               </div>
             </section>
           </>
-        ) : (
+        ) : mainTab === "preferences" ? (
           <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
             <h2 className="text-lg font-bold text-[#0d1b12] mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">category</span>
@@ -528,6 +562,64 @@ export default function UserProfilePage() {
                   >
                     {prefsMode === "seller" ? "Open buyer requests" : "Open showcase"}
                   </Link>
+                </div>
+              </>
+            )}
+          </section>
+        ) : (
+          <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
+            <h2 className="text-lg font-bold text-[#0d1b12] mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
+              Seller balance
+            </h2>
+            <p className="text-sm text-[#4c9a66] mb-6">
+              Funds from completed request deals (demo payments). Withdrawal is simulated — no real payout.
+            </p>
+            {user?.role !== "seller" ? (
+              <p className="text-sm text-slate-600">Balance is available for seller accounts.</p>
+            ) : (
+              <>
+                <div className="rounded-xl border border-[#e7f3eb] bg-[#f5f6f8] p-6 mb-6">
+                  <p className="text-xs font-semibold uppercase text-[#4c9a66]">Available</p>
+                  <p className="text-3xl font-black text-[#0d1b12]">
+                    {walletBalance == null ? "…" : `$${walletBalance.toFixed(2)}`}
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 max-w-md">
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Amount (USD)"
+                    value={walletWithdraw}
+                    onChange={(e) => setWalletWithdraw(e.target.value)}
+                    className="flex-1 rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    disabled={walletBusy}
+                    onClick={async () => {
+                      const n = Number(walletWithdraw);
+                      if (!Number.isFinite(n) || n <= 0) {
+                        toastError("Enter a valid amount.");
+                        return;
+                      }
+                      setWalletBusy(true);
+                      try {
+                        const r = await demoWithdrawWallet(n);
+                        setWalletBalance(r.balance);
+                        setWalletWithdraw("");
+                        toastSuccess(`Demo withdraw: $${r.withdrawn.toFixed(2)}`);
+                      } catch (e: unknown) {
+                        toastError(e instanceof Error ? e.message : "Withdraw failed.");
+                      } finally {
+                        setWalletBusy(false);
+                      }
+                    }}
+                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                  >
+                    {walletBusy ? "…" : "Demo withdraw"}
+                  </button>
                 </div>
               </>
             )}

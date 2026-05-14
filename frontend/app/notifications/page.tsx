@@ -44,6 +44,8 @@ function tabCategoryFromType(type: string): NotificationCategory | "system" {
       return "messages";
     case "shop_order_placed":
     case "shop_order_status_changed":
+    case "request_deal_paid":
+    case "request_deal_status_changed":
       return "orders";
     default:
       return "system";
@@ -61,6 +63,8 @@ function iconFromType(type: string): NotificationItem["iconType"] {
       return "offer";
     case "shop_order_placed":
     case "shop_order_status_changed":
+    case "request_deal_paid":
+    case "request_deal_status_changed":
       return "order";
     default:
       return "system";
@@ -88,6 +92,7 @@ function resolveHref(
     case "moderation_case":
       return "/admin/moderation";
     case "catalog_order":
+    case "request_deal_order":
       return `/orders/${encodeURIComponent(refId)}`;
     default:
       return null;

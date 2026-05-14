@@ -18,10 +18,10 @@ type ShowcaseForPrefill = {
 };
 
 const CURRENCIES = [
-  { code: "USD", label: "USD - US Dollar" },
-  { code: "EUR", label: "EUR - Euro" },
-  { code: "RUB", label: "RUB - Russian Ruble" },
-  { code: "KZT", label: "KZT - Kazakhstani Tenge" },
+  { code: "KZT", label: "KZT — Kazakhstani Tenge (₸)" },
+  { code: "USD", label: "USD — US Dollar" },
+  { code: "EUR", label: "EUR — Euro" },
+  { code: "RUB", label: "RUB — Russian Ruble" },
 ];
 
 const MAX_DESC = 1000;
@@ -79,7 +79,7 @@ function CreateProductRequestContent() {
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("KZT");
   const [budget, setBudget] = useState("");
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");

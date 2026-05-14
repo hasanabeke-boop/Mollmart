@@ -14,7 +14,9 @@ const baseChannels = [
   'chat.message.created',
   'user.blocked',
   'shop.order.placed',
-  'shop.order.status_changed'
+  'shop.order.status_changed',
+  'request_deal.paid',
+  'request_deal.status_changed'
 ] as const;
 
 export class NotificationWorker {

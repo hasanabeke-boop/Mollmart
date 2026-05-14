@@ -205,7 +205,7 @@ export default function OrderDetailsPage() {
                 <span>{formatCatalogMoney(order.total, order.currency, 2)}</span>
               </div>
             </div>
-            <p className="text-xs text-slate-500 mt-4">Demo checkout — no real card charge.</p>
+            <p className="text-xs text-slate-500 mt-4">Demo payment from chat — no real card charge.</p>
           </div>
 
           <div className="rounded-xl border border-[#e7f3eb] bg-[#f8fcf9] p-4 text-center text-sm text-[#0d1b12]">

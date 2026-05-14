@@ -30,7 +30,7 @@ const FAQ_ITEMS: FaqItem[] = [
     category: "moderation",
     question: "What happens after I accept an offer?",
     answer:
-      "Mollmart creates a conversation between buyer and seller. From there the two sides continue discussing details directly. The platform helps with matching and communication, not checkout or delivery.",
+      "After you accept an offer, you negotiate price in chat with counter-offers. When both sides agree on a number, the buyer can run a demo payment; the seller receives a balance and an order is created for tracking. Email copies of notifications are sent when mail is configured.",
   },
   {
     id: 4,

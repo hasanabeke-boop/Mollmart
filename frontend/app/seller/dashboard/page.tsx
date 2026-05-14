@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { formatMoney, normalizeCurrency } from "@/lib/currency";
 
 type RequestLead = {
   id: string;
@@ -38,16 +39,12 @@ function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
 }
 
 function formatBudget(lead: RequestLead) {
-  const currency = lead.currency || "USD";
-  const fmt = (n: number) => new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n);
+  const currency = normalizeCurrency(lead.currency);
+  const fmt = (n: number) => formatMoney(n, currency);
 
-  if (lead.budgetMin && lead.budgetMax) return `${fmt(lead.budgetMin)} - ${fmt(lead.budgetMax)}`;
-  if (lead.budgetMax) return fmt(lead.budgetMax);
-  if (lead.budgetMin) return `${fmt(lead.budgetMin)}+`;
+  if (lead.budgetMin != null && lead.budgetMax != null) return `${fmt(lead.budgetMin)} - ${fmt(lead.budgetMax)}`;
+  if (lead.budgetMax != null) return fmt(lead.budgetMax);
+  if (lead.budgetMin != null) return `${fmt(lead.budgetMin)}+`;
   return "Negotiable";
 }
 

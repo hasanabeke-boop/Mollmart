@@ -42,6 +42,10 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         return this.mapShopOrderPlaced(event.payload);
       case 'shop.order.status_changed':
         return this.mapShopOrderStatusChanged(event.payload);
+      case 'request_deal.paid':
+        return this.mapRequestDealPaid(event.payload);
+      case 'request_deal.status_changed':
+        return this.mapRequestDealStatusChanged(event.payload);
       case 'moderation.case.created':
         return config.subscriptions.moderationEvents ? this.mapModerationCaseCreated(event.payload) : [];
       default:
@@ -246,6 +250,89 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         referenceType: 'catalog_order',
         referenceId: orderId,
         dedupeKey: `shop-order-status-${orderId}-seller-${previousStatus}-${newStatus}`
+      }
+    ];
+  }
+
+  private mapRequestDealPaid(payload: PlainObject): MappedNotification[] {
+    const orderId = asString(payload.orderId);
+    const buyerId = asString(payload.buyerId);
+    const sellerId = asString(payload.sellerId);
+    const title = asString(payload.title);
+    const currency = asString(payload.currency) ?? '';
+    const amount = asNumber(payload.amount);
+
+    if (orderId == null || buyerId == null || sellerId == null) {
+      logger.warn('Skipping request_deal.paid event due to missing orderId, buyerId, or sellerId');
+      return [];
+    }
+
+    const totalLabel =
+      amount != null
+        ? `${Number.isInteger(amount) ? String(amount) : amount.toFixed(2)} ${currency}`.trim()
+        : currency.trim();
+
+    const buyerBody =
+      title != null ? `You paid for “${title}” (${totalLabel}).` : `Your payment went through (${totalLabel}).`;
+    const sellerBody =
+      title != null ? `A buyer purchased “${title}” (${totalLabel}).` : `You have a new sale (${totalLabel}).`;
+
+    return [
+      {
+        userId: buyerId,
+        type: 'request_deal_paid',
+        title: 'Purchase complete',
+        body: buyerBody,
+        referenceType: 'request_deal_order',
+        referenceId: orderId,
+        dedupeKey: `request-deal-paid-buyer-${orderId}`
+      },
+      {
+        userId: sellerId,
+        type: 'request_deal_paid',
+        title: 'New sale',
+        body: sellerBody,
+        referenceType: 'request_deal_order',
+        referenceId: orderId,
+        dedupeKey: `request-deal-paid-seller-${orderId}`
+      }
+    ];
+  }
+
+  private mapRequestDealStatusChanged(payload: PlainObject): MappedNotification[] {
+    const orderId = asString(payload.orderId);
+    const buyerId = asString(payload.buyerId);
+    const sellerId = asString(payload.sellerId);
+    const title = asString(payload.title);
+    const previousStatus = asString(payload.previousStatus);
+    const newStatus = asString(payload.newStatus);
+
+    if (orderId == null || buyerId == null || sellerId == null || previousStatus == null || newStatus == null) {
+      logger.warn('Skipping request_deal.status_changed event due to missing fields');
+      return [];
+    }
+
+    const label = title != null ? ` for “${title}”` : '';
+    const body = `Order${label} status changed from "${previousStatus}" to "${newStatus}".`;
+
+    return [
+      {
+        userId: buyerId,
+        type: 'request_deal_status_changed',
+        title: 'Order status updated',
+        body,
+        referenceType: 'request_deal_order',
+        referenceId: orderId,
+        dedupeKey: `request-deal-status-${orderId}-buyer-${previousStatus}-${newStatus}`
+      },
+      {
+        userId: sellerId,
+        type: 'request_deal_status_changed',
+        title: 'Order status updated',
+        body,
+        referenceType: 'request_deal_order',
+        referenceId: orderId,
+        dedupeKey: `request-deal-status-${orderId}-seller-${previousStatus}-${newStatus}`
       }
     ];
   }

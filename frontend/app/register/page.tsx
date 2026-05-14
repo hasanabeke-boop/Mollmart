@@ -49,7 +49,9 @@ export default function RegisterPage() {
     try {
       const result = await signup(username.trim(), email, password, role);
       setVerificationToken(result.verificationToken || "");
-      setRequiresEmailVerification(Boolean(result.requiresEmailVerification));
+      setRequiresEmailVerification(
+        Boolean(result.requiresEmailVerification) || Boolean(result.verificationToken),
+      );
       setSuccess(true);
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
@@ -68,12 +70,13 @@ export default function RegisterPage() {
   };
 
   if (success) {
-    const title = requiresEmailVerification ? "Check your email" : "Account created";
+    const title = requiresEmailVerification ? "Verify your email" : "Account created";
     const message = requiresEmailVerification
       ? (
           <>
-            We&apos;ve sent a verification link to <span className="font-semibold text-slate-900">{email}</span>.
-            Please verify your email before logging in.
+            Your account was created for <span className="font-semibold text-slate-900">{email}</span>.
+            You need to verify your email before you can sign in. Check your inbox for a link from Mollmart
+            {verificationToken ? " or use the link below for local testing." : "."}
           </>
         )
       : (
@@ -85,9 +88,17 @@ export default function RegisterPage() {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8] p-8">
         <div className="w-full max-w-md text-center space-y-6 animate-[fadeIn_0.5s_ease-out]">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <span className="material-symbols-outlined text-4xl text-green-600">
-              {requiresEmailVerification ? "mark_email_read" : "check_circle"}
+          <div
+            className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full ${
+              requiresEmailVerification ? "bg-amber-100" : "bg-green-100"
+            }`}
+          >
+            <span
+              className={`material-symbols-outlined text-4xl ${
+                requiresEmailVerification ? "text-amber-600" : "text-green-600"
+              }`}
+            >
+              {requiresEmailVerification ? "mark_email_unread" : "check_circle"}
             </span>
           </div>
           <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
