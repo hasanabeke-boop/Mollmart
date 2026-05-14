@@ -115,6 +115,7 @@ export default function MyRequestsPage() {
   const [offersByRequest, setOffersByRequest] = useState<Record<string, OfferItem[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [acceptingId, setAcceptingId] = useState("");
 
   const [editOpen, setEditOpen] = useState(false);
@@ -133,6 +134,11 @@ export default function MyRequestsPage() {
     null | { kind: "delete" | "cancel"; request: RequestItem }
   >(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q")?.trim() || "";
+    setSearch(q);
+  }, []);
 
   const restricted = editRequest ? isRestrictedEdit(editRequest) : false;
 
@@ -365,6 +371,21 @@ export default function MyRequestsPage() {
     return (id: string) => map[id] || id;
   }, []);
 
+  const filteredRequests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return requests;
+    return requests.filter((request) => {
+      const haystack = [
+        request.title,
+        request.description,
+        categoryLabel(request.categoryId),
+        request.status,
+        request.location || "",
+      ].join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [requests, search, categoryLabel]);
+
   return (
     <RoleGate
       allowedRoles={["buyer", "admin"]}
@@ -389,6 +410,20 @@ export default function MyRequestsPage() {
         </Link>
       </div>
 
+      <div className="mb-6">
+        <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="my-requests-search">
+          Search requests
+        </label>
+        <input
+          id="my-requests-search"
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by title, description, category, status, or location..."
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-primary focus:ring-primary"
+        />
+      </div>
+
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
@@ -406,9 +441,14 @@ export default function MyRequestsPage() {
           <h2 className="text-lg font-bold text-slate-900">No requests yet</h2>
           <p className="mt-2 text-sm text-slate-500">Create a request so sellers can respond with offers.</p>
         </div>
+      ) : filteredRequests.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+          <h2 className="text-lg font-bold text-slate-900">No matching requests</h2>
+          <p className="mt-2 text-sm text-slate-500">Try another search or clear the field.</p>
+        </div>
       ) : (
         <div className="space-y-5">
-          {requests.map((request) => {
+          {filteredRequests.map((request) => {
             const offers = offersByRequest[request.id] || [];
             const editable = canEdit(request);
             const cancellable = canCancelRequest(request);

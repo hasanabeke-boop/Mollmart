@@ -23,7 +23,7 @@ export function NewsletterSection() {
                 autoComplete="email"
                 className="w-full rounded-lg border-gray-300 px-5 py-3 placeholder-gray-500 focus:border-primary focus:ring-primary sm:max-w-xs transition-shadow shadow-sm"
                 id="email-address"
-                name="email-address"
+                name="email"
                 placeholder="Enter your email"
                 required
                 type="email"

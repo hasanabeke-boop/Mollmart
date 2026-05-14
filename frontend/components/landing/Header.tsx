@@ -64,7 +64,7 @@ export function Header() {
     event.preventDefault();
     const q = search.trim();
     if (user?.role === "buyer") {
-      router.push(q ? `/my-requests` : "/my-requests");
+      router.push(q ? `/my-requests?q=${encodeURIComponent(q)}` : "/my-requests");
       return;
     }
     router.push(q ? `/browse-buyer-requests?q=${encodeURIComponent(q)}` : "/browse-buyer-requests");

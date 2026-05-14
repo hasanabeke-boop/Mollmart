@@ -14,6 +14,11 @@ function postLoginPath(role: User["role"]): string {
   return "/";
 }
 
+function safeReturnUrl(value: string | null): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
+
 export default function LoginPage() {
   const { login, user } = useAuth();
   const router = useRouter();
@@ -28,30 +33,35 @@ export default function LoginPage() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [verificationToken, setVerificationToken] = useState("");
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
 
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState("");
+  const [forgotResetToken, setForgotResetToken] = useState("");
 
   useEffect(() => {
     if (forgotOpen) {
       setForgotEmail(email.trim());
       setForgotError("");
+      setForgotResetToken("");
     }
   }, [forgotOpen, email]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
+    setReturnUrl(safeReturnUrl(params.get("returnUrl")));
     if (params.get("forgot") === "1") {
       setForgotOpen(true);
-      router.replace("/login", { scroll: false });
+      const next = safeReturnUrl(params.get("returnUrl"));
+      router.replace(next ? `/login?returnUrl=${encodeURIComponent(next)}` : "/login", { scroll: false });
     }
   }, [router]);
 
   if (user) {
-    router.replace(postLoginPath(user.role));
+    router.replace(returnUrl || postLoginPath(user.role));
     return null;
   }
 
@@ -73,7 +83,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const loggedIn = await login(email, password);
-      router.push(postLoginPath(loggedIn.role));
+      router.push(returnUrl || postLoginPath(loggedIn.role));
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
       if (apiErr.data?.errors) {
@@ -123,17 +133,23 @@ export default function LoginPage() {
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotError("");
+    setForgotResetToken("");
     if (!forgotEmail.trim()) {
       setForgotError("Email is required");
       return;
     }
     setForgotLoading(true);
     try {
-      await apiFetch("/api/v1/forgot-password", {
+      const result = await apiFetch<{ message?: string; resetToken?: string }>("/api/v1/forgot-password", {
         method: "POST",
         service: "auth",
         body: JSON.stringify({ email: forgotEmail.trim() }),
       });
+      if (result.resetToken) {
+        setForgotResetToken(result.resetToken);
+        toastSuccess(result.message || "Password reset email is disabled. Use the local reset link.");
+        return;
+      }
       toastSuccess("If this email is registered, we sent reset instructions.");
       setForgotOpen(false);
     } catch (err: unknown) {
@@ -432,6 +448,15 @@ export default function LoginPage() {
               <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 <span className="material-symbols-outlined shrink-0 text-[20px]">error</span>
                 {forgotError}
+              </div>
+            )}
+
+            {forgotResetToken && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                <p className="font-semibold">Local reset link</p>
+                <Link className="mt-1 block break-all underline" href={`/reset-password/${forgotResetToken}`}>
+                  {typeof window !== "undefined" ? window.location.origin : ""}/reset-password/{forgotResetToken}
+                </Link>
               </div>
             )}
 
