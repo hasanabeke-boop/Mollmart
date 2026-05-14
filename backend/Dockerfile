@@ -20,5 +20,7 @@ COPY src ./src
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY prisma ./prisma
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 EXPOSE 4040
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed:prod && node dist/index.js"]
+CMD ["./docker-entrypoint.sh"]

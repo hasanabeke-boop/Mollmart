@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import ProfileController from '../../controllers/profile.controller';
+import { imageUploadSingle } from '../../../media/middleware/imageUpload';
 import { authenticate } from '../../middleware/auth';
 import validate from '../../middleware/validate';
 import asyncHandler from '../../utils/asyncHandler';
@@ -21,6 +22,7 @@ export function createProfileRouter(controller: ProfileController): Router {
   router.use(authenticate);
 
   router.get('/profiles/me', asyncHandler(controller.getMe));
+  router.post('/profiles/me/avatar', imageUploadSingle, asyncHandler(controller.uploadAvatar));
   router.patch('/profiles/me', validate(updateBaseProfileSchema), asyncHandler(controller.updateMe));
   router.patch('/profiles/me/seller', validate(updateSellerProfileSchema), asyncHandler(controller.updateSeller));
   router.patch('/profiles/me/buyer', validate(updateBuyerProfileSchema), asyncHandler(controller.updateBuyer));
