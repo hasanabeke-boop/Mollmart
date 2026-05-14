@@ -3,6 +3,7 @@ import httpStatus from 'http-status';
 import { randomUUID } from 'crypto';
 import * as argon2 from 'argon2';
 import prismaClient from '../../../config/prisma';
+import config from '../../../config/config';
 import type {
   EmailRequestBody,
   ResetPasswordRequestBodyType,
@@ -39,7 +40,7 @@ export const handleForgotPassword = async (
     });
   }
 
-  if (!user.emailVerified) {
+  if (config.auth.requireEmailVerification && !user.emailVerified) {
     return res.status(httpStatus.UNAUTHORIZED).json({
       message: 'Your email is not verified! Please confirm your email!'
     });

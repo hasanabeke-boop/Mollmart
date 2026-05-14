@@ -19,7 +19,7 @@ export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/seller/dashboard")) return "dashboard";
   if (pathname.startsWith("/seller")) return "dashboard";
   if (pathname.startsWith("/browse-buyer-requests")) return "requests";
-  if (pathname.startsWith("/chat")) return "messages";
+  if (pathname === "/chat" || pathname.startsWith("/chat/")) return "messages";
   return "dashboard";
 }
 
@@ -34,7 +34,6 @@ const NAV_ITEMS: {
   { id: "my_showcase", icon: "grid_view", label: "My showcase", href: "/seller/showcase" },
   { id: "new_showcase", icon: "add_box", label: "New listing", href: "/seller/products/new" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
-  { id: "offers", icon: "local_offer", label: "Offers", href: "/browse-buyer-requests" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];

@@ -9,9 +9,15 @@ export default function SellerShell({ children }: { children: React.ReactNode })
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isChatWorkspace = pathname === "/chat" || pathname.startsWith("/chat/");
+  const isSellerWorkspace =
+    pathname.startsWith("/seller") ||
+    pathname.startsWith("/browse-buyer-requests") ||
+    isChatWorkspace;
 
+  const isAdminSellerArea = user?.role === "admin" && pathname.startsWith("/seller");
   const showSellerChrome =
-    user?.role === "seller" || (user?.role === "admin" && pathname.startsWith("/seller"));
+    (user?.role === "seller" || isAdminSellerArea) && isSellerWorkspace;
 
   if (loading || !showSellerChrome) {
     return <>{children}</>;

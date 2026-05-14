@@ -46,6 +46,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-shared-refresh-secret}
       SERVER_URL: ${SERVER_URL:-http://localhost:4040}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
     ports:
       - "4040:4040"
     depends_on:

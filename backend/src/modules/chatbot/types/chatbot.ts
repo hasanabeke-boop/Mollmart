@@ -1,0 +1,21 @@
+export interface ChatbotHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatbotMessageInput {
+  message: string;
+  history?: ChatbotHistoryItem[];
+  currentPath?: string;
+  userRole?: 'buyer' | 'seller' | 'admin';
+}
+
+export interface ChatbotReply {
+  reply: string;
+  intent: string;
+  suggestions: string[];
+  source?: 'openai' | 'local';
+  suggestedRoute?: string;
+  actions?: string[];
+  confidence?: number;
+}

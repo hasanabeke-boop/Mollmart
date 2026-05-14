@@ -1,0 +1,498 @@
+import { ChatbotMessageInput, ChatbotReply } from '../types/chatbot';
+import config from '../../../config/config';
+import logger from '../../../middleware/logger';
+
+type ChatbotIntent =
+  | 'greeting'
+  | 'buyer_request'
+  | 'buyer_offers'
+  | 'seller_board'
+  | 'seller_offer'
+  | 'chat'
+  | 'profile'
+  | 'notifications'
+  | 'deployment'
+  | 'account'
+  | 'admin'
+  | 'platform_limits'
+  | 'assistant_setup'
+  | 'fallback';
+
+const validIntents = [
+  'greeting',
+  'buyer_request',
+  'buyer_offers',
+  'seller_board',
+  'seller_offer',
+  'chat',
+  'profile',
+  'notifications',
+  'deployment',
+  'account',
+  'admin',
+  'platform_limits',
+  'assistant_setup',
+  'fallback'
+] as const;
+
+const knownRoutes = new Set([
+  '/register',
+  '/login',
+  '/profile',
+  '/create-product-request',
+  '/my-requests',
+  '/browse-buyer-requests',
+  '/chat',
+  '/chatbot',
+  '/notifications',
+  '/seller/dashboard',
+  '/seller/analytics',
+  '/help',
+  '/admin',
+  '/admin/categories',
+  '/admin/moderation',
+  '/admin/users'
+]);
+
+const defaultSuggestions = [
+  'How do I create a request?',
+  'How do sellers send offers?',
+  'How does chat work?'
+];
+
+const routeByIntent: Partial<Record<ChatbotIntent, string>> = {
+  buyer_request: '/create-product-request',
+  buyer_offers: '/my-requests',
+  seller_board: '/browse-buyer-requests',
+  seller_offer: '/browse-buyer-requests',
+  chat: '/chat',
+  profile: '/profile',
+  notifications: '/notifications',
+  deployment: '/help',
+  account: '/login',
+  admin: '/admin',
+  platform_limits: '/help',
+  assistant_setup: '/chatbot'
+};
+
+const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
+  buyer_request: ['Open Post Request', 'Enter title, category, budget, and details', 'Save draft, then publish from My Requests'],
+  buyer_offers: ['Open My Requests', 'Review offers under a published request', 'Accept the best offer to open chat'],
+  seller_board: ['Open Buyer Requests', 'Filter or search active requests', 'Choose a request that matches your service'],
+  seller_offer: ['Open a buyer request', 'Enter price, timeframe, and message', 'Send one clear offer'],
+  chat: ['Accept an offer first', 'Open Messages', 'Continue details directly with the other user'],
+  profile: ['Open Profile', 'Update base details', 'Save changes'],
+  notifications: ['Open Notifications', 'Review unread items', 'Open the linked request or chat'],
+  deployment: ['Set production environment variables', 'Run Prisma migrations', 'Build frontend and backend images/services'],
+  account: ['Check email and password', 'Confirm account status', 'Check email verification setting'],
+  admin: ['Open Admin', 'Review users/categories/moderation', 'Apply changes carefully'],
+  platform_limits: ['Use chat for final details', 'Handle payment or delivery outside Mollmart', 'Add unsupported features only when you build them'],
+  assistant_setup: ['Set OPENAI_API_KEY', 'Choose OPENAI_MODEL', 'Restart/rebuild backend']
+};
+
+const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 'suggestedRoute' | 'actions' | 'confidence'>> = {
+  greeting: {
+    reply: 'Hi, I am Mollmart Assistant. I can guide buyers, sellers, and admins through the real Mollmart flow: requests, offers, accepted-offer chat, profiles, notifications, and deployment.',
+    suggestions: defaultSuggestions
+  },
+  buyer_request: {
+    reply: 'Buyer flow: create a request with a clear title, category, budget, optional deadline/location, and useful details. It starts as a draft; publish it from My Requests when you are ready for sellers to send offers.',
+    suggestions: ['What should I write in a request?', 'How do I publish a draft?', 'How do I compare offers?']
+  },
+  buyer_offers: {
+    reply: 'To manage offers, open My Requests, choose your published request, then compare seller offers. Accepting an offer starts the conversation in Messages.',
+    suggestions: ['How do I accept an offer?', 'Why do I see no offers?', 'Can I edit my request?']
+  },
+  seller_board: {
+    reply: 'Seller flow: open Buyer Requests, search or filter active requests, then open the best match and send an offer. Buyers see your offer under their request.',
+    suggestions: ['How do I find buyer requests?', 'How do I make a strong offer?', 'Where is seller dashboard?']
+  },
+  seller_offer: {
+    reply: 'A strong seller offer includes a realistic price in the request currency, estimated availability, and a short message explaining what you can provide. The buyer can accept or decline it.',
+    suggestions: ['Why can I not send two offers?', 'What should my offer message include?', 'Where are my seller metrics?']
+  },
+  chat: {
+    reply: 'Messages are created after a buyer accepts a seller offer. If the chat page is empty, first check whether an offer has been accepted for that request.',
+    suggestions: ['Why do I have no conversations?', 'How do unread messages work?', 'Where is chat?']
+  },
+  profile: {
+    reply: 'Profile is where users complete account details. Sellers should keep seller information clear so buyers trust their offers; buyers can use preferences to shape future requests.',
+    suggestions: ['How do I edit profile?', 'What should seller profile include?', 'Where are preferences?']
+  },
+  notifications: {
+    reply: 'Notifications surface important events such as new offers, accepted offers, messages, moderation changes, and account status updates.',
+    suggestions: ['Where are notifications?', 'Why no notification appears?', 'How do message notifications work?']
+  },
+  deployment: {
+    reply: 'Minimum deployment needs production env values, PostgreSQL, backend hosting, frontend hosting, Prisma migrations, and secure JWT/OpenAI/SMTP secrets. Redis can usually be optional if the app is configured that way.',
+    suggestions: ['Which env values are required?', 'How do I rebuild Docker?', 'Can Redis be disabled?']
+  },
+  account: {
+    reply: 'For account issues, check the user email/password, whether the account is active, whether email verification is required, and whether JWT secrets/database connection are valid in the backend env.',
+    suggestions: ['How do I disable email verification?', 'Why login fails?', 'How do I reset password?']
+  },
+  admin: {
+    reply: 'Admin screens are for user management, categories, and moderation. Keep admin actions separate from buyer and seller workflows so normal users only see their role-specific screens.',
+    suggestions: ['How do I manage categories?', 'How does moderation work?', 'Where are users?']
+  },
+  platform_limits: {
+    reply: 'Mollmart currently matches buyers and sellers, collects offers, and opens chat after acceptance. It does not provide checkout, escrow, in-app payment, shipping labels, or delivery tracking yet.',
+    suggestions: ['What happens after accepting an offer?', 'Can we add payments later?', 'How does chat work?']
+  },
+  assistant_setup: {
+    reply: 'The assistant uses OPENAI_API_KEY and OPENAI_MODEL on the backend. If the key is missing or the API fails, it falls back to local Mollmart guidance.',
+    suggestions: ['Where do I put the API key?', 'Which model should I use?', 'How do I rebuild Docker?']
+  },
+  fallback: {
+    reply: 'I can help with Mollmart flows: buyer requests, seller offers, accepted-offer chat, profiles, notifications, login, admin, and deployment. Tell me which screen or problem you mean.',
+    suggestions: defaultSuggestions
+  }
+};
+
+type OpenAIResponse = {
+  output_text?: string;
+  output?: Array<{
+    content?: Array<{
+      type?: string;
+      text?: string;
+    }>;
+  }>;
+};
+
+type OpenAIChatbotPayload = {
+  reply?: unknown;
+  intent?: unknown;
+  suggestions?: unknown;
+  suggestedRoute?: unknown;
+  actions?: unknown;
+  confidence?: unknown;
+};
+
+const chatbotJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    reply: {
+      type: 'string',
+      description: 'Concise helpful answer for the user, specific to Mollmart.'
+    },
+    intent: {
+      type: 'string',
+      enum: validIntents
+    },
+    suggestions: {
+      type: 'array',
+      items: {
+        type: 'string'
+      }
+    },
+    suggestedRoute: {
+      type: 'string',
+      description: 'One allowed Mollmart route to open next, or an empty string.'
+    },
+    actions: {
+      type: 'array',
+      items: {
+        type: 'string'
+      }
+    },
+    confidence: {
+      type: 'number'
+    }
+  },
+  required: ['reply', 'intent', 'suggestions', 'suggestedRoute', 'actions', 'confidence']
+} as const;
+
+function normalizeText(message: string): string {
+  return message.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function hasPhrase(text: string, phrase: string): boolean {
+  return new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text);
+}
+
+function hasAnyPhrase(text: string, phrases: string[]): boolean {
+  return phrases.some((phrase) => hasPhrase(text, phrase));
+}
+
+export class ChatbotService {
+  async createReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
+    if (config.openai.apiKey.trim().length > 0) {
+      try {
+        return await this.createOpenAIReply(input);
+      } catch (error) {
+        logger.warn(`OpenAI chatbot fallback used: ${(error as Error).message}`);
+      }
+    }
+
+    return this.createLocalReply(input);
+  }
+
+  private createLocalReply(input: ChatbotMessageInput): ChatbotReply {
+    const intent = this.detectIntent(input);
+    const response = responses[intent];
+
+    return {
+      intent,
+      reply: this.withContext(input, intent, response.reply),
+      suggestions: response.suggestions,
+      source: 'local',
+      suggestedRoute: this.routeForIntent(intent, input.userRole),
+      actions: actionsByIntent[intent] ?? [],
+      confidence: intent === 'fallback' ? 0.42 : 0.78
+    };
+  }
+
+  private async createOpenAIReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
+    const intent = this.detectIntent(input);
+    const recentHistory = (input.history ?? [])
+      .slice(-10)
+      .map((item) => `${item.role === 'user' ? 'User' : 'Assistant'}: ${item.content}`)
+      .join('\n');
+
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.openai.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: config.openai.model,
+        instructions: this.buildSystemPrompt(input),
+        input: [
+          recentHistory ? `Recent conversation:\n${recentHistory}` : '',
+          `Current path: ${input.currentPath || 'unknown'}`,
+          `Current user role: ${input.userRole || 'guest'}`,
+          `Detected intent hint: ${intent}`,
+          `Current user message: ${input.message}`
+        ].filter(Boolean).join('\n\n'),
+        max_output_tokens: 650,
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'mollmart_chatbot_reply',
+            strict: true,
+            schema: chatbotJsonSchema
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`OpenAI request failed (${response.status}) ${errorText.slice(0, 200)}`);
+    }
+
+    const data = (await response.json()) as OpenAIResponse;
+    const outputText = this.extractOpenAIText(data);
+
+    if (outputText.length === 0) {
+      throw new Error('OpenAI response did not include text output');
+    }
+
+    const parsed = this.parseOpenAIJson(outputText, intent);
+    const normalizedIntent = this.normalizeIntent(parsed.intent, intent);
+
+    return {
+      ...parsed,
+      intent: normalizedIntent,
+      reply: this.limitReply(parsed.reply),
+      suggestions: this.normalizeStringList(parsed.suggestions, responses[normalizedIntent].suggestions, 4),
+      actions: this.normalizeStringList(parsed.actions, actionsByIntent[normalizedIntent] ?? [], 4),
+      suggestedRoute: this.normalizeRoute(parsed.suggestedRoute, normalizedIntent, input.userRole),
+      confidence: this.normalizeConfidence(parsed.confidence),
+      source: 'openai'
+    };
+  }
+
+  private buildSystemPrompt(input: ChatbotMessageInput): string {
+    return [
+      'You are Mollmart Assistant, a smart support chatbot inside the Mollmart marketplace app.',
+      'Mollmart is not a checkout store. Correct flow: buyers publish product/service requests; sellers browse buyer requests and submit offers; when a buyer accepts an offer, a buyer-seller conversation opens in Messages.',
+      'Use the current role and path when helpful. If role is buyer, prefer buyer actions. If role is seller, prefer seller board/dashboard actions. If role is admin, mention admin routes only when relevant.',
+      `Current role available to you: ${input.userRole || 'guest'}. Current path: ${input.currentPath || 'unknown'}.`,
+      'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/users.',
+      'Do not invent checkout, payment, escrow, shipping labels, delivery tracking, file uploads for requests, realtime websocket features, or unsupported social login. If asked, explain they are not currently part of Mollmart.',
+      'For deployment: mention production env, secure secrets, PostgreSQL, Prisma migrations, frontend/backend build, Docker rebuild, CORS/SERVER_URL, and optional Redis when relevant.',
+      'For API assistant setup: mention OPENAI_API_KEY and OPENAI_MODEL in backend env, and that local fallback works without a key.',
+      'Be logical: answer the question first, then give 2-4 concrete next actions. If the request is vague, ask one direct clarifying question and still give the safest next step.',
+      'Return only JSON matching the schema. Keep reply under 900 characters. suggestions and actions should be short UI labels.'
+    ].join('\n');
+  }
+
+  private extractOpenAIText(data: OpenAIResponse): string {
+    if (typeof data.output_text === 'string') {
+      return data.output_text.trim();
+    }
+
+    return (data.output ?? [])
+      .flatMap((item) => item.content ?? [])
+      .map((content) => content.text ?? '')
+      .join('\n')
+      .trim();
+  }
+
+  private parseOpenAIJson(outputText: string, fallbackIntent: ChatbotIntent): Required<Omit<ChatbotReply, 'source'>> {
+    const cleanText = outputText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+
+    try {
+      const parsed = JSON.parse(cleanText) as OpenAIChatbotPayload;
+      return {
+        reply: typeof parsed.reply === 'string' && parsed.reply.trim().length > 0
+          ? parsed.reply.trim()
+          : responses[fallbackIntent].reply,
+        intent: typeof parsed.intent === 'string' ? parsed.intent : fallbackIntent,
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : responses[fallbackIntent].suggestions,
+        suggestedRoute: typeof parsed.suggestedRoute === 'string' ? parsed.suggestedRoute : routeByIntent[fallbackIntent] ?? '',
+        actions: Array.isArray(parsed.actions) ? parsed.actions : actionsByIntent[fallbackIntent] ?? [],
+        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.65
+      };
+    } catch {
+      return {
+        reply: cleanText,
+        intent: fallbackIntent,
+        suggestions: responses[fallbackIntent].suggestions,
+        suggestedRoute: routeByIntent[fallbackIntent] ?? '',
+        actions: actionsByIntent[fallbackIntent] ?? [],
+        confidence: 0.55
+      };
+    }
+  }
+
+  private normalizeIntent(value: string, fallback: ChatbotIntent): ChatbotIntent {
+    return validIntents.includes(value as ChatbotIntent) ? (value as ChatbotIntent) : fallback;
+  }
+
+  private normalizeStringList(value: unknown, fallback: string[], maxItems: number): string[] {
+    if (!Array.isArray(value)) {
+      return fallback;
+    }
+
+    const items = value
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, maxItems);
+
+    return items.length > 0 ? items : fallback;
+  }
+
+  private normalizeRoute(value: string, fallbackIntent: ChatbotIntent, role?: ChatbotMessageInput['userRole']): string {
+    const route = value.trim();
+
+    if (route.length > 0 && knownRoutes.has(route)) {
+      return route;
+    }
+
+    return this.routeForIntent(fallbackIntent, role);
+  }
+
+  private normalizeConfidence(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0.65;
+    }
+
+    return Math.max(0, Math.min(1, value));
+  }
+
+  private limitReply(reply: string): string {
+    return reply.length <= 1200 ? reply : `${reply.slice(0, 1197)}...`;
+  }
+
+  private routeForIntent(intent: ChatbotIntent, role?: ChatbotMessageInput['userRole']): string {
+    if (intent === 'account' && role) {
+      return '/profile';
+    }
+
+    return routeByIntent[intent] ?? '';
+  }
+
+  private detectIntent(input: ChatbotMessageInput): ChatbotIntent {
+    const text = normalizeText(input.message);
+    const scores = new Map<ChatbotIntent, number>();
+    const add = (intent: ChatbotIntent, points: number) => {
+      scores.set(intent, (scores.get(intent) ?? 0) + points);
+    };
+
+    if (hasAnyPhrase(text, ['hello', 'hey', 'hi']) && text.split(' ').length <= 5) add('greeting', 5);
+    if (hasAnyPhrase(text, ['assistant', 'bot', 'chatbot'])) add('assistant_setup', 3);
+
+    if (hasAnyPhrase(text, ['create request', 'post request', 'publish request', 'new request', 'buyer request', 'my request', 'draft request'])) add('buyer_request', 5);
+    if (hasAnyPhrase(text, ['accept offer', 'accept offers', 'compare offers', 'my requests', 'buyer offers', 'see offers', 'offer accepted'])) add('buyer_offers', 5);
+    if (hasAnyPhrase(text, ['browse requests', 'buyer requests', 'request board', 'seller dashboard', 'find customer', 'find buyers'])) add('seller_board', 5);
+    if (hasAnyPhrase(text, ['send offer', 'send offers', 'make offer', 'make offers', 'submit offer', 'submit offers', 'seller offer', 'seller offers', 'proposal', 'bid'])) add('seller_offer', 5);
+    if (hasAnyPhrase(text, ['request', 'requests'])) add(input.userRole === 'seller' ? 'seller_board' : 'buyer_request', 2);
+    if (hasAnyPhrase(text, ['offer', 'offers', 'price', 'timeframe'])) add(input.userRole === 'buyer' ? 'buyer_offers' : 'seller_offer', 2);
+    if (hasAnyPhrase(text, ['message', 'messages', 'chat', 'conversation', 'unread'])) add('chat', 5);
+    if (hasAnyPhrase(text, ['profile', 'avatar', 'preferences', 'seller profile', 'buyer preferences'])) add('profile', 5);
+    if (hasAnyPhrase(text, ['notification', 'notifications', 'notify', 'alert', 'unread notification'])) add('notifications', 5);
+    if (hasAnyPhrase(text, ['deploy', 'deployment', 'production', 'hosting', 'docker', 'build image', 'rebuild', 'vercel', 'render', 'railway', 'env'])) add('deployment', 5);
+    if (hasAnyPhrase(text, ['login', 'log in', 'signup', 'sign up', 'register', 'password', 'email', 'email verification', 'forgot password'])) add('account', 5);
+    if (hasAnyPhrase(text, ['admin', 'moderation', 'category', 'categories', 'users', 'block user'])) add('admin', 5);
+    if (hasAnyPhrase(text, ['payment', 'checkout', 'cart', 'shipping', 'delivery tracking', 'escrow', 'refund', 'invoice'])) add('platform_limits', 6);
+    if (hasAnyPhrase(text, ['openai', 'api key', 'model', 'smart assistant', 'ai assistant'])) add('assistant_setup', 5);
+
+    if (input.userRole === 'buyer') {
+      add('buyer_request', 0.4);
+      add('buyer_offers', 0.4);
+    } else if (input.userRole === 'seller') {
+      add('seller_board', 0.4);
+      add('seller_offer', 0.4);
+    } else if (input.userRole === 'admin') {
+      add('admin', 0.4);
+    }
+
+    const contextualIntent = this.detectContextIntent(input);
+    if (contextualIntent && this.isFollowUp(text)) {
+      add(contextualIntent, 2.5);
+    }
+
+    const [bestIntent, bestScore] = [...scores.entries()].sort((a, b) => b[1] - a[1])[0] ?? ['fallback', 0];
+    return bestScore >= 3 ? bestIntent : 'fallback';
+  }
+
+  private detectContextIntent(input: ChatbotMessageInput): ChatbotIntent | null {
+    const previousUserMessages = (input.history ?? [])
+      .filter((item) => item.role === 'user' && normalizeText(item.content) !== normalizeText(input.message))
+      .slice(-3)
+      .reverse();
+
+    for (const item of previousUserMessages) {
+      const intent = this.detectIntent({ message: item.content, userRole: input.userRole, currentPath: input.currentPath });
+      if (intent !== 'fallback' && intent !== 'greeting') {
+        return intent;
+      }
+    }
+
+    return null;
+  }
+
+  private isFollowUp(text: string): boolean {
+    return text.length < 90 && (
+      hasAnyPhrase(text, ['how', 'where', 'why', 'what', 'when', 'then', 'next', 'this', 'that', 'it']) ||
+      text.endsWith('?')
+    );
+  }
+
+  private withContext(input: ChatbotMessageInput, intent: ChatbotIntent, reply: string): string {
+    const role = input.userRole;
+
+    if (role === 'buyer' && ['seller_board', 'seller_offer'].includes(intent)) {
+      return `${reply} Your current role is buyer, so you may need a seller account to use seller-only pages.`;
+    }
+
+    if (role === 'seller' && ['buyer_request', 'buyer_offers'].includes(intent)) {
+      return `${reply} Your current role is seller, so buyer request management may require a buyer account.`;
+    }
+
+    if (intent === 'fallback') {
+      return input.currentPath
+        ? `${reply} You are currently on ${input.currentPath}; tell me what you are trying to do from this screen.`
+        : reply;
+    }
+
+    return reply;
+  }
+}
+
+export default ChatbotService;

@@ -266,6 +266,24 @@ export default function UserProfilePage() {
               My Requests
             </Link>
           )}
+          {user?.role === "seller" && (
+            <>
+              <Link
+                href="/seller/dashboard"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
+              >
+                <span className="material-symbols-outlined">dashboard</span>
+                Seller Dashboard
+              </Link>
+              <Link
+                href="/browse-buyer-requests"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
+              >
+                <span className="material-symbols-outlined">travel_explore</span>
+                Buyer Requests
+              </Link>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setMainTab("preferences")}
@@ -279,17 +297,21 @@ export default function UserProfilePage() {
         <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[#102216] to-[#1a2e22] text-white">
           <div className="relative z-10 flex flex-col gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">
-              local_offer
+              {user?.role === "seller" ? "travel_explore" : "playlist_add"}
             </span>
-            <h4 className="font-bold text-lg">Sell on Mollmart</h4>
+            <h4 className="font-bold text-lg">
+              {user?.role === "seller" ? "Find buyer demand" : "Post buyer demand"}
+            </h4>
             <p className="text-xs text-gray-300 mb-2">
-              Respond to live buyer requests and start more conversations.
+              {user?.role === "seller"
+                ? "Respond to live buyer requests and start more conversations."
+                : "Create a request so sellers can respond with offers."}
             </p>
             <Link
-              href="/seller/dashboard"
+              href={user?.role === "seller" ? "/browse-buyer-requests" : "/create-product-request"}
               className="w-full py-2 bg-primary text-[#0d1b12] text-xs font-bold rounded-lg hover:bg-green-400 transition-colors text-center"
             >
-              Start Selling
+              {user?.role === "seller" ? "Browse Requests" : "Post Request"}
             </Link>
           </div>
           <div className="absolute -bottom-8 -right-8 size-24 bg-primary/20 rounded-full blur-xl" />

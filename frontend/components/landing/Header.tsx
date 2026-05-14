@@ -177,6 +177,9 @@ export function Header() {
                 Post Request
               </Link>
             )}
+            <Link className="text-sm font-medium text-[#0d1b12] hover:text-primary transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full" href="/chatbot">
+              Assistant
+            </Link>
           </nav>
 
           {loading ? (
@@ -202,6 +205,12 @@ export function Header() {
                 className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
               >
                 <span className="material-symbols-outlined text-[22px]">chat</span>
+              </Link>
+              <Link
+                href="/chatbot"
+                className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#0d1b12]"
+              >
+                <span className="material-symbols-outlined text-[22px]">smart_toy</span>
               </Link>
               <Link
                 href="/notifications"

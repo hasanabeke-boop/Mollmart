@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import KpiCard from "../../../components/KpiCard";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import RoleGate from "@/components/auth/RoleGate";
 
 type OfferItem = {
   id: string;
@@ -30,6 +32,7 @@ function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
 }
 
 export default function SellerAnalyticsPage() {
+  const { user, loading: authLoading } = useAuth();
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -37,6 +40,7 @@ export default function SellerAnalyticsPage() {
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
+    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
     setLoading(true);
     setError("");
     try {
@@ -66,11 +70,15 @@ export default function SellerAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+      setLoading(false);
+      return;
+    }
     loadData();
-  }, [loadData]);
+  }, [loadData, authLoading, user]);
 
   const acceptedOffers = offers.filter((offer) => offer.status === "accepted").length;
   const activeConversations = conversations.filter((conversation) => conversation.status !== "closed").length;
@@ -117,6 +125,14 @@ export default function SellerAnalyticsPage() {
   }, [offers, requests]);
 
   return (
+    <RoleGate
+      allowedRoles={["seller", "admin"]}
+      title="Seller analytics"
+      description="Seller Analytics is for sellers tracking offers, accepted matches, and conversations. Buyers should use My Requests to compare offers."
+      ctaHref="/my-requests"
+      ctaLabel="Open my requests"
+      unauthenticatedDescription="Log in as a seller to view analytics."
+    >
     <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
       <main className="mx-auto flex h-full min-h-[calc(100vh-4rem)] max-w-7xl flex-1 flex-col space-y-8 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -267,6 +283,7 @@ export default function SellerAnalyticsPage() {
         </div>
       </main>
     </div>
+    </RoleGate>
   );
 }
 

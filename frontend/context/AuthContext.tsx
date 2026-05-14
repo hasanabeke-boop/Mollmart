@@ -36,7 +36,11 @@ type AuthState = {
     email: string,
     password: string,
     role: "buyer" | "seller",
-  ) => Promise<{ message: string; verificationToken?: string }>;
+  ) => Promise<{
+    message: string;
+    requiresEmailVerification?: boolean;
+    verificationToken?: string;
+  }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -124,7 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       role: "buyer" | "seller",
     ) => {
-      return await apiFetch<{ message: string; verificationToken?: string }>("/api/v1/auth/signup", {
+      return await apiFetch<{
+        message: string;
+        requiresEmailVerification?: boolean;
+        verificationToken?: string;
+      }>("/api/v1/auth/signup", {
         method: "POST",
         service: "auth",
         body: JSON.stringify({ username, email, password, role }),

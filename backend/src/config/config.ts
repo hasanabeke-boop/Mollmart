@@ -33,12 +33,18 @@ const envSchema = Joi.object({
     .falsy('0')
     .default(false),
   SUBSCRIBE_MODERATION_EVENTS: Joi.boolean().truthy('true').truthy('1').falsy('false').falsy('0').default(true),
+  REQUIRE_EMAIL_VERIFICATION: Joi.string()
+    .lowercase()
+    .valid('auto', 'true', 'false', '1', '0')
+    .default('auto'),
   SMTP_HOST: Joi.string().default('smtp.example.com'),
   SMTP_PORT: Joi.string().default('587'),
   SMTP_USERNAME: Joi.string().default('user@example.com'),
   SMTP_PASSWORD: Joi.string().default('password'),
   EMAIL_FROM: Joi.string().email().default('no-reply@example.com'),
-  INTERNAL_API_TOKEN: Joi.string().allow('').default('')
+  INTERNAL_API_TOKEN: Joi.string().allow('').default(''),
+  OPENAI_API_KEY: Joi.string().allow('').default(''),
+  OPENAI_MODEL: Joi.string().default('gpt-5-mini')
 })
   .custom((value, helpers) => {
     if (value.JWT_ACCESS_SECRET == null && value.ACCESS_TOKEN_SECRET == null) {
@@ -72,6 +78,16 @@ if (error != null) {
 const accessSecret = (value.JWT_ACCESS_SECRET ?? value.ACCESS_TOKEN_SECRET) as string;
 const refreshSecret = (value.JWT_REFRESH_SECRET ?? value.REFRESH_TOKEN_SECRET) as string;
 const nodeEnv = value.NODE_ENV as 'development' | 'production' | 'test';
+const emailEnabled =
+  value.SMTP_HOST !== 'smtp.example.com' &&
+  value.SMTP_USERNAME !== 'user@example.com' &&
+  value.SMTP_PASSWORD !== 'password';
+const requireEmailVerificationSetting = value.REQUIRE_EMAIL_VERIFICATION as string;
+const requireEmailVerification =
+  requireEmailVerificationSetting === 'auto'
+    ? emailEnabled
+    : requireEmailVerificationSetting === 'true' ||
+      requireEmailVerificationSetting === '1';
 
 const config = {
   nodeEnv,
@@ -111,11 +127,11 @@ const config = {
   subscriptions: {
     moderationEvents: Boolean(value.SUBSCRIBE_MODERATION_EVENTS)
   },
+  auth: {
+    requireEmailVerification
+  },
   email: {
-    enabled:
-      value.SMTP_HOST !== 'smtp.example.com' &&
-      value.SMTP_USERNAME !== 'user@example.com' &&
-      value.SMTP_PASSWORD !== 'password',
+    enabled: emailEnabled,
     smtp: {
       host: value.SMTP_HOST as string,
       port: value.SMTP_PORT as string,
@@ -128,6 +144,10 @@ const config = {
   },
   internal: {
     api_token: value.INTERNAL_API_TOKEN as string
+  },
+  openai: {
+    apiKey: value.OPENAI_API_KEY as string,
+    model: value.OPENAI_MODEL as string
   },
   requestService: {
     url: `${value.SERVER_URL}/api/v1`,

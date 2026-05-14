@@ -7,6 +7,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
+import { useAuth } from "@/context/AuthContext";
+import RoleGate from "@/components/auth/RoleGate";
 
 const CATEGORIES = [
   { value: "home-furniture", label: "Home & Furniture" },
@@ -111,6 +113,7 @@ function canCancelRequest(request: RequestItem): boolean {
 export default function MyRequestsPage() {
   const router = useRouter();
   const toast = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [offersByRequest, setOffersByRequest] = useState<Record<string, OfferItem[]>>({});
   const [loading, setLoading] = useState(true);
@@ -148,6 +151,7 @@ export default function MyRequestsPage() {
   }, [editModalMounted]);
 
   const loadRequests = useCallback(async () => {
+    if (!user || (user.role !== "buyer" && user.role !== "admin")) return;
     setLoading(true);
     setError("");
     try {
@@ -167,11 +171,15 @@ export default function MyRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
+    if (authLoading || !user || (user.role !== "buyer" && user.role !== "admin")) {
+      setLoading(false);
+      return;
+    }
     loadRequests();
-  }, [loadRequests]);
+  }, [loadRequests, authLoading, user]);
 
   const openEdit = useCallback((r: RequestItem) => {
     setEditRequest(r);
@@ -361,6 +369,14 @@ export default function MyRequestsPage() {
   }, []);
 
   return (
+    <RoleGate
+      allowedRoles={["buyer", "admin"]}
+      title="Buyer request area"
+      description="My Requests is for buyers who publish demand and compare seller offers. Sellers should use the seller dashboard and request board."
+      ctaHref="/seller/dashboard"
+      ctaLabel="Open seller dashboard"
+      unauthenticatedDescription="Log in as a buyer to manage requests and accept offers."
+    >
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -678,5 +694,6 @@ export default function MyRequestsPage() {
         onConfirm={runConfirmedAction}
       />
     </main>
+    </RoleGate>
   );
 }
