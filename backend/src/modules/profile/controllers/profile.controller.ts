@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
+import { storePublicImage } from '../../media/services/publicMediaStorage';
+import { badRequest } from '../utils/apiError';
 import ProfileService from '../services/profile.service';
 import { SellerListQuery } from '../types/profile';
 
@@ -14,6 +16,20 @@ export class ProfileController {
   updateMe = async (req: Request, res: Response): Promise<void> => {
     const profile = await this.profileService.updateMyProfile(req.user!, req.body);
     res.status(httpStatus.OK).json(profile);
+  };
+
+  uploadAvatar = async (req: Request, res: Response): Promise<void> => {
+    const file = req.file;
+    if (file == null) {
+      throw badRequest('No file uploaded');
+    }
+    if (file.buffer == null || !Buffer.isBuffer(file.buffer)) {
+      throw badRequest('Invalid upload');
+    }
+
+    const stored = await storePublicImage(['avatars', req.user!.id], file);
+    const profile = await this.profileService.updateMyProfile(req.user!, { avatarUrl: stored.url });
+    res.status(httpStatus.CREATED).json({ url: stored.url, key: stored.key, profile });
   };
 
   updateSeller = async (req: Request, res: Response): Promise<void> => {

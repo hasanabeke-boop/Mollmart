@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { User } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { uploadProfileAvatar } from "@/lib/profile";
 
 export type ProfileMeResponse = {
   userId: string;
@@ -64,6 +65,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
 
   const resetFromProfile = useCallback(() => {
@@ -111,8 +113,36 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    setUploadingAvatar(false);
     setError("");
   }, [profile, user.name]);
+
+  const handleAvatarUpload = async (file: File | null) => {
+    if (file == null) return;
+    const isImage = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"].includes(file.type);
+    if (!isImage || file.size > 5 * 1024 * 1024) {
+      const msg = "Only JPEG, PNG, WebP, or GIF under 5 MB.";
+      setError(msg);
+      toastError(msg);
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setError("");
+    try {
+      const url = await uploadProfileAvatar(file);
+      setAvatarUrl(url);
+      toastInfo("Avatar uploaded.");
+      onSaved();
+    } catch (err: unknown) {
+      const e = err as Error;
+      const msg = e.message || "Avatar upload failed";
+      setError(msg);
+      toastError(msg);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     if (open && profile) {
@@ -314,6 +344,33 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
             </label>
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Avatar URL</span>
+              <div className="mb-2 flex items-center gap-3">
+                <div className="h-14 w-14 overflow-hidden rounded-full border border-[#e7f3eb] bg-[#f5f6f8]">
+                  {avatarUrl.trim() ? (
+                    <img src={avatarUrl.trim()} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[#4c9a66]">
+                      {fullName.trim().slice(0, 1).toUpperCase() || user.name?.slice(0, 1).toUpperCase() || "U"}
+                    </div>
+                  )}
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#e7f3eb] bg-white px-3 py-2 text-sm font-bold text-[#0d1b12] hover:bg-gray-50">
+                  <span className="material-symbols-outlined text-[20px]">
+                    {uploadingAvatar ? "progress_activity" : "upload"}
+                  </span>
+                  {uploadingAvatar ? "Uploading..." : "Upload"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    disabled={saving || uploadingAvatar}
+                    onChange={(e) => {
+                      void handleAvatarUpload(e.target.files?.[0] ?? null);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+              </div>
               <input
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
