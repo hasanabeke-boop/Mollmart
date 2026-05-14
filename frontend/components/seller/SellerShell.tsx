@@ -15,7 +15,11 @@ export default function SellerShell({ children }: { children: React.ReactNode })
     pathname.startsWith("/browse-buyer-requests") ||
     isChatWorkspace;
 
-  if (loading || user?.role !== "seller" || !isSellerWorkspace) {
+  const isAdminSellerArea = user?.role === "admin" && pathname.startsWith("/seller");
+  const showSellerChrome =
+    (user?.role === "seller" || isAdminSellerArea) && isSellerWorkspace;
+
+  if (loading || !showSellerChrome) {
     return <>{children}</>;
   }
 

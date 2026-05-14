@@ -18,6 +18,7 @@ export type ProfileMeResponse = {
     businessType: string | null;
     website: string | null;
     instagramUrl: string | null;
+    preferencesJson?: unknown;
     verificationStatus: string;
     ratingAverage: number;
     completedDealsCount: number;
@@ -164,7 +165,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     const av = avatarUrl.trim();
     if (av.length > 0) baseBody.avatarUrl = av;
 
-    const sellerBody: Record<string, string> = {};
+    const sellerBody: Record<string, unknown> = {};
     if (user.role === "seller" && profile.sellerProfile) {
       const dn = sellerDisplayName.trim();
       if (dn.length >= 2) sellerBody.displayName = dn;
@@ -178,7 +179,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
       if (ig.length > 0) sellerBody.instagramUrl = ig;
     }
 
-    const buyerBody: Record<string, string> = {};
+    const buyerBody: Record<string, unknown> = {};
     if (user.role === "buyer" && profile.buyerProfile) {
       const dn = buyerDisplayName.trim();
       if (dn.length >= 2) buyerBody.displayName = dn;
@@ -369,6 +370,9 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                   className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </label>
+              <p className="text-xs text-gray-500">
+                Recommendation categories are managed under <span className="font-semibold">Preferences</span> on your profile page.
+              </p>
             </section>
           )}
 
@@ -393,6 +397,9 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
               </label>
               <p className="text-xs text-gray-500">
                 You also have a general city field above; use buyer city for matching preferences if you keep them different.
+              </p>
+              <p className="text-xs text-gray-500">
+                Shopping categories for showcase recommendations are under <span className="font-semibold">Preferences</span> on your profile page.
               </p>
             </section>
           )}

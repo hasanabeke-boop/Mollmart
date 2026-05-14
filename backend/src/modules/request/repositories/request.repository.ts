@@ -252,7 +252,11 @@ export class RequestRepository implements RequestRepositoryLike {
         in: ['published', 'has_offers']
       },
       AND: andFilters,
-      ...(query.categoryId != null ? { categoryId: query.categoryId } : {}),
+      ...(query.categoryIdsIn != null && query.categoryIdsIn.length > 0
+        ? { categoryId: { in: query.categoryIdsIn } }
+        : query.categoryId != null
+          ? { categoryId: query.categoryId }
+          : {}),
       ...(query.currency != null ? { currency: query.currency } : {}),
       ...(query.location != null ? { location: { contains: query.location, mode: 'insensitive' } } : {}),
       ...(query.isNegotiable != null ? { isNegotiable: query.isNegotiable } : {}),

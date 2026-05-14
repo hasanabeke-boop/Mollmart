@@ -16,6 +16,10 @@ function asString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+function asNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
 export class NotificationEventMapper implements NotificationEventMapperLike {
   mapEvent(event: EventEnvelope): MappedNotification[] {
     if (!isObject(event.payload)) {
@@ -34,6 +38,10 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         return this.mapChatMessageCreated(event.payload);
       case 'user.blocked':
         return this.mapUserBlocked(event.payload);
+      case 'shop.order.placed':
+        return this.mapShopOrderPlaced(event.payload);
+      case 'shop.order.status_changed':
+        return this.mapShopOrderStatusChanged(event.payload);
       case 'moderation.case.created':
         return config.subscriptions.moderationEvents ? this.mapModerationCaseCreated(event.payload) : [];
       default:
@@ -152,6 +160,92 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         referenceType: 'user',
         referenceId: userId,
         dedupeKey: `user-blocked-${userId}`
+      }
+    ];
+  }
+
+  private mapShopOrderPlaced(payload: PlainObject): MappedNotification[] {
+    const orderId = asString(payload.orderId);
+    const buyerId = asString(payload.buyerId);
+    const sellerId = asString(payload.sellerId);
+    const currency = asString(payload.currency) ?? '';
+    const total = asNumber(payload.total);
+    const firstLineTitle = asString(payload.firstLineTitle);
+
+    if (orderId == null || buyerId == null || sellerId == null) {
+      logger.warn('Skipping shop.order.placed event due to missing orderId, buyerId, or sellerId');
+      return [];
+    }
+
+    const totalLabel =
+      total != null
+        ? `${Number.isInteger(total) ? String(total) : total.toFixed(2)} ${currency}`.trim()
+        : currency.trim();
+
+    const buyerBody =
+      firstLineTitle != null
+        ? `Your shop order is confirmed (${totalLabel}). Includes: ${firstLineTitle}.`
+        : `Your shop order is confirmed (${totalLabel}).`;
+
+    const sellerBody =
+      firstLineTitle != null
+        ? `You have a new sale from checkout (${totalLabel}). First item: ${firstLineTitle}.`
+        : `You have a new sale from checkout (${totalLabel}).`;
+
+    return [
+      {
+        userId: buyerId,
+        type: 'shop_order_placed',
+        title: 'Order placed',
+        body: buyerBody,
+        referenceType: 'catalog_order',
+        referenceId: orderId,
+        dedupeKey: `shop-order-placed-buyer-${orderId}`
+      },
+      {
+        userId: sellerId,
+        type: 'shop_order_placed',
+        title: 'New sale (checkout)',
+        body: sellerBody,
+        referenceType: 'catalog_order',
+        referenceId: orderId,
+        dedupeKey: `shop-order-placed-seller-${orderId}`
+      }
+    ];
+  }
+
+  private mapShopOrderStatusChanged(payload: PlainObject): MappedNotification[] {
+    const orderId = asString(payload.orderId);
+    const buyerId = asString(payload.buyerId);
+    const sellerId = asString(payload.sellerId);
+    const previousStatus = asString(payload.previousStatus);
+    const newStatus = asString(payload.newStatus);
+
+    if (orderId == null || buyerId == null || sellerId == null || previousStatus == null || newStatus == null) {
+      logger.warn('Skipping shop.order.status_changed event due to missing fields');
+      return [];
+    }
+
+    const body = `Shop order status changed from "${previousStatus}" to "${newStatus}".`;
+
+    return [
+      {
+        userId: buyerId,
+        type: 'shop_order_status_changed',
+        title: 'Order status updated',
+        body,
+        referenceType: 'catalog_order',
+        referenceId: orderId,
+        dedupeKey: `shop-order-status-${orderId}-buyer-${previousStatus}-${newStatus}`
+      },
+      {
+        userId: sellerId,
+        type: 'shop_order_status_changed',
+        title: 'Order status updated',
+        body,
+        referenceType: 'catalog_order',
+        referenceId: orderId,
+        dedupeKey: `shop-order-status-${orderId}-seller-${previousStatus}-${newStatus}`
       }
     ];
   }

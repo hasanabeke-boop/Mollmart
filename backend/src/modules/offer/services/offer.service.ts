@@ -63,7 +63,7 @@ export class OfferService {
       user.id
     );
 
-    await this.offerEventPublisher.publishOfferCreated(offer);
+    await this.offerEventPublisher.publishOfferCreated(offer, request.buyerId);
     return offer;
   }
 

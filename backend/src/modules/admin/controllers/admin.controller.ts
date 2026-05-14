@@ -1,10 +1,15 @@
+import { CatalogOrderStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import AdminService from '../services/admin.service';
+import ShopService from '../../shop/services/shop.service';
 import { ModerationCaseListQuery } from '../types/admin';
 
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly shopService: ShopService
+  ) {}
 
   createCategory = async (req: Request, res: Response): Promise<void> => {
     const category = await this.adminService.createCategory(req.user!, req.body);
@@ -49,6 +54,30 @@ export class AdminController {
   getDashboardSummary = async (_req: Request, res: Response): Promise<void> => {
     const summary = await this.adminService.getDashboardSummary();
     res.status(httpStatus.OK).json(summary);
+  };
+
+  listCatalogOrders = async (req: Request, res: Response): Promise<void> => {
+    const { page, limit, status } = req.query as unknown as {
+      page: number;
+      limit: number;
+      status?: string;
+    };
+    const data = await this.shopService.listOrdersAdmin(page, limit, status);
+    res.status(httpStatus.OK).json(data);
+  };
+
+  patchCatalogOrder = async (req: Request, res: Response): Promise<void> => {
+    const body = req.body as {
+      status?: CatalogOrderStatus;
+      trackingNumber?: string | null;
+      carrier?: string | null;
+    };
+    const data = await this.shopService.patchOrderAdmin(req.user!, req.params.id, {
+      status: body.status,
+      trackingNumber: body.trackingNumber,
+      carrier: body.carrier
+    });
+    res.status(httpStatus.OK).json(data);
   };
 }
 

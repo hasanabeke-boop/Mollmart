@@ -64,9 +64,13 @@ function formatBudget(min?: number, max?: number, currency = "USD"): string {
   return "Negotiable";
 }
 
-type FilterTab = "all" | "published" | "has_offers";
+type FilterTab = "recommendations" | "all" | "published" | "has_offers";
+
+const SELLER_REC_HINT =
+  "To see recommended buyer requests, publish showcase listings in your categories or choose selling preferences in your profile settings.";
 
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
+  { id: "recommendations", label: "Recommendations" },
   { id: "all", label: "All Requests" },
   { id: "published", label: "Published" },
   { id: "has_offers", label: "Has Offers" },
@@ -263,20 +267,26 @@ function OfferModal({
 
 export default function BrowseBuyerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [activeTab, setActiveTab] = useState<FilterTab>("recommendations");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
 
   const loadRequests = useCallback(async () => {
     if (!user || (user.role !== "seller" && user.role !== "admin")) return;
     setLoadingData(true);
+    setRequests([]);
     try {
       const params = new URLSearchParams({ limit: "50" });
-      if (activeTab !== "all") params.set("status", activeTab);
+      if (activeTab === "recommendations") {
+        params.set("recommended", "true");
+      } else {
+        setHasRecommendationSignals(null);
+      }
       if (search.trim().length >= 2) params.set("q", search.trim());
       if (selectedCategory) params.set("categoryId", selectedCategory);
 
@@ -307,7 +317,12 @@ export default function BrowseBuyerRequestsPage() {
           createdAt: string;
           attachments?: string[];
         }>;
+        hasRecommendationSignals?: boolean;
       }>(`/api/v1/requests?${params.toString()}`, { service: "request" });
+
+      if (activeTab === "recommendations") {
+        setHasRecommendationSignals(data.hasRecommendationSignals ?? false);
+      }
 
       const items = data.data || data.items || (Array.isArray(data) ? data : []);
 
@@ -347,6 +362,7 @@ export default function BrowseBuyerRequestsPage() {
       setRequests(mapped);
     } catch {
       setRequests([]);
+      if (activeTab === "recommendations") setHasRecommendationSignals(null);
     } finally {
       setLoadingData(false);
     }
@@ -369,6 +385,12 @@ export default function BrowseBuyerRequestsPage() {
   const filteredRequests = useMemo(() => {
     let data = requests;
 
+    if (activeTab === "published") {
+      data = data.filter((r) => r.status === "published");
+    } else if (activeTab === "has_offers") {
+      data = data.filter((r) => r.status === "has_offers");
+    }
+
     if (selectedCategory) {
       data = data.filter((r) => r.categoryId === selectedCategory);
     }
@@ -384,7 +406,7 @@ export default function BrowseBuyerRequestsPage() {
     }
 
     return data;
-  }, [requests, search, selectedCategory]);
+  }, [requests, search, selectedCategory, activeTab]);
 
   const featuredRequest = filteredRequests.find((r) => r.image);
   const regularRequests = filteredRequests.filter((r) => r !== featuredRequest);
@@ -548,6 +570,22 @@ export default function BrowseBuyerRequestsPage() {
         <div className="rounded-2xl border border-[#dfe7f2] bg-white p-6 text-center text-sm font-semibold text-slate-500">
           Loading live requests...
         </div>
+      ) : activeTab === "recommendations" && hasRecommendationSignals === false ? (
+        <div className="text-center py-16 max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-amber-700 text-3xl">tune</span>
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No recommendation data yet</h3>
+          <p className="text-slate-600 text-sm mb-4">{SELLER_REC_HINT}</p>
+          <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
+            <Link href="/seller/products/new" className="text-blue-600 hover:underline">
+              Add a showcase listing
+            </Link>
+            <Link href="/profile" className="text-blue-600 hover:underline">
+              Profile settings
+            </Link>
+          </div>
+        </div>
       ) : filteredRequests.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
@@ -566,7 +604,7 @@ export default function BrowseBuyerRequestsPage() {
             onClick={() => {
               setSearch("");
               setSelectedCategory("");
-              setActiveTab("all");
+              setActiveTab("recommendations");
             }}
             className="text-sm text-blue-600 font-bold hover:underline"
           >

@@ -23,6 +23,11 @@ export class NotificationController {
     const result = await this.notificationService.markAllRead(req.user!);
     res.status(httpStatus.OK).json(result);
   };
+
+  unreadCount = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.notificationService.countUnread(req.user!);
+    res.status(httpStatus.OK).json(result);
+  };
 }
 
 export default NotificationController;

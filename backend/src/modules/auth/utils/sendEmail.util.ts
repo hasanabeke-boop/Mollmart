@@ -66,3 +66,42 @@ export const sendVerifyEmail = async (
   logger.info('Verify email sent: ' + info.response);
   return true;
 };
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export const sendNotificationEmail = async (
+  email: string,
+  subject: string,
+  bodyPlain: string
+): Promise<boolean> => {
+  const appUrl = config.corsOrigin.replace(/\/$/, '');
+  const mailOptions = {
+    from: config.email.from,
+    to: email,
+    subject: `Mollmart: ${subject}`,
+    html: `
+      <p>${escapeHtml(bodyPlain)}</p>
+      <p>
+        <a
+          href="${escapeHtml(appUrl)}/notifications"
+          style="display:inline-block;padding:12px 20px;background:#18181b;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;"
+        >
+          View notifications
+        </a>
+      </p>
+      <p style="font-size:12px;color:#666;">If the button does not work, open: ${escapeHtml(appUrl)}/notifications</p>
+    `
+  };
+
+  const transporter = await getTransporter();
+  if (!transporter) return false;
+  const info = await transporter.sendMail(mailOptions);
+  logger.info('Notification email sent: ' + info.response);
+  return true;
+};

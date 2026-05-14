@@ -4,6 +4,10 @@ import { authenticate, requireAdmin } from '../../middleware/auth';
 import validate from '../../middleware/validate';
 import asyncHandler from '../../utils/asyncHandler';
 import {
+  adminCatalogOrderListSchema,
+  adminCatalogOrderPatchSchema
+} from '../../../shop/validators/shop.validation';
+import {
   blockUserSchema,
   categoryCreateSchema,
   categoryUpdateSchema,
@@ -42,6 +46,17 @@ export function createAdminRouter(controller: AdminController): Router {
   router.post('/admin/users/:userId/block', validate(blockUserSchema), asyncHandler(controller.blockUser));
   router.post('/admin/users/:userId/unblock', validate(userIdParamSchema), asyncHandler(controller.unblockUser));
   router.get('/admin/dashboard/summary', asyncHandler(controller.getDashboardSummary));
+
+  router.get(
+    '/admin/catalog-orders',
+    validate(adminCatalogOrderListSchema),
+    asyncHandler(controller.listCatalogOrders)
+  );
+  router.patch(
+    '/admin/catalog-orders/:id',
+    validate(adminCatalogOrderPatchSchema),
+    asyncHandler(controller.patchCatalogOrder)
+  );
 
   return router;
 }

@@ -112,6 +112,7 @@ export class ProfileService {
               businessType: profile.sellerProfile.businessType,
               website: profile.sellerProfile.website,
               instagramUrl: profile.sellerProfile.instagramUrl,
+              preferencesJson: profile.sellerProfile.preferencesJson,
               verificationStatus: profile.sellerProfile.verificationStatus,
               ratingAverage: Number(profile.sellerProfile.ratingAverage),
               completedDealsCount: profile.sellerProfile.completedDealsCount
@@ -192,6 +193,7 @@ export class ProfileService {
       businessType: string | null;
       website: string | null;
       instagramUrl: string | null;
+      preferencesJson: Prisma.JsonValue;
     }> = {};
 
     if (input.displayName !== undefined) {
@@ -208,6 +210,9 @@ export class ProfileService {
     }
     if (input.instagramUrl !== undefined) {
       data.instagramUrl = input.instagramUrl.trim().length > 0 ? input.instagramUrl.trim() : null;
+    }
+    if (input.preferencesJson !== undefined) {
+      data.preferencesJson = input.preferencesJson;
     }
 
     return data;

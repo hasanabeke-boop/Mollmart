@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import { apiFetchWithRefresh } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 
 type ProfileStats = {
@@ -20,6 +20,21 @@ function roleLabel(role: string | undefined) {
   return "Buyer";
 }
 
+function readRecommendedCategoryIds(prefs: unknown): string[] {
+  if (prefs == null || typeof prefs !== "object") return [];
+  const raw = (prefs as { recommendedCategoryIds?: unknown }).recommendedCategoryIds;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((x) => String(x)).filter((s) => s.length > 0);
+}
+
+type ProfileMainTab = "overview" | "preferences";
+
+function navButtonClass(active: boolean) {
+  return `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+    active ? "bg-primary/10 font-medium text-[#0d1b12]" : "text-[#0d1b12] hover:bg-[#f5f6f8]"
+  }`;
+}
+
 export default function UserProfilePage() {
   const { user, loading: authLoading, refreshUser } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -30,8 +45,30 @@ export default function UserProfilePage() {
   const [location, setLocation] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
   const [editOpen, setEditOpen] = useState(false);
+  const [mainTab, setMainTab] = useState<ProfileMainTab>("overview");
+  const [prefCategoryIds, setPrefCategoryIds] = useState<string[]>([]);
+  const [prefSaving, setPrefSaving] = useState(false);
+  const [prefError, setPrefError] = useState("");
 
   const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
+  const [catalogCategories, setCatalogCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await apiFetch<Array<{ id: string; name: string; slug: string }>>("/api/v1/catalog/categories", {
+          service: "catalog",
+        });
+        if (!cancelled && Array.isArray(rows)) setCatalogCategories(rows);
+      } catch {
+        if (!cancelled) setCatalogCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -122,6 +159,81 @@ export default function UserProfilePage() {
     toastSuccess("Profile updated.");
   }, [loadProfile, refreshUser, toastSuccess]);
 
+  const prefsMode = useMemo<"buyer" | "seller" | null>(() => {
+    if (!profileData || !user) return null;
+    if (user.role === "buyer" && profileData.buyerProfile) return "buyer";
+    if (user.role === "seller" && profileData.sellerProfile) return "seller";
+    if (user.role === "admin" && profileData.sellerProfile) return "seller";
+    if (user.role === "admin" && profileData.buyerProfile) return "buyer";
+    return null;
+  }, [user, profileData]);
+
+  const preferenceLabels = useMemo(() => {
+    if (!profileData || prefsMode == null) return [];
+    const prefs =
+      prefsMode === "seller"
+        ? profileData.sellerProfile?.preferencesJson
+        : profileData.buyerProfile?.preferencesJson;
+    const ids = readRecommendedCategoryIds(prefs);
+    return ids
+      .map((id) => catalogCategories.find((c) => c.id === id)?.name)
+      .filter((x): x is string => Boolean(x));
+  }, [profileData, prefsMode, catalogCategories]);
+
+  useEffect(() => {
+    if (mainTab !== "preferences" || prefsMode == null || !profileData) return;
+    const prefs =
+      prefsMode === "seller"
+        ? profileData.sellerProfile?.preferencesJson
+        : profileData.buyerProfile?.preferencesJson;
+    setPrefCategoryIds(readRecommendedCategoryIds(prefs));
+  }, [mainTab, prefsMode, profileData]);
+
+  const togglePrefCategory = (id: string) => {
+    setPrefCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const saveRecommendationPreferences = async () => {
+    if (!profileData || prefsMode == null) return;
+    setPrefError("");
+    setPrefSaving(true);
+    try {
+      const prevRaw =
+        prefsMode === "seller"
+          ? profileData.sellerProfile?.preferencesJson
+          : profileData.buyerProfile?.preferencesJson;
+      const prevPrefs =
+        prevRaw != null && typeof prevRaw === "object" ? (prevRaw as Record<string, unknown>) : {};
+      const body = {
+        preferencesJson: {
+          ...prevPrefs,
+          recommendedCategoryIds: prefCategoryIds,
+        },
+      };
+      if (prefsMode === "seller") {
+        await apiFetchWithRefresh("/api/v1/profiles/me/seller", {
+          method: "PATCH",
+          service: "profile",
+          body: JSON.stringify(body),
+        });
+      } else {
+        await apiFetchWithRefresh("/api/v1/profiles/me/buyer", {
+          method: "PATCH",
+          service: "profile",
+          body: JSON.stringify(body),
+        });
+      }
+      await loadProfile();
+      toastSuccess("Preferences saved.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Could not save preferences.";
+      setPrefError(msg);
+      toastError(msg);
+    } finally {
+      setPrefSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 md:px-10 py-8 min-h-[calc(100vh-80px)]">
       {user && (
@@ -137,14 +249,18 @@ export default function UserProfilePage() {
       {/* Sidebar */}
       <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-6">
         <nav className="flex flex-col gap-1 bg-white p-2 rounded-xl border border-[#e7f3eb] shadow-sm">
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 font-medium text-sm">
+          <button
+            type="button"
+            onClick={() => setMainTab("overview")}
+            className={navButtonClass(mainTab === "overview")}
+          >
             <span className="material-symbols-outlined">person</span>
-            Profile Info
+            Profile
           </button>
           {user?.role !== "seller" && (
             <Link
               href="/my-requests"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
             >
               <span className="material-symbols-outlined">playlist_add</span>
               My Requests
@@ -154,27 +270,27 @@ export default function UserProfilePage() {
             <>
               <Link
                 href="/seller/dashboard"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
               >
                 <span className="material-symbols-outlined">dashboard</span>
                 Seller Dashboard
               </Link>
               <Link
                 href="/browse-buyer-requests"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
               >
                 <span className="material-symbols-outlined">travel_explore</span>
                 Buyer Requests
               </Link>
             </>
           )}
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
+          <button
+            type="button"
+            onClick={() => setMainTab("preferences")}
+            className={navButtonClass(mainTab === "preferences")}
+          >
             <span className="material-symbols-outlined">tune</span>
             Preferences
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors">
-            <span className="material-symbols-outlined">settings</span>
-            Settings
           </button>
         </nav>
 
@@ -204,7 +320,6 @@ export default function UserProfilePage() {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col gap-8 min-w-0">
-        {/* Profile header */}
         <section className="bg-white rounded-2xl p-6 border border-[#e7f3eb] shadow-sm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex items-center gap-5">
@@ -222,6 +337,9 @@ export default function UserProfilePage() {
                 </div>
               </div>
               <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66] mb-1">
+                  {mainTab === "preferences" ? "Preferences" : "Overview"}
+                </p>
                 <h1 className="text-2xl md:text-3xl font-bold mb-1 text-[#0d1b12]">
                   {displayName || "—"}
                 </h1>
@@ -266,81 +384,155 @@ export default function UserProfilePage() {
           </div>
         </section>
 
-        {/* Stats */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Offers Sent" : "My Requests"}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#0d1b12]">{stats.primary}</span>
-            </div>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Accepted Offers" : "Offers Received"}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#0d1b12]">{stats.secondary}</span>
-            </div>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-            <p className="text-sm text-[#4c9a66] font-medium">Conversations</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#0d1b12]">{stats.conversations}</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Interests & Notifications */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Interests */}
-          <div className="bg-white p-6 rounded-xl border border-[#e7f3eb] shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">interests</span>
-                <h3 className="font-bold">{user?.role === "seller" ? "Demand topics" : "Buyer preferences"}</h3>
+        {mainTab === "overview" ? (
+          <>
+            {/* Stats */}
+            <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
+                <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Offers Sent" : "My Requests"}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-[#0d1b12]">{stats.primary}</span>
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-[#4c9a66] mb-4">
-              {user?.role === "seller"
-                ? "Open matching buyer requests by topic."
-                : "Use these topics as inspiration for your next request."}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "Technology",
-                "Fashion",
-                "Home Decor",
-                "Outdoor",
-                "Books",
-                "Vintage",
-              ].map((interest) => {
-                return (
-                  <Link
-                    key={interest}
-                    href={user?.role === "seller"
-                      ? `/browse-buyer-requests?q=${encodeURIComponent(interest)}`
-                      : "/create-product-request"}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors bg-[#f5f6f8] border-[#e7f3eb] text-[#4c9a66] hover:border-primary hover:text-primary"
-                  >
-                    {interest}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+              <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
+                <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Accepted Offers" : "Offers Received"}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-[#0d1b12]">{stats.secondary}</span>
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
+                <p className="text-sm text-[#4c9a66] font-medium">Conversations</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-[#0d1b12]">{stats.conversations}</span>
+                </div>
+              </div>
+            </section>
 
-          {/* Notifications */}
-          <div className="bg-white p-6 rounded-xl border border-[#e7f3eb] shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="material-symbols-outlined text-primary">notifications</span>
-              <h3 className="font-bold">Notifications</h3>
-            </div>
-            <div className="flex flex-col gap-4">
-              <ToggleRow label="Request Updates" checked />
-              <ToggleRow label="Offer Replies" checked />
-              <ToggleRow label="Newsletter" checked={false} />
-              <p className="text-xs text-[#4c9a66]">Notification preference API is not available yet, so these controls are read-only.</p>
-            </div>
-          </div>
-        </section>
+            {/* Interests & Notifications */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl border border-[#e7f3eb] shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">interests</span>
+                    <h3 className="font-bold">Interests</h3>
+                  </div>
+                </div>
+                <p className="text-sm text-[#4c9a66] mb-4">
+                  Categories you use for personalized recommendations. Your buyer requests or published showcase
+                  listings still help when nothing is selected here.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {preferenceLabels.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      None selected yet. Open the <span className="font-semibold">Preferences</span> tab in the sidebar to pick categories.
+                    </p>
+                  ) : (
+                    preferenceLabels.map((name) => (
+                      <span
+                        key={name}
+                        className="px-3 py-1.5 rounded-full text-xs font-medium border bg-[#f5f6f8] border-[#e7f3eb] text-[#4c9a66]"
+                      >
+                        {name}
+                      </span>
+                    ))
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold text-primary">
+                  <button
+                    type="button"
+                    onClick={() => setMainTab("preferences")}
+                    className="hover:underline text-left"
+                  >
+                    Edit in Preferences
+                  </button>
+                  {user?.role === "seller" ? (
+                    <Link href="/browse-buyer-requests" className="hover:underline">
+                      Browse buyer requests
+                    </Link>
+                  ) : (
+                    <Link href="/products" className="hover:underline">
+                      Browse showcase
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border border-[#e7f3eb] shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-primary">notifications</span>
+                  <h3 className="font-bold">Notifications</h3>
+                </div>
+                <div className="flex flex-col gap-4">
+                  <ToggleRow label="Request Updates" checked />
+                  <ToggleRow label="Offer Replies" checked />
+                  <ToggleRow label="Newsletter" checked={false} />
+                  <p className="text-xs text-[#4c9a66]">Notification preference API is not available yet, so these controls are read-only.</p>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : (
+          <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
+            <h2 className="text-lg font-bold text-[#0d1b12] mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">category</span>
+              Recommendation categories
+            </h2>
+            {prefsMode == null ? (
+              <p className="text-sm text-slate-600 max-w-lg">
+                Recommendation categories are available once your account has a buyer or seller profile. If you think this is a mistake, try refreshing the page or contact support.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-[#4c9a66] mb-6 max-w-2xl">
+                  {prefsMode === "buyer"
+                    ? "Pick categories you care about. They power the Recommendations view on the showcase page. If you clear everything, we still infer categories from your buyer requests when possible."
+                    : "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published showcase listings when possible."}
+                </p>
+                {prefError ? (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {prefError}
+                  </div>
+                ) : null}
+                <div className="max-h-80 overflow-y-auto flex flex-wrap gap-2 rounded-xl border border-[#e7f3eb] bg-[#f5f6f8] p-3">
+                  {catalogCategories.length === 0 ? (
+                    <span className="text-sm text-slate-500">Categories could not be loaded.</span>
+                  ) : (
+                    catalogCategories.map((c) => (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-full border border-[#e7f3eb] bg-white px-3 py-1.5 text-sm font-medium text-[#0d1b12]"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-[#e7f3eb] text-primary focus:ring-primary"
+                          checked={prefCategoryIds.includes(c.id)}
+                          onChange={() => togglePrefCategory(c.id)}
+                        />
+                        {c.name}
+                      </label>
+                    ))
+                  )}
+                </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={prefSaving || prefsMode == null}
+                    onClick={() => void saveRecommendationPreferences()}
+                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                  >
+                    {prefSaving ? "Saving…" : "Save preferences"}
+                  </button>
+                  <Link
+                    href={prefsMode === "seller" ? "/browse-buyer-requests" : "/products"}
+                    className="text-sm font-bold text-[#4c9a66] hover:underline"
+                  >
+                    {prefsMode === "seller" ? "Open buyer requests" : "Open showcase"}
+                  </Link>
+                </div>
+              </>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );

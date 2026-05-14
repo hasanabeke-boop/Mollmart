@@ -3,11 +3,21 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-export type SellerNavId = "dashboard" | "requests" | "messages" | "analytics";
+export type SellerNavId =
+  | "dashboard"
+  | "my_showcase"
+  | "new_showcase"
+  | "requests"
+  | "offers"
+  | "messages"
+  | "analytics";
 
 export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/seller/analytics")) return "analytics";
-  if (pathname.startsWith("/seller/dashboard") || pathname.startsWith("/seller")) return "dashboard";
+  if (pathname.startsWith("/seller/showcase")) return "my_showcase";
+  if (pathname.startsWith("/seller/products/new")) return "new_showcase";
+  if (pathname.startsWith("/seller/dashboard")) return "dashboard";
+  if (pathname.startsWith("/seller")) return "dashboard";
   if (pathname.startsWith("/browse-buyer-requests")) return "requests";
   if (pathname === "/chat" || pathname.startsWith("/chat/")) return "messages";
   return "dashboard";
@@ -21,6 +31,8 @@ const NAV_ITEMS: {
   badge?: number;
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
+  { id: "my_showcase", icon: "grid_view", label: "My showcase", href: "/seller/showcase" },
+  { id: "new_showcase", icon: "add_box", label: "New listing", href: "/seller/products/new" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
-type NotificationCategory = "all" | "requests" | "messages" | "offers";
+type NotificationCategory = "all" | "requests" | "messages" | "offers" | "orders";
 
 type ApiNotification = {
   id: string;
@@ -27,7 +27,7 @@ type NotificationItem = {
   body: string;
   time: string;
   unread: boolean;
-  iconType: "request" | "message" | "offer" | "system";
+  iconType: "request" | "message" | "offer" | "order" | "system";
   backendType: string;
   referenceType?: string;
   referenceId?: string;
@@ -42,9 +42,9 @@ function tabCategoryFromType(type: string): NotificationCategory | "system" {
       return "offers";
     case "chat_message_created":
       return "messages";
-    case "user_blocked":
-    case "moderation_case_created":
-      return "system";
+    case "shop_order_placed":
+    case "shop_order_status_changed":
+      return "orders";
     default:
       return "system";
   }
@@ -59,6 +59,9 @@ function iconFromType(type: string): NotificationItem["iconType"] {
     case "offer_created":
     case "offer_accepted":
       return "offer";
+    case "shop_order_placed":
+    case "shop_order_status_changed":
+      return "order";
     default:
       return "system";
   }
@@ -84,6 +87,8 @@ function resolveHref(
       return "/profile";
     case "moderation_case":
       return "/admin/moderation";
+    case "catalog_order":
+      return `/orders/${encodeURIComponent(refId)}`;
     default:
       return null;
   }
@@ -265,6 +270,7 @@ export default function NotificationsPage() {
               { id: "requests", label: "Requests" },
               { id: "messages", label: "Messages" },
               { id: "offers", label: "Offers" },
+              { id: "orders", label: "Shop orders" },
             ].map((tab) => {
               const active = category === tab.id;
               return (
@@ -328,6 +334,9 @@ export default function NotificationsPage() {
                   )}
                   {item.iconType === "offer" && (
                     <span className="material-symbols-outlined">sell</span>
+                  )}
+                  {item.iconType === "order" && (
+                    <span className="material-symbols-outlined">receipt_long</span>
                   )}
                   {item.iconType === "system" && (
                     <span className="material-symbols-outlined">notifications</span>

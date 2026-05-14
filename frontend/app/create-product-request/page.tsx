@@ -1,18 +1,20 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
-import { apiFetchWithRefresh } from "@/lib/api";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import RoleGate from "@/components/auth/RoleGate";
 
-const CATEGORIES = [
-  { value: "home-furniture", label: "Home & Furniture" },
-  { value: "electronics", label: "Electronics" },
-  { value: "fashion", label: "Fashion & Apparel" },
-  { value: "collectibles", label: "Collectibles" },
-  { value: "services", label: "Services" },
-  { value: "sustainability", label: "Sustainability" },
-];
+type ApiCategory = { id: string; name: string; slug: string };
+
+type ShowcaseForPrefill = {
+  slug: string;
+  title: string;
+  description: string;
+  category: { id: string; name: string; slug: string } | null;
+  seller: { id: string; name: string };
+};
 
 const CURRENCIES = [
   { code: "USD", label: "USD - US Dollar" },
@@ -31,6 +33,24 @@ type FormErrors = {
 };
 
 export default function CreateProductRequestPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-5xl mx-auto px-4 py-16 text-center text-slate-500">Loading…</div>
+      }
+    >
+      <CreateProductRequestContent />
+    </Suspense>
+  );
+}
+
+function CreateProductRequestContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const lastPrefillSlug = useRef<string | null>(null);
+
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -40,6 +60,69 @@ export default function CreateProductRequestPage() {
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCategoriesLoading(true);
+      try {
+        const rows = await apiFetch<ApiCategory[]>("/api/v1/catalog/categories", { service: "catalog" });
+        if (!cancelled) setCatalogCategories(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!cancelled) setCatalogCategories([]);
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const slug = searchParams.get("fromShowcase")?.trim();
+    if (!slug) return;
+    if (lastPrefillSlug.current === slug) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await apiFetch<ShowcaseForPrefill>(
+          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}?currency=USD`,
+          { service: "catalog" },
+        );
+        if (cancelled) return;
+        lastPrefillSlug.current = slug;
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const link = origin ? `${origin}/products/${p.slug}` : `/products/${p.slug}`;
+        const head = [
+          "I was inspired by this seller showcase listing (not a binding offer).",
+          "",
+          `Seller: ${p.seller.name}`,
+          `Showcase: ${link}`,
+          "",
+          "What they showed:",
+        ].join("\n");
+        const tail = [
+          "",
+          "What I want (edit below — add quantity, deadlines, specs, and your expectations):",
+          "- ",
+        ].join("\n");
+        const rawDesc = p.description.trim();
+        const maxDescPart = Math.max(0, MAX_DESC - head.length - tail.length - 1);
+        const descPart = rawDesc.slice(0, maxDescPart);
+        const truncated = descPart.length < rawDesc.length;
+        const full = `${head}\n${descPart}${truncated ? "\n…" : ""}${tail}`;
+        setTitle(`Inspired by: ${p.title}`.slice(0, 200));
+        setDescription(full.slice(0, MAX_DESC));
+        if (p.category?.id) setCategory(p.category.id);
+      } catch {
+        if (!cancelled) lastPrefillSlug.current = null;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   const validate = (): boolean => {
     const next: FormErrors = {};
@@ -100,6 +183,7 @@ export default function CreateProductRequestPage() {
   };
 
   const reset = () => {
+    lastPrefillSlug.current = null;
     setTitle("");
     setCategory("");
     setCurrency("USD");
@@ -109,6 +193,9 @@ export default function CreateProductRequestPage() {
     setDescription("");
     setErrors({});
     setSubmitted(false);
+    if (searchParams.get("fromShowcase")?.trim()) {
+      router.replace("/create-product-request");
+    }
   };
 
   if (submitted) {
@@ -152,7 +239,7 @@ export default function CreateProductRequestPage() {
             <div className="flex justify-between">
               <span className="text-sm text-slate-500">Category</span>
               <span className="text-sm font-semibold text-slate-900">
-                {CATEGORIES.find((c) => c.value === category)?.label}
+                {catalogCategories.find((c) => c.id === category)?.name ?? "—"}
               </span>
             </div>
             <div className="flex justify-between">
@@ -243,8 +330,8 @@ export default function CreateProductRequestPage() {
               Post a Request
             </h1>
             <p className="text-slate-600 leading-relaxed">
-              Can&apos;t find what you&apos;re looking for? Describe your ideal
-              product and let our curated sellers bring it to you.
+              Saw something you like in a seller showcase? Describe what you need and{" "}
+              <span className="font-semibold text-slate-800">name your price</span> — sellers compete with offers.
             </p>
           </div>
 
@@ -299,6 +386,12 @@ export default function CreateProductRequestPage() {
             className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 md:p-10 space-y-8"
             noValidate
           >
+            {searchParams.get("fromShowcase")?.trim() ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                Started from a seller showcase — edit the details and set <strong>your</strong> budget below.
+              </div>
+            ) : null}
+
             {/* Section 1: Basics */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-2">
@@ -346,6 +439,7 @@ export default function CreateProductRequestPage() {
                   <div className="relative">
                     <select
                       value={category}
+                      disabled={categoriesLoading}
                       onChange={(e) => {
                         setCategory(e.target.value);
                         if (errors.category)
@@ -357,10 +451,10 @@ export default function CreateProductRequestPage() {
                           : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     >
-                      <option value="">Select a category</option>
-                      {CATEGORIES.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.label}
+                      <option value="">{categoriesLoading ? "Loading categories…" : "Select a category"}</option>
+                      {catalogCategories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
                         </option>
                       ))}
                     </select>
