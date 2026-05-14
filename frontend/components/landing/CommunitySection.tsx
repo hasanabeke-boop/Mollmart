@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function CommunitySection() {
   return (
     <section className="py-16 bg-[#eff6ff]">
@@ -15,7 +17,7 @@ export function CommunitySection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+          <Link href="/create-product-request" className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 block">
             <div className="relative h-96 w-full overflow-hidden">
               <img
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 filter brightness-75 group-hover:brightness-90"
@@ -36,9 +38,9 @@ export function CommunitySection() {
                 <p className="text-gray-300 text-sm">One request • Multiple seller offers • Fast comparison</p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+          <Link href="/browse-buyer-requests" className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 block">
             <div className="relative h-96 w-full overflow-hidden">
               <img
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 filter brightness-75 group-hover:brightness-90"
@@ -59,9 +61,9 @@ export function CommunitySection() {
                 <p className="text-gray-300 text-sm">Relevant demand • Better response timing • More chats</p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+          <Link href="/chat" className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 block">
             <div className="relative h-96 w-full overflow-hidden">
               <img
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 filter brightness-75 group-hover:brightness-90"
@@ -82,7 +84,7 @@ export function CommunitySection() {
                 <p className="text-gray-300 text-sm">Match first • Final details later • No checkout flow</p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </section>

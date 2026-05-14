@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 bg-gradient-to-b from-blue-50 to-white">
@@ -21,12 +23,12 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-col w-full sm:flex-row gap-3 sm:w-auto mt-4">
-              <a href="/create-product-request" className="flex items-center justify-center rounded-lg bg-primary h-14 px-8 text-base font-bold text-white transition-all hover:bg-[var(--primary-hover)] shadow-xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-1">
+              <Link href="/create-product-request" className="flex items-center justify-center rounded-lg bg-primary h-14 px-8 text-base font-bold text-white transition-all hover:bg-[var(--primary-hover)] shadow-xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-1">
                 Post a Request
-              </a>
-              <a href="/browse-buyer-requests" className="flex items-center justify-center rounded-lg bg-white border border-gray-200 h-14 px-8 text-base font-bold text-[#0d1b12] hover:bg-gray-50 transition-colors hover:border-gray-300">
+              </Link>
+              <Link href="/browse-buyer-requests" className="flex items-center justify-center rounded-lg bg-white border border-gray-200 h-14 px-8 text-base font-bold text-[#0d1b12] hover:bg-gray-50 transition-colors hover:border-gray-300">
                 Browse Requests
-              </a>
+              </Link>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 text-sm font-medium text-gray-500">
@@ -94,9 +96,9 @@ export function HeroSection() {
                     <div className="font-bold text-sm line-clamp-1">Looking for 20 ergonomic office chairs</div>
                     <div className="text-xs text-gray-500 mt-1">14 sellers matched this request</div>
                   </div>
-                  <button className="ml-auto bg-primary/10 text-primary p-2 rounded-full hover:bg-primary hover:text-white transition-colors">
+                  <Link href="/browse-buyer-requests?q=office%20chairs" className="ml-auto bg-primary/10 text-primary p-2 rounded-full hover:bg-primary hover:text-white transition-colors" aria-label="Open matching buyer requests">
                     <span className="material-symbols-outlined text-[18px] block">arrow_forward</span>
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
