@@ -14,11 +14,18 @@ const offerInclude = {
     orderBy: {
       createdAt: 'desc'
     }
+  },
+  seller: {
+    select: {
+      id: true,
+      name: true
+    }
   }
 } satisfies Prisma.OfferInclude;
 
 export type OfferWithRelations = Offer & {
   statusHistory: OfferStatusHistory[];
+  seller: { id: string; name: string };
 };
 
 export interface CreateOfferRecordInput {
@@ -60,24 +67,52 @@ export class OfferRepository implements OfferRepositoryLike {
   constructor(private readonly client: PrismaClient = prisma) {}
 
   async create(data: CreateOfferRecordInput, actorId: string): Promise<OfferWithRelations> {
-    return this.client.offer.create({
-      data: {
-        requestId: data.requestId,
-        sellerId: data.sellerId,
-        price: data.price,
-        currency: data.currency,
-        message: data.message,
-        ...(data.deliveryDays !== undefined ? { deliveryDays: data.deliveryDays } : {}),
-        ...(data.warrantyInfo !== undefined ? { warrantyInfo: data.warrantyInfo } : {}),
-        statusHistory: {
-          create: {
-            actorId,
-            action: 'created',
-            toStatus: 'submitted'
+    return this.client.$transaction(async (tx) => {
+      const offer = await tx.offer.create({
+        data: {
+          requestId: data.requestId,
+          sellerId: data.sellerId,
+          price: data.price,
+          currency: data.currency,
+          message: data.message,
+          ...(data.deliveryDays !== undefined ? { deliveryDays: data.deliveryDays } : {}),
+          ...(data.warrantyInfo !== undefined ? { warrantyInfo: data.warrantyInfo } : {}),
+          statusHistory: {
+            create: {
+              actorId,
+              action: 'created',
+              toStatus: 'submitted'
+            }
           }
+        },
+        include: offerInclude
+      });
+
+      const requestRow = await tx.request.findUniqueOrThrow({
+        where: { id: data.requestId }
+      });
+
+      await tx.request.update({
+        where: { id: data.requestId },
+        data: {
+          offerCount: { increment: 1 },
+          ...(requestRow.status === 'published' ? { status: 'has_offers' } : {})
         }
-      },
-      include: offerInclude
+      });
+
+      if (requestRow.status === 'published') {
+        await tx.requestStatusHistory.create({
+          data: {
+            requestId: data.requestId,
+            actorId,
+            fromStatus: 'published',
+            toStatus: 'has_offers',
+            action: 'moved_to_has_offers'
+          }
+        });
+      }
+
+      return offer;
     });
   }
 
@@ -179,6 +214,13 @@ export class OfferRepository implements OfferRepositoryLike {
                 : 'expired',
         ...(note !== undefined ? { note } : {})
       });
+
+      if (toStatus === 'withdrawn' && current.status !== 'withdrawn') {
+        await tx.request.updateMany({
+          where: { id: current.requestId, offerCount: { gt: 0 } },
+          data: { offerCount: { decrement: 1 } }
+        });
+      }
 
       return tx.offer.findUniqueOrThrow({
         where: { id },

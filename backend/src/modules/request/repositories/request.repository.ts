@@ -97,10 +97,21 @@ export class RequestRepository implements RequestRepositoryLike {
   }
 
   async findById(id: string): Promise<RequestWithRelations | null> {
-    return this.client.request.findUnique({
+    const row = await this.client.request.findUnique({
       where: { id },
-      include: requestDetailsInclude
+      include: {
+        ...requestDetailsInclude,
+        _count: { select: { offers: true } }
+      }
     });
+    if (row == null) {
+      return null;
+    }
+    const { _count, ...rest } = row;
+    return {
+      ...rest,
+      offerCount: _count.offers
+    };
   }
 
   async publish(id: string, actorId: string, note?: string): Promise<RequestWithRelations> {
@@ -209,10 +220,13 @@ export class RequestRepository implements RequestRepositoryLike {
       ...(query.status != null ? { status: query.status } : {})
     };
 
-    const [items, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       this.client.request.findMany({
         where,
-        include: requestDetailsInclude,
+        include: {
+          ...requestDetailsInclude,
+          _count: { select: { offers: true } }
+        },
         skip: (query.page - 1) * query.limit,
         take: query.limit,
         orderBy: {
@@ -221,6 +235,14 @@ export class RequestRepository implements RequestRepositoryLike {
       }),
       this.client.request.count({ where })
     ]);
+
+    const items: RequestWithRelations[] = rows.map((row) => {
+      const { _count, ...rest } = row;
+      return {
+        ...rest,
+        offerCount: _count.offers
+      };
+    });
 
     return {
       items,
