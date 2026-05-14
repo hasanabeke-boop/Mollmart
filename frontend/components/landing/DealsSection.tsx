@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function DealsSection() {
   return (
     <section className="py-16 bg-[#f8faff]">
@@ -12,7 +14,7 @@ export function DealsSection() {
               New activity this hour
             </div>
           </div>
-          <a
+          <Link
             className="text-sm font-bold text-primary hover:text-blue-700 transition-colors flex items-center gap-1 group"
             href="/browse-buyer-requests"
           >
@@ -20,7 +22,7 @@ export function DealsSection() {
             <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
               arrow_forward
             </span>
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -76,7 +78,7 @@ function RequestCard({
   image: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 group h-full">
+    <Link href="/browse-buyer-requests?q=headsets" className="relative overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 group h-full block">
       <div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-red-500/30">
         {badge}
       </div>
@@ -102,12 +104,12 @@ function RequestCard({
             </div>
           </div>
           <p className="text-xs text-gray-500 mb-4">{activity}</p>
-          <button className="w-full bg-[#0d1b12] text-white text-sm font-bold py-2 rounded-lg hover:opacity-90 transition-opacity hover:shadow-lg">
+          <span className="block w-full bg-[#0d1b12] text-center text-white text-sm font-bold py-2 rounded-lg group-hover:opacity-90 transition-opacity group-hover:shadow-lg">
             {cta}
-          </button>
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -127,7 +129,7 @@ function CompactRequestCard({
   icon: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 group">
+    <Link href={`/browse-buyer-requests?q=${encodeURIComponent(title)}`} className="relative overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 group block">
       <div className="absolute top-4 left-4 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-red-500/30">
         {badge}
       </div>
@@ -146,11 +148,11 @@ function CompactRequestCard({
             <span className="text-lg font-bold text-primary">{budget}</span>
             <span className="text-sm text-gray-400">{note}</span>
           </div>
-          <button className="bg-gray-100 p-2 rounded-full text-[#0d1b12] hover:bg-primary hover:text-white transition-colors transform active:scale-95">
+          <span className="bg-gray-100 p-2 rounded-full text-[#0d1b12] group-hover:bg-primary group-hover:text-white transition-colors">
             <span className="material-symbols-outlined text-[20px] block">{icon}</span>
-          </button>
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
