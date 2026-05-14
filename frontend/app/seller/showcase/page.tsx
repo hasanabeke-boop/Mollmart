@@ -539,7 +539,7 @@ export default function SellerShowcaseManagePage() {
         title="Remove this listing?"
         description={
           deleteTarget
-            ? `“${deleteTarget.title}” will be removed from your showcase. If it was ever sold through checkout, it will be archived instead of fully deleted.`
+            ? `“${deleteTarget.title}” will be removed from your showcase. If it was linked to an old catalog order, it may be archived instead of fully deleted.`
             : ""
         }
         confirmLabel="Remove"

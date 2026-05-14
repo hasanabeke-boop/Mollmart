@@ -118,12 +118,12 @@ export default function OrdersPage() {
     <div className="flex-1 w-full max-w-[1280px] mx-auto px-6 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-[#0d1b12] mb-2 tracking-tight">
-          {isSellerView ? "Shop orders" : "My orders"}
+          {isSellerView ? "Order history" : "My orders"}
         </h1>
         <p className="text-[#4c9a66]">
           {isSellerView
-            ? "Shop orders from buyers who used checkout on your listings — track status and fulfillment."
-            : "Shop purchases — track delivery and order details."}
+            ? "Orders from paid request deals — open an order to see details and tracking."
+            : "Orders after you pay from chat — track delivery and details here."}
         </p>
       </div>
 

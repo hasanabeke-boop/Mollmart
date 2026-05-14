@@ -5,6 +5,8 @@ import AdminEventPublisher from '../../services/admin-event.service';
 import AdminService from '../../services/admin.service';
 import ShopRepository from '../../../shop/repositories/shop.repository';
 import ShopService from '../../../shop/services/shop.service';
+import DealEventPublisher from '../../../deal/services/deal-event.service';
+import DealService from '../../../deal/services/deal.service';
 import { createAdminRouter } from './admin.route';
 
 const router = Router();
@@ -14,7 +16,8 @@ const adminEventPublisher = new AdminEventPublisher();
 const adminService = new AdminService(adminRepository, adminEventPublisher);
 const shopRepository = new ShopRepository();
 const shopService = new ShopService(shopRepository);
-const adminController = new AdminController(adminService, shopService);
+const dealService = new DealService(new DealEventPublisher());
+const adminController = new AdminController(adminService, shopService, dealService);
 
 router.use('/', createAdminRouter(adminController));
 

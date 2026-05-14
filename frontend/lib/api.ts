@@ -7,7 +7,7 @@ export type ServiceName =
   | "admin"
   | "notification"
   | "catalog"
-  | "shop";
+  | "deal";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
 

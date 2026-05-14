@@ -1,8 +1,16 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiFetchWithRefresh } from "@/lib/api";
+import {
+  acceptPriceProposal,
+  demoPayConversation,
+  fetchDealState,
+  postPriceProposal,
+  type DealState,
+} from "@/lib/shop";
 import { useAuth } from "@/context/AuthContext";
 
 type ApiMessage = {
@@ -208,6 +216,13 @@ function ChatPageContent() {
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [dealState, setDealState] = useState<DealState | null>(null);
+  const [dealLoading, setDealLoading] = useState(false);
+  const [proposeAmount, setProposeAmount] = useState("");
+  const [dealBusy, setDealBusy] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [cardLast4, setCardLast4] = useState("");
+  const [cardName, setCardName] = useState("");
 
   const active = conversations.find((conversation) => conversation.id === activeId);
 
@@ -281,6 +296,18 @@ function ChatPageContent() {
     }
   }, []);
 
+  const loadDealState = useCallback(async (conversationId: string) => {
+    try {
+      setDealLoading(true);
+      const d = await fetchDealState(conversationId);
+      setDealState(d);
+    } catch {
+      setDealState(null);
+    } finally {
+      setDealLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!authLoading) {
       void loadConversations();
@@ -290,11 +317,12 @@ function ChatPageContent() {
   useEffect(() => {
     if (!activeId) return;
     void loadMessages(activeId);
+    void loadDealState(activeId);
     apiFetchWithRefresh(`/api/v1/conversations/${activeId}/read`, {
       method: "POST",
       service: "chat",
     }).catch(() => {});
-  }, [activeId, loadMessages]);
+  }, [activeId, loadMessages, loadDealState]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -302,11 +330,12 @@ function ChatPageContent() {
       void loadConversations({ silent: true });
       if (activeId) {
         void loadMessages(activeId, { silent: true });
+        void loadDealState(activeId);
       }
     }, 8000);
 
     return () => window.clearInterval(interval);
-  }, [activeId, loadConversations, loadMessages, user?.id]);
+  }, [activeId, loadConversations, loadDealState, loadMessages, user?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -590,7 +619,7 @@ function ChatPageContent() {
       </main>
 
       {active && (
-        <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-[#e7f3eb] bg-white xl:flex">
+        <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-[#e7f3eb] bg-white lg:flex">
           <section className="border-b border-[#e7f3eb] p-6">
             <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Request</h2>
             <div className="space-y-3">
@@ -625,6 +654,156 @@ function ChatPageContent() {
               </div>
             </section>
           )}
+
+          <section className="border-b border-[#e7f3eb] p-6">
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Price &amp; pay</h2>
+            {dealLoading && !dealState ? (
+              <p className="text-sm text-[#4c9a66]">Loading deal…</p>
+            ) : dealState ? (
+              <div className="space-y-4">
+                {dealState.orderId ? (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900">
+                    Paid —{" "}
+                    <Link className="font-bold underline" href={`/orders/${dealState.orderId}`}>
+                      view order
+                    </Link>
+                  </div>
+                ) : null}
+                {dealState.initialOffer && !dealState.orderId && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={dealBusy}
+                      onClick={async () => {
+                        if (!active) return;
+                        setDealBusy(true);
+                        try {
+                          const d = await postPriceProposal(active.id, {
+                            amount: Number(dealState.initialOffer!.price),
+                            currency: dealState.initialOffer!.currency,
+                          });
+                          setDealState(d);
+                          setProposeAmount("");
+                        } catch (e) {
+                          setError((e as Error).message || "Could not use offer price.");
+                        } finally {
+                          setDealBusy(false);
+                        }
+                      }}
+                      className="flex-1 rounded-lg bg-primary py-2 text-xs font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                    >
+                      Use offer price
+                    </button>
+                  </div>
+                )}
+                <div className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] p-3">
+                  <p className="text-xs text-[#4c9a66] mb-1">Your counter price</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={proposeAmount}
+                      onChange={(e) => setProposeAmount(e.target.value)}
+                      placeholder={dealState.requestCurrency || "USD"}
+                      className="min-w-0 flex-1 rounded-md border border-[#e7f3eb] px-2 py-1.5 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={dealBusy || !proposeAmount}
+                      onClick={async () => {
+                        if (!active) return;
+                        const n = Number(proposeAmount);
+                        if (!Number.isFinite(n) || n <= 0) return;
+                        setDealBusy(true);
+                        try {
+                          const d = await postPriceProposal(active.id, {
+                            amount: n,
+                            currency: dealState.requestCurrency || "USD",
+                          });
+                          setDealState(d);
+                          setProposeAmount("");
+                        } catch (e) {
+                          setError((e as Error).message || "Could not send proposal.");
+                        } finally {
+                          setDealBusy(false);
+                        }
+                      }}
+                      className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-[#0d1b12] ring-1 ring-[#e7f3eb] hover:bg-[#f5f6f8] disabled:opacity-50"
+                    >
+                      Offer
+                    </button>
+                  </div>
+                </div>
+                {dealState.agreedPrice != null && dealState.agreedCurrency && !dealState.orderId ? (
+                  <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
+                    <p className="font-bold text-[#0d1b12]">
+                      Agreed: {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
+                    </p>
+                    {user?.role === "buyer" && active.buyerId === user.id ? (
+                      <button
+                        type="button"
+                        className="mt-2 w-full rounded-lg bg-primary py-2 text-xs font-bold text-black"
+                        onClick={() => setPayOpen(true)}
+                      >
+                        Pay now (demo)
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-xs text-[#4c9a66]">Waiting for buyer to pay…</p>
+                    )}
+                  </div>
+                ) : null}
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-[#4c9a66]">Recent proposals</p>
+                  <ul className="max-h-40 space-y-2 overflow-y-auto text-sm">
+                    {dealState.proposals.length === 0 ? (
+                      <li className="text-[#4c9a66]">No price proposals yet.</li>
+                    ) : (
+                      dealState.proposals.map((p) => {
+                        const mine = p.proposerId === user?.id;
+                        const canAccept = !mine && p.status === "pending";
+                        return (
+                          <li
+                            key={p.id}
+                            className="flex items-center justify-between gap-2 rounded-md border border-[#e7f3eb] bg-white px-2 py-1.5"
+                          >
+                            <span className="truncate">
+                              {formatCurrency(p.amount, p.currency)}{" "}
+                              <span className="text-xs text-[#4c9a66]">
+                                {mine ? "(you)" : ""} · {p.status}
+                              </span>
+                            </span>
+                            {canAccept ? (
+                              <button
+                                type="button"
+                                disabled={dealBusy}
+                                className="shrink-0 text-xs font-bold text-primary hover:underline disabled:opacity-50"
+                                onClick={async () => {
+                                  setDealBusy(true);
+                                  try {
+                                    const d = await acceptPriceProposal(p.id);
+                                    setDealState(d);
+                                  } catch (e) {
+                                    setError((e as Error).message || "Accept failed.");
+                                  } finally {
+                                    setDealBusy(false);
+                                  }
+                                }}
+                              >
+                                Accept
+                              </button>
+                            ) : null}
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[#4c9a66]">Deal tools unavailable.</p>
+            )}
+          </section>
 
           <section className="p-6">
             <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">
@@ -665,6 +844,69 @@ function ChatPageContent() {
             </div>
           </section>
         </aside>
+      )}
+      {payOpen && active && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#e7f3eb] bg-white p-6 shadow-xl">
+            <h3 className="mb-1 text-lg font-bold text-[#0d1b12]">Demo payment</h3>
+            <p className="mb-4 text-sm text-[#4c9a66]">
+              No real charge. Fill the fields below to simulate checkout for the agreed amount.
+            </p>
+            <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
+            <input
+              value={cardName}
+              onChange={(e) => setCardName(e.target.value)}
+              className="mb-3 w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
+              placeholder="Jane Buyer"
+            />
+            <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Last 4 digits</label>
+            <input
+              value={cardLast4}
+              onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm tracking-widest"
+              placeholder="4242"
+              inputMode="numeric"
+            />
+            <div className="mt-6 flex gap-2">
+              <button
+                type="button"
+                className="flex-1 rounded-lg border border-[#e7f3eb] py-2.5 text-sm font-bold text-[#0d1b12] hover:bg-[#f5f6f8]"
+                onClick={() => {
+                  setPayOpen(false);
+                  setCardLast4("");
+                  setCardName("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={dealBusy || cardLast4.length !== 4 || !cardName.trim()}
+                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                onClick={async () => {
+                  if (cardLast4.length !== 4) {
+                    setError("Enter the last 4 digits of the card.");
+                    return;
+                  }
+                  setDealBusy(true);
+                  try {
+                    await demoPayConversation(active.id, cardLast4);
+                    await loadDealState(active.id);
+                    setPayOpen(false);
+                    setCardLast4("");
+                    setCardName("");
+                  } catch (e) {
+                    setError((e as Error).message || "Payment failed.");
+                  } finally {
+                    setDealBusy(false);
+                  }
+                }}
+              >
+                {dealBusy ? "Processing…" : "Complete payment"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

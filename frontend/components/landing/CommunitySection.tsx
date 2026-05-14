@@ -79,7 +79,7 @@ export function CommunitySection() {
                   <span className="text-white text-sm font-medium">Negotiation story</span>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-1">Accepted offer, then continued in chat</h3>
-                <p className="text-gray-300 text-sm">Match first • Final details later • No checkout flow</p>
+                <p className="text-gray-300 text-sm">Match in chat • Agree on price • Demo pay &amp; track orders</p>
               </div>
             </div>
           </div>

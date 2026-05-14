@@ -8,6 +8,10 @@ import {
   adminCatalogOrderPatchSchema
 } from '../../../shop/validators/shop.validation';
 import {
+  adminRequestOrderListSchema,
+  adminRequestOrderPatchSchema
+} from '../../../deal/validators/deal.validation';
+import {
   blockUserSchema,
   categoryCreateSchema,
   categoryUpdateSchema,
@@ -56,6 +60,17 @@ export function createAdminRouter(controller: AdminController): Router {
     '/admin/catalog-orders/:id',
     validate(adminCatalogOrderPatchSchema),
     asyncHandler(controller.patchCatalogOrder)
+  );
+
+  router.get(
+    '/admin/request-orders',
+    validate(adminRequestOrderListSchema),
+    asyncHandler(controller.listRequestOrders)
+  );
+  router.patch(
+    '/admin/request-orders/:id',
+    validate(adminRequestOrderPatchSchema),
+    asyncHandler(controller.patchRequestOrder)
   );
 
   return router;

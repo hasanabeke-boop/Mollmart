@@ -13,7 +13,7 @@ import chatbotRoutes from './modules/chatbot/routes/v1';
 import chatRoutes from './modules/chat/routes/v1';
 import notificationRoutes from './modules/notification/routes/v1';
 import catalogRoutes from './modules/catalog/routes/v1';
-import shopRoutes from './modules/shop/routes/v1';
+import dealRoutes from './modules/deal/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
 import profileRoutes from './modules/profile/routes/v1';
 import requestRoutes from './modules/request/routes/v1';
@@ -38,7 +38,7 @@ app.get('/health', (_req, res) => {
     status: 'ok',
     service: 'mollmart-backend',
     architecture: 'modular-monolith',
-    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'shop']
+    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'deal']
 
   });
 });
@@ -58,7 +58,7 @@ app.use('/api/v1', chatRoutes);
 app.use('/api/v1', chatbotRoutes);
 app.use('/api/v1', notificationRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
-app.use('/api/v1/shop', shopRoutes);
+app.use('/api/v1', dealRoutes);
 
 app.get('/secret', isAuth, (_req, res) => {
   res.json({
