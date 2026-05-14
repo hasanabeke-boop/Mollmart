@@ -18,7 +18,7 @@ const createTestTransporter = async (): Promise<Transporter> => {
     }
   });
 
-  logger.info(`Test account created: ${account.user}`);
+  logger.info(`Ethereal test SMTP ready (user=${account.user}). Mail is not delivered to real inboxes.`);
 
   return transporter;
 };
@@ -26,11 +26,7 @@ const createTestTransporter = async (): Promise<Transporter> => {
 export const getTransporter = async (): Promise<Transporter | null> => {
   if (transporter) return transporter;
 
-  if (config.node_env === 'production') {
-    if (!config.email.enabled) {
-      logger.warn('Email delivery is disabled because SMTP is using placeholder values in .env.');
-      return null;
-    }
+  if (config.email.enabled) {
     transporter = nodemailer.createTransport({
       host: config.email.smtp.host,
       port: parseInt(config.email.smtp.port, 10),
@@ -43,17 +39,17 @@ export const getTransporter = async (): Promise<Transporter | null> => {
     return transporter;
   }
 
-  if (config.node_env === 'development') {
-    if (!testAccountPromise) {
-      testAccountPromise = createTestTransporter().catch((error: Error) => {
-        testAccountPromise = null;
-        throw error;
-      });
-    }
-    return testAccountPromise;
+  if (config.node_env === 'test') {
+    return null;
   }
 
-  return null;
+  if (!testAccountPromise) {
+    testAccountPromise = createTestTransporter().catch((error: Error) => {
+      testAccountPromise = null;
+      throw error;
+    });
+  }
+  return testAccountPromise;
 };
 
 export default getTransporter;

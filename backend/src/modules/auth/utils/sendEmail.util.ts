@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import logger from '../../../middleware/logger';
 import { getTransporter } from '../config/nodemailer';
 import config from '../../../config/config';
@@ -60,11 +61,20 @@ export const sendVerifyEmail = async (
     `
   };
 
-  const transporter = await getTransporter();
-  if (!transporter) return false;
-  const info = await transporter.sendMail(mailOptions);
-  logger.info('Verify email sent: ' + info.response);
-  return true;
+  try {
+    const transporter = await getTransporter();
+    if (!transporter) return false;
+    const info = await transporter.sendMail(mailOptions);
+    logger.info('Verify email sent: ' + info.response);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      logger.info(`Open this URL to see the message in Ethereal (fake inbox): ${previewUrl}`);
+    }
+    return true;
+  } catch (err) {
+    logger.error('sendVerifyEmail failed', err);
+    return false;
+  }
 };
 
 function escapeHtml(s: string): string {

@@ -8,7 +8,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mollmart}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mollmart}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,6 +31,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    # Same mail/keys as local dev: backend/.env (SMTP, secrets, …). Compose env below overrides DB/Redis for Docker network.
+    env_file:
+      - ./backend/.env
     environment:
       NODE_ENV: production
       PORT: 4040
@@ -45,11 +52,6 @@ services:
       ALLOW_MULTIPLE_ACTIVE_OFFERS_PER_REQUEST: ${ALLOW_MULTIPLE_ACTIVE_OFFERS_PER_REQUEST:-false}
       SUBSCRIBE_MODERATION_EVENTS: ${SUBSCRIBE_MODERATION_EVENTS:-true}
       REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-auto}
-      SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-user@example.com}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-password}
-      EMAIL_FROM: ${EMAIL_FROM:-no-reply@example.com}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}

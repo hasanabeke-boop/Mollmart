@@ -104,12 +104,10 @@ const emailEnabled =
   value.SMTP_USERNAME !== 'user@example.com' &&
   value.SMTP_PASSWORD !== 'password';
 const requireEmailVerificationSetting = value.REQUIRE_EMAIL_VERIFICATION as string;
-/** `auto`: require verification in development (mail via Ethereal); in production only when real SMTP is configured. */
+/** `auto`: always require email verification; use `false` or `0` only to disable (e.g. tests). */
 const requireEmailVerification =
   requireEmailVerificationSetting === 'auto'
-    ? nodeEnv === 'development'
-      ? true
-      : emailEnabled
+    ? true
     : requireEmailVerificationSetting === 'true' ||
       requireEmailVerificationSetting === '1';
 

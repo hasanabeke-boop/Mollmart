@@ -12,6 +12,7 @@ import {
   type DealState,
 } from "@/lib/shop";
 import { useAuth } from "@/context/AuthContext";
+import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 
 type ApiMessage = {
   id: string;
@@ -130,21 +131,18 @@ function formatTime(value?: string | null) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function formatCurrency(value?: string | number | null, currency = "USD") {
+function formatCurrency(value?: string | number | null, currency?: string | null) {
   if (value == null || value === "") return "";
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatMoney(amount, normalizeCurrency(currency));
 }
 
 function formatBudget(conversation: Conversation) {
   const { budgetMin, budgetMax, currency } = conversation.request;
-  const min = formatCurrency(budgetMin, currency || "USD");
-  const max = formatCurrency(budgetMax, currency || "USD");
+  const cur = normalizeCurrency(currency);
+  const min = formatCurrency(budgetMin, cur);
+  const max = formatCurrency(budgetMax, cur);
   if (min && max) return `${min} - ${max}`;
   return min || max || "Open budget";
 }
@@ -219,6 +217,7 @@ function ChatPageContent() {
   const [dealState, setDealState] = useState<DealState | null>(null);
   const [dealLoading, setDealLoading] = useState(false);
   const [proposeAmount, setProposeAmount] = useState("");
+  const [proposeCurrency, setProposeCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [dealBusy, setDealBusy] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [cardLast4, setCardLast4] = useState("");
@@ -307,6 +306,12 @@ function ChatPageContent() {
       setDealLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (dealState?.requestCurrency) {
+      setProposeCurrency(normalizeCurrency(dealState.requestCurrency));
+    }
+  }, [dealState?.requestCurrency]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -698,14 +703,26 @@ function ChatPageContent() {
                 )}
                 <div className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] p-3">
                   <p className="text-xs text-[#4c9a66] mb-1">Your counter price</p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <select
+                      value={proposeCurrency}
+                      onChange={(e) => setProposeCurrency(e.target.value)}
+                      className="rounded-md border border-[#e7f3eb] bg-white px-2 py-1.5 text-xs font-bold text-[#0d1b12]"
+                      aria-label="Proposal currency"
+                    >
+                      {["KZT", "USD", "EUR", "RUB"].map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       type="number"
                       min={0}
                       step="0.01"
                       value={proposeAmount}
                       onChange={(e) => setProposeAmount(e.target.value)}
-                      placeholder={dealState.requestCurrency || "USD"}
+                      placeholder={normalizeCurrency(dealState.requestCurrency)}
                       className="min-w-0 flex-1 rounded-md border border-[#e7f3eb] px-2 py-1.5 text-sm"
                     />
                     <button
@@ -719,7 +736,7 @@ function ChatPageContent() {
                         try {
                           const d = await postPriceProposal(active.id, {
                             amount: n,
-                            currency: dealState.requestCurrency || "USD",
+                            currency: normalizeCurrency(proposeCurrency),
                           });
                           setDealState(d);
                           setProposeAmount("");

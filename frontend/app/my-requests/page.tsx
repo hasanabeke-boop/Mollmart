@@ -9,6 +9,7 @@ import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 
 const CATEGORIES = [
   { value: "home-furniture", label: "Home & Furniture" },
@@ -61,7 +62,7 @@ function normalizeRequest(raw: Record<string, unknown>): RequestItem {
     categoryId: String(raw.categoryId ?? ""),
     budgetMin: dec(raw.budgetMin),
     budgetMax: dec(raw.budgetMax),
-    currency: String(raw.currency ?? "USD"),
+    currency: normalizeCurrency(raw.currency != null ? String(raw.currency) : DEFAULT_CURRENCY),
     status: String(raw.status ?? ""),
     offerCount: typeof raw.offerCount === "number" ? raw.offerCount : dec(raw.offerCount),
     createdAt: String(raw.createdAt ?? ""),
@@ -72,12 +73,8 @@ function normalizeRequest(raw: Record<string, unknown>): RequestItem {
 }
 
 function formatBudget(request: RequestItem) {
-  const currency = request.currency || "USD";
-  const fmt = (n: number) => new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n);
+  const currency = normalizeCurrency(request.currency);
+  const fmt = (n: number) => formatMoney(n, currency);
 
   if (request.budgetMin != null && request.budgetMax != null) return `${fmt(request.budgetMin)} - ${fmt(request.budgetMax)}`;
   if (request.budgetMax != null) return fmt(request.budgetMax);
@@ -224,7 +221,7 @@ export default function MyRequestsPage() {
         body.title = t;
         body.description = d;
         body.categoryId = categoryId;
-        body.currency = editRequest.currency || "USD";
+        body.currency = editRequest.currency || DEFAULT_CURRENCY;
         body.isNegotiable = isNegotiable;
         const max = budgetMax.trim() ? Number(budgetMax) : undefined;
         if (max !== undefined && (!Number.isFinite(max) || max < 0)) {
@@ -504,7 +501,7 @@ export default function MyRequestsPage() {
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
                             <p className="text-lg font-black text-slate-900">
-                              {new Intl.NumberFormat("en-US", { style: "currency", currency: offer.currency }).format(offer.price)}
+                              {formatMoney(offer.price, offer.currency)}
                             </p>
                             <p className="mt-1 text-sm text-slate-600">{offer.message}</p>
                             <p className="mt-2 text-xs text-slate-400">Seller: {offer.sellerId}</p>
