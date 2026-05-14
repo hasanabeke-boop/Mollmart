@@ -4,21 +4,24 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { apiFetchWithRefresh } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 
-const CATEGORIES = [
-  { value: "home-furniture", label: "Home & Furniture" },
-  { value: "electronics", label: "Electronics" },
-  { value: "fashion", label: "Fashion & Apparel" },
-  { value: "collectibles", label: "Collectibles" },
-  { value: "services", label: "Services" },
-  { value: "sustainability", label: "Sustainability" },
-];
+/** Legacy slug keys from older drafts; DB uses Category.id (cuid). */
+const LEGACY_CATEGORY_SLUG_LABELS: Record<string, string> = {
+  "home-furniture": "Home & Furniture",
+  electronics: "Electronics",
+  fashion: "Fashion & Apparel",
+  collectibles: "Collectibles",
+  services: "Services",
+  sustainability: "Sustainability",
+};
+
+type ApiCategory = { id: string; name: string; slug: string };
 
 type RequestItem = {
   id: string;
@@ -44,6 +47,7 @@ type OfferItem = {
   message: string;
   status: string;
   sellerId: string;
+  seller?: { id: string; name: string };
   createdAt: string;
 };
 
@@ -134,6 +138,8 @@ export default function MyRequestsPage() {
     null | { kind: "delete" | "cancel"; request: RequestItem }
   >(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get("q")?.trim() || "";
@@ -183,6 +189,24 @@ export default function MyRequestsPage() {
     }
     loadRequests();
   }, [loadRequests, authLoading, user]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setCategoriesLoading(true);
+      try {
+        const rows = await apiFetch<ApiCategory[]>("/api/v1/catalog/categories", { service: "catalog" });
+        if (!cancelled) setCatalogCategories(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!cancelled) setCatalogCategories([]);
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const openEdit = useCallback((r: RequestItem) => {
     setEditRequest(r);
@@ -367,9 +391,13 @@ export default function MyRequestsPage() {
   };
 
   const categoryLabel = useMemo(() => {
-    const map = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label]));
-    return (id: string) => map[id] || id;
-  }, []);
+    const byId: Record<string, string> = { ...LEGACY_CATEGORY_SLUG_LABELS };
+    for (const c of catalogCategories) {
+      byId[c.id] = c.name;
+      byId[c.slug] = c.name;
+    }
+    return (id: string) => byId[id] || "Category";
+  }, [catalogCategories]);
 
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -544,7 +572,12 @@ export default function MyRequestsPage() {
                               {formatMoney(offer.price, offer.currency)}
                             </p>
                             <p className="mt-1 text-sm text-slate-600">{offer.message}</p>
-                            <p className="mt-2 text-xs text-slate-400">Seller: {offer.sellerId}</p>
+                            <p className="mt-2 text-xs text-slate-400">
+                              Seller:{" "}
+                              <span className="font-medium text-slate-600">
+                                {offer.seller?.name?.trim() || offer.sellerId}
+                              </span>
+                            </p>
                           </div>
                           <button
                             type="button"
@@ -620,13 +653,24 @@ export default function MyRequestsPage() {
                     <select
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      disabled={categoriesLoading}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 disabled:opacity-60"
                     >
-                      {CATEGORIES.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.label}
-                        </option>
-                      ))}
+                      {categoriesLoading ? (
+                        <option value={categoryId}>Loading categories…</option>
+                      ) : (
+                        <>
+                          {catalogCategories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                          {categoryId &&
+                            !catalogCategories.some((c) => c.id === categoryId) && (
+                              <option value={categoryId}>{categoryLabel(categoryId)}</option>
+                            )}
+                        </>
+                      )}
                     </select>
                   </div>
                   <div>
