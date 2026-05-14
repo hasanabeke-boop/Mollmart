@@ -1,9 +1,10 @@
 'use client';
 
 import Link from "next/link";
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
+import { uploadCatalogImage } from "@/lib/catalog";
 import RoleGate from "@/components/auth/RoleGate";
 
 type ApiCategory = { id: string; name: string; slug: string };
@@ -24,6 +25,31 @@ const CURRENCIES = [
 ];
 
 const MAX_DESC = 1000;
+
+const MAX_REQUEST_PHOTOS = 10;
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const PHOTO_MIMES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+function mergeFilesFromInput(list: FileList | null): File[] {
+  if (list == null) return [];
+  return Array.from(list);
+}
+
+function filterImageFiles(files: File[]): File[] {
+  return files.filter((f) => PHOTO_MIMES.has(f.type) && f.size > 0 && f.size <= MAX_PHOTO_BYTES);
+}
+
+type RequestPhotoAttachment = {
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+};
 
 type FormErrors = {
   title?: string;
@@ -60,6 +86,55 @@ function CreateProductRequestContent() {
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+
+  const [attachments, setAttachments] = useState<RequestPhotoAttachment[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState("");
+  const [photoDropActive, setPhotoDropActive] = useState(false);
+  const photoDragDepthRef = useRef(0);
+  const photosInputRef = useRef<HTMLInputElement>(null);
+  const attachmentsRef = useRef<RequestPhotoAttachment[]>([]);
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  const onAddPhotos = useCallback(async (picked: File[]) => {
+    if (picked.length === 0) return;
+    const images = filterImageFiles(picked);
+    if (images.length === 0) {
+      setPhotoUploadError("Only JPEG, PNG, WebP, or GIF under 5 MB each.");
+      return;
+    }
+    const room = MAX_REQUEST_PHOTOS - attachmentsRef.current.length;
+    if (room <= 0) {
+      setPhotoUploadError(`You can attach up to ${MAX_REQUEST_PHOTOS} photos.`);
+      return;
+    }
+    const batch = images.slice(0, room);
+    setUploadingPhotos(true);
+    setPhotoUploadError("");
+    try {
+      const uploaded: RequestPhotoAttachment[] = await Promise.all(
+        batch.map(async (file) => {
+          const url = await uploadCatalogImage(file);
+          const name = file.name.trim().slice(0, 255) || "image";
+          return { fileName: name, fileUrl: url, mimeType: file.type };
+        }),
+      );
+      setAttachments((prev) => [...prev, ...uploaded]);
+      if (images.length > batch.length) {
+        setPhotoUploadError(
+          `Only ${batch.length} photo(s) added (maximum ${MAX_REQUEST_PHOTOS} per request).`,
+        );
+      } else if (picked.length > images.length) {
+        setPhotoUploadError("Some files were skipped (unsupported type or over 5 MB).");
+      }
+    } catch (err: unknown) {
+      setPhotoUploadError((err as Error).message || "Upload failed.");
+    } finally {
+      setUploadingPhotos(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,13 +231,20 @@ function CreateProductRequestContent() {
         categoryId: category,
         budgetMax: Number(budget),
         currency,
-        isNegotiable: true,
+        isNegotiable: false,
       };
       if (deadlineLocal.trim()) {
         body.deadlineAt = new Date(deadlineLocal).toISOString();
       }
       if (location.trim()) {
         body.location = location.trim().slice(0, 150);
+      }
+      if (attachments.length > 0) {
+        body.attachments = attachments.map((a) => ({
+          fileName: a.fileName,
+          fileUrl: a.fileUrl,
+          mimeType: a.mimeType,
+        }));
       }
 
       const created = await apiFetchWithRefresh<{ id: string }>("/api/v1/requests", {
@@ -193,6 +275,10 @@ function CreateProductRequestContent() {
     setDescription("");
     setErrors({});
     setSubmitted(false);
+    setAttachments([]);
+    setPhotoUploadError("");
+    photoDragDepthRef.current = 0;
+    setPhotoDropActive(false);
     if (searchParams.get("fromShowcase")?.trim()) {
       router.replace("/create-product-request");
     }
@@ -280,6 +366,14 @@ function CreateProductRequestContent() {
                 <span className="text-sm text-slate-500">Request ID</span>
                 <span className="text-sm font-semibold text-slate-900">
                   {createdId}
+                </span>
+              </div>
+            )}
+            {attachments.length > 0 && (
+              <div className="flex justify-between gap-4">
+                <span className="text-sm text-slate-500 shrink-0">Photos</span>
+                <span className="text-sm font-semibold text-slate-900 text-right">
+                  {attachments.length} attached
                 </span>
               </div>
             )}
@@ -623,6 +717,120 @@ function CreateProductRequestContent() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Reference photos{" "}
+                  <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+                <p className="text-xs text-slate-500">
+                  Drag and drop up to {MAX_REQUEST_PHOTOS} images, or click to choose. JPEG, PNG, WebP,
+                  or GIF — max 5 MB each. Images are stored securely and appear on the request board.
+                </p>
+                <input
+                  ref={photosInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void onAddPhotos(mergeFilesFromInput(e.target.files));
+                    e.target.value = "";
+                  }}
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      photosInputRef.current?.click();
+                    }
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    photoDragDepthRef.current += 1;
+                    setPhotoDropActive(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    photoDragDepthRef.current -= 1;
+                    if (photoDragDepthRef.current <= 0) {
+                      photoDragDepthRef.current = 0;
+                      setPhotoDropActive(false);
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    photoDragDepthRef.current = 0;
+                    setPhotoDropActive(false);
+                    void onAddPhotos(mergeFilesFromInput(e.dataTransfer.files));
+                  }}
+                  onClick={() => photosInputRef.current?.click()}
+                  className={`cursor-pointer rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    uploadingPhotos
+                      ? "border-blue-300 bg-blue-50/80 text-slate-600"
+                      : photoDropActive
+                        ? "border-blue-500 bg-blue-50/60 text-slate-700"
+                        : "border-slate-200 bg-slate-50/80 text-slate-600 hover:border-primary/50"
+                  }`}
+                >
+                  {uploadingPhotos ? (
+                    <span className="flex items-center justify-center gap-2 font-medium text-slate-700">
+                      <span className="material-symbols-outlined animate-pulse text-[22px]">cloud_upload</span>
+                      Uploading…
+                    </span>
+                  ) : (
+                    <span className="flex flex-col items-center gap-2">
+                      <span className="material-symbols-outlined text-[28px] text-slate-400">add_photo_alternate</span>
+                      <span>
+                        Drop images here or <span className="font-semibold text-blue-600">click to browse</span>
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {attachments.length}/{MAX_REQUEST_PHOTOS} used
+                      </span>
+                    </span>
+                  )}
+                </div>
+                {photoUploadError ? (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">error</span>
+                    {photoUploadError}
+                  </p>
+                ) : null}
+                {attachments.length > 0 ? (
+                  <ul className="flex flex-wrap gap-3 pt-1">
+                    {attachments.map((a, i) => (
+                      <li
+                        key={`${a.fileUrl}-${i}`}
+                        className="relative h-24 w-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 shadow-sm"
+                      >
+                        <img src={a.fileUrl} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          disabled={uploadingPhotos}
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-xs font-bold text-white hover:bg-black/80 disabled:opacity-50"
+                          aria-label="Remove photo"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAttachments((prev) => prev.filter((_, j) => j !== i));
+                            setPhotoUploadError("");
+                          }}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+
             </div>
 
             {/* Submit */}
@@ -635,7 +843,7 @@ function CreateProductRequestContent() {
               )}
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || uploadingPhotos}
                 className="w-full bg-[#607afb] hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (

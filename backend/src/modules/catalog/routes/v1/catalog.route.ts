@@ -20,7 +20,7 @@ export function createCatalogRouter(controller: CatalogController): Router {
   router.post(
     '/upload',
     authenticate,
-    requireRoles('seller', 'admin'),
+    requireRoles('seller', 'admin', 'buyer'),
     catalogUploadSingle,
     asyncHandler(controller.uploadImage)
   );

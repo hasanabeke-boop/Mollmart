@@ -156,6 +156,12 @@ export default function NotificationsPage() {
     void loadNotifications();
   }, [authLoading, user, loadNotifications]);
 
+  useEffect(() => {
+    if (user?.role === "seller" && category === "orders") {
+      setCategory("all");
+    }
+  }, [user?.role, category]);
+
   const filtered = useMemo(() => {
     return items.filter((n) => {
       if (category === "all") return true;
@@ -265,13 +271,22 @@ export default function NotificationsPage() {
         {/* Tabs */}
         <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center border-b border-[#e7f3eb] pb-0 gap-4">
           <div className="flex gap-6 md:gap-8 overflow-x-auto w-full sm:w-auto no-scrollbar">
-            {[
-              { id: "all", label: "All" },
-              { id: "requests", label: "Requests" },
-              { id: "messages", label: "Messages" },
-              { id: "offers", label: "Offers" },
-              { id: "orders", label: "Shop orders" },
-            ].map((tab) => {
+            {(
+              user?.role === "seller"
+                ? [
+                    { id: "all" as const, label: "All" },
+                    { id: "requests" as const, label: "Requests" },
+                    { id: "messages" as const, label: "Messages" },
+                    { id: "offers" as const, label: "Offers" },
+                  ]
+                : [
+                    { id: "all" as const, label: "All" },
+                    { id: "requests" as const, label: "Requests" },
+                    { id: "messages" as const, label: "Messages" },
+                    { id: "offers" as const, label: "Offers" },
+                    { id: "orders" as const, label: "Shop orders" },
+                  ]
+            ).map((tab) => {
               const active = category === tab.id;
               return (
                 <button

@@ -44,7 +44,12 @@ const envSchema = Joi.object({
   EMAIL_FROM: Joi.string().email().default('no-reply@example.com'),
   INTERNAL_API_TOKEN: Joi.string().allow('').default(''),
   OPENAI_API_KEY: Joi.string().allow('').default(''),
-  OPENAI_MODEL: Joi.string().default('gpt-5-mini')
+  OPENAI_MODEL: Joi.string().default('gpt-5-mini'),
+  R2_ENDPOINT: Joi.string().uri().optional().allow(''),
+  R2_BUCKET: Joi.string().trim().optional().allow(''),
+  R2_ACCESS_KEY_ID: Joi.string().optional().allow(''),
+  R2_SECRET_ACCESS_KEY: Joi.string().optional().allow(''),
+  R2_PUBLIC_BASE_URL: Joi.string().uri().optional().allow('')
 })
   .custom((value, helpers) => {
     if (value.JWT_ACCESS_SECRET == null && value.ACCESS_TOKEN_SECRET == null) {
@@ -59,6 +64,22 @@ const envSchema = Joi.object({
       });
     }
 
+    return value;
+  })
+  .custom((value, helpers) => {
+    const parts = [
+      value.R2_ENDPOINT,
+      value.R2_BUCKET,
+      value.R2_ACCESS_KEY_ID,
+      value.R2_SECRET_ACCESS_KEY,
+      value.R2_PUBLIC_BASE_URL
+    ].map((v: string | undefined) => (typeof v === 'string' ? v.trim() : ''));
+    const set = parts.filter((p) => p.length > 0).length;
+    if (set !== 0 && set !== 5) {
+      return helpers.error('any.custom', {
+        message: 'R2: set all of R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_BASE_URL, or leave all empty for local disk uploads'
+      });
+    }
     return value;
   })
   .unknown()
@@ -88,6 +109,30 @@ const requireEmailVerification =
     ? emailEnabled
     : requireEmailVerificationSetting === 'true' ||
       requireEmailVerificationSetting === '1';
+
+function normalizeR2Endpoint(raw: string): string {
+  try {
+    const u = new URL(raw.trim());
+    if (u.pathname !== '/' && u.pathname !== '') {
+      u.pathname = '';
+    }
+    return u.origin;
+  } catch {
+    return raw.trim().replace(/\/$/, '');
+  }
+}
+
+const r2Endpoint = (value.R2_ENDPOINT as string | undefined)?.trim() ?? '';
+const r2Bucket = (value.R2_BUCKET as string | undefined)?.trim() ?? '';
+const r2AccessKeyId = (value.R2_ACCESS_KEY_ID as string | undefined)?.trim() ?? '';
+const r2SecretAccessKey = (value.R2_SECRET_ACCESS_KEY as string | undefined)?.trim() ?? '';
+const r2PublicBaseUrl = (value.R2_PUBLIC_BASE_URL as string | undefined)?.trim() ?? '';
+const r2Enabled =
+  r2Endpoint.length > 0 &&
+  r2Bucket.length > 0 &&
+  r2AccessKeyId.length > 0 &&
+  r2SecretAccessKey.length > 0 &&
+  r2PublicBaseUrl.length > 0;
 
 const config = {
   nodeEnv,
@@ -156,7 +201,17 @@ const config = {
   offerService: {
     url: `${value.SERVER_URL}/api/v1`,
     timeoutMs: 5000
-  }
+  },
+  r2: r2Enabled
+    ? {
+        enabled: true as const,
+        endpoint: normalizeR2Endpoint(r2Endpoint),
+        bucket: r2Bucket,
+        accessKeyId: r2AccessKeyId,
+        secretAccessKey: r2SecretAccessKey,
+        publicBaseUrl: r2PublicBaseUrl.replace(/\/$/, '')
+      }
+    : { enabled: false as const }
 } as const;
 
 export default config;
