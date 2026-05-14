@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import RoleGate from "@/components/auth/RoleGate";
 
 type RequestLead = {
   id: string;
@@ -50,6 +52,7 @@ function formatBudget(lead: RequestLead) {
 }
 
 export default function SellerDashboardPage() {
+  const { user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RequestLead[]>([]);
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -58,6 +61,7 @@ export default function SellerDashboardPage() {
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
+    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
     setLoading(true);
     setError("");
     try {
@@ -87,11 +91,15 @@ export default function SellerDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+      setLoading(false);
+      return;
+    }
     loadData();
-  }, [loadData]);
+  }, [loadData, authLoading, user]);
 
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -112,6 +120,14 @@ export default function SellerDashboardPage() {
     .slice(0, 3);
 
   return (
+    <RoleGate
+      allowedRoles={["seller", "admin"]}
+      title="Seller workspace"
+      description="Seller Dashboard is for sellers who browse buyer demand, send offers, and track conversations. Buyers should manage their requests instead."
+      ctaHref="/my-requests"
+      ctaLabel="Open my requests"
+      unauthenticatedDescription="Log in as a seller to view the seller dashboard."
+    >
     <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
       <main className="flex min-h-[calc(100vh-4rem)] flex-1 flex-col overflow-y-auto">
         <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-6 backdrop-blur">
@@ -271,6 +287,7 @@ export default function SellerDashboardPage() {
         </div>
       </main>
     </div>
+    </RoleGate>
   );
 }
 

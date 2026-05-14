@@ -21,6 +21,66 @@ const conversationInclude = {
     include: {
       readStates: true
     }
+  },
+  request: {
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      budgetMin: true,
+      budgetMax: true,
+      currency: true,
+      location: true
+    }
+  },
+  offer: {
+    select: {
+      id: true,
+      price: true,
+      currency: true,
+      status: true
+    }
+  },
+  buyer: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profile: {
+        select: {
+          fullName: true,
+          avatarUrl: true,
+          buyerProfile: {
+            select: {
+              displayName: true,
+              city: true
+            }
+          }
+        }
+      }
+    }
+  },
+  seller: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profile: {
+        select: {
+          fullName: true,
+          avatarUrl: true,
+          city: true,
+          sellerProfile: {
+            select: {
+              displayName: true,
+              businessType: true,
+              ratingAverage: true,
+              completedDealsCount: true
+            }
+          }
+        }
+      }
+    }
   }
 } satisfies Prisma.ConversationInclude;
 
@@ -34,6 +94,60 @@ export type MessageWithReadStates = Message & {
 
 export type ConversationWithPreview = Conversation & {
   messages: MessageWithReadStates[];
+  request: {
+    id: string;
+    title: string;
+    status: string;
+    budgetMin: Prisma.Decimal | null;
+    budgetMax: Prisma.Decimal | null;
+    currency: string;
+    location: string | null;
+  };
+  offer: {
+    id: string;
+    price: Prisma.Decimal;
+    currency: string;
+    status: string;
+  } | null;
+  buyer: ConversationUserSummary;
+  seller: ConversationUserSummary;
+};
+
+type ConversationUserSummary = {
+  id: string;
+  name: string;
+  email: string | null;
+  profile: {
+    fullName: string;
+    avatarUrl: string | null;
+    city?: string | null;
+    buyerProfile?: {
+      displayName: string;
+      city: string | null;
+    } | null;
+    sellerProfile?: {
+      displayName: string;
+      businessType: string | null;
+      ratingAverage: Prisma.Decimal;
+      completedDealsCount: number;
+    } | null;
+  } | null;
+};
+
+export type ConversationListItem = ConversationWithPreview & {
+  lastMessage: MessageWithReadStates | null;
+  unreadCount: number;
+  otherParticipant: {
+    id: string;
+    name: string;
+    email: string | null;
+    avatarUrl: string | null;
+    role: 'buyer' | 'seller';
+    city: string | null;
+    ratingAverage?: string;
+    completedDealsCount?: number;
+    businessType?: string | null;
+  };
 };
 
 export interface ConversationRecordInput {
@@ -48,7 +162,7 @@ export interface ChatRepositoryLike {
   findUniqueConversation(requestId: string, buyerId: string, sellerId: string): Promise<Conversation | null>;
   createConversation(data: ConversationRecordInput): Promise<Conversation>;
   updateConversationOfferContext(id: string, offerId: string): Promise<Conversation>;
-  listUserConversations(userId: string, status: ConversationStatus | undefined, page: number, limit: number): Promise<RequestListResult<ConversationWithPreview>>;
+  listUserConversations(userId: string, status: ConversationStatus | undefined, page: number, limit: number): Promise<RequestListResult<ConversationListItem>>;
   getConversationWithLastMessage(id: string): Promise<ConversationWithPreview | null>;
   listMessages(conversationId: string, page: number, limit: number): Promise<RequestListResult<MessageWithReadStates>>;
   createMessage(conversationId: string, senderId: string, senderRole: SenderRole, body: string, messageType: MessageType): Promise<MessageWithReadStates>;
@@ -99,7 +213,7 @@ export class ChatRepository implements ChatRepositoryLike {
     status: ConversationStatus | undefined,
     page: number,
     limit: number
-  ): Promise<RequestListResult<ConversationWithPreview>> {
+  ): Promise<RequestListResult<ConversationListItem>> {
     const where: Prisma.ConversationWhereInput = {
       OR: [{ buyerId: userId }, { sellerId: userId }],
       ...(status !== undefined ? { status } : {})
@@ -119,8 +233,13 @@ export class ChatRepository implements ChatRepositoryLike {
       this.client.conversation.count({ where })
     ]);
 
+    const unreadCounts = await this.getUnreadCounts(
+      items.map((conversation) => conversation.id),
+      userId
+    );
+
     return {
-      items,
+      items: items.map((conversation) => this.mapConversationListItem(conversation, userId, unreadCounts)),
       meta: buildPageMeta(page, limit, total)
     };
   }
@@ -227,6 +346,71 @@ export class ChatRepository implements ChatRepositoryLike {
         include: messageInclude
       });
     });
+  }
+
+  private async getUnreadCounts(conversationIds: string[], userId: string): Promise<Map<string, number>> {
+    if (conversationIds.length === 0) {
+      return new Map();
+    }
+
+    const grouped = await this.client.message.groupBy({
+      by: ['conversationId'],
+      where: {
+        conversationId: {
+          in: conversationIds
+        },
+        senderId: {
+          not: userId
+        },
+        readStates: {
+          none: {
+            userId
+          }
+        }
+      },
+      _count: {
+        _all: true
+      }
+    });
+
+    return new Map(grouped.map((item) => [item.conversationId, item._count._all]));
+  }
+
+  private mapConversationListItem(
+    conversation: ConversationWithPreview,
+    userId: string,
+    unreadCounts: Map<string, number>
+  ): ConversationListItem {
+    const otherRole = conversation.buyerId === userId ? 'seller' : 'buyer';
+    const otherUser = otherRole === 'seller' ? conversation.seller : conversation.buyer;
+    const profile = otherUser.profile;
+    const displayName =
+      otherRole === 'seller'
+        ? profile?.sellerProfile?.displayName ?? profile?.fullName ?? otherUser.name
+        : profile?.buyerProfile?.displayName ?? profile?.fullName ?? otherUser.name;
+
+    return {
+      ...conversation,
+      lastMessage: conversation.messages[0] ?? null,
+      unreadCount: unreadCounts.get(conversation.id) ?? 0,
+      otherParticipant: {
+        id: otherUser.id,
+        name: displayName,
+        email: otherUser.email,
+        avatarUrl: profile?.avatarUrl ?? null,
+        role: otherRole,
+        city: otherRole === 'seller'
+          ? profile?.city ?? null
+          : profile?.buyerProfile?.city ?? null,
+        ...(otherRole === 'seller'
+          ? {
+              ratingAverage: profile?.sellerProfile?.ratingAverage?.toString() ?? '0',
+              completedDealsCount: profile?.sellerProfile?.completedDealsCount ?? 0,
+              businessType: profile?.sellerProfile?.businessType ?? null
+            }
+          : {})
+      }
+    };
   }
 }
 

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import RoleGate from "@/components/auth/RoleGate";
 
 type BuyerRequest = {
   id: string;
@@ -17,6 +17,7 @@ type BuyerRequest = {
   barColor: string;
   budget: string;
   budgetMax: number;
+  currency: string;
   barPercent: string;
   description: string;
   postedAgo: string;
@@ -45,11 +46,21 @@ function timeAgo(dateStr: string): string {
   return `Posted ${days}d ago`;
 }
 
-function formatBudget(min?: number, max?: number): string {
-  const fmt = (n: number) => `$${n.toLocaleString()}`;
-  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
-  if (max) return fmt(max);
-  if (min) return `${fmt(min)}+`;
+function formatBudget(min?: number, max?: number, currency = "USD"): string {
+  const fmt = (n: number) => {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(n);
+    } catch {
+      return `${currency} ${n.toLocaleString()}`;
+    }
+  };
+  if (typeof min === "number" && typeof max === "number") return `${fmt(min)} - ${fmt(max)}`;
+  if (typeof max === "number") return fmt(max);
+  if (typeof min === "number") return `${fmt(min)}+`;
   return "Negotiable";
 }
 
@@ -93,7 +104,7 @@ function OfferModal({
         body: JSON.stringify({
           requestId: request.id,
           price: num,
-          currency: "USD",
+          currency: request.currency || "USD",
           message: message.trim(),
           deliveryDays: delivery ? parseInt(delivery) || undefined : undefined,
         }),
@@ -138,14 +149,17 @@ function OfferModal({
               Offer Sent!
             </h4>
             <p className="text-slate-500 text-sm mb-2">
-              Your offer of <span className="font-bold text-slate-900">${Number(price).toFixed(2)}</span> for
+              Your offer of{" "}
+              <span className="font-bold text-slate-900">
+                {request.currency} {Number(price).toFixed(2)}
+              </span>{" "}
+              for
             </p>
             <p className="font-semibold text-slate-800 mb-4">
               &ldquo;{request.title}&rdquo;
             </p>
             <p className="text-xs text-slate-400 mb-6">
-              The buyer will be notified and can accept, decline, or counter
-              your offer.
+              The buyer will be notified and can accept or decline your offer.
             </p>
             <button
               type="button"
@@ -173,13 +187,13 @@ function OfferModal({
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-3.5 text-slate-400 font-medium">
-                  $
+                  {request.currency}
                 </span>
                 <input
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900"
+                  className="w-full pl-16 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900"
                   placeholder="0.00"
                   autoFocus
                 />
@@ -249,7 +263,6 @@ function OfferModal({
 
 export default function BrowseBuyerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -258,14 +271,8 @@ export default function BrowseBuyerRequestsPage() {
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (user?.role === "buyer") {
-      router.replace("/my-requests");
-    }
-  }, [authLoading, user, router]);
-
   const loadRequests = useCallback(async () => {
+    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
     setLoadingData(true);
     try {
       const params = new URLSearchParams({ limit: "50" });
@@ -281,6 +288,7 @@ export default function BrowseBuyerRequestsPage() {
           categoryId: string;
           budgetMin?: number;
           budgetMax?: number;
+          currency?: string;
           status: string;
           offerCount?: number;
           createdAt: string;
@@ -293,6 +301,7 @@ export default function BrowseBuyerRequestsPage() {
           categoryId: string;
           budgetMin?: number;
           budgetMax?: number;
+          currency?: string;
           status: string;
           offerCount?: number;
           createdAt: string;
@@ -309,6 +318,7 @@ export default function BrowseBuyerRequestsPage() {
         categoryId: string;
         budgetMin?: number;
         budgetMax?: number;
+        currency?: string;
         status: string;
         offerCount?: number;
         createdAt: string;
@@ -322,8 +332,9 @@ export default function BrowseBuyerRequestsPage() {
           category: r.categoryId,
           categoryId: r.categoryId,
           ...style,
-          budget: formatBudget(r.budgetMin, r.budgetMax),
+          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency || "USD"),
           budgetMax: max,
+          currency: r.currency || "USD",
           barPercent: max > 5000 ? "w-full" : max > 2000 ? "w-3/4" : max > 1000 ? "w-1/2" : "w-1/3",
           description: r.description,
           postedAgo: timeAgo(r.createdAt),
@@ -339,7 +350,7 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab, search, selectedCategory]);
+  }, [activeTab, search, selectedCategory, user]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -348,7 +359,10 @@ export default function BrowseBuyerRequestsPage() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || user?.role === "buyer") return;
+    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+      setLoadingData(false);
+      return;
+    }
     loadRequests();
   }, [loadRequests, authLoading, user]);
 
@@ -379,11 +393,15 @@ export default function BrowseBuyerRequestsPage() {
     new Set(requests.map((r) => r.category)),
   ).filter(Boolean);
 
-  if (!authLoading && user?.role === "buyer") {
-    return null;
-  }
-
   return (
+    <RoleGate
+      allowedRoles={["seller", "admin"]}
+      title="Seller request board"
+      description="This board is for sellers to find buyer requests and submit offers. Buyers manage their own requests from My Requests."
+      ctaHref="/my-requests"
+      ctaLabel="Open my requests"
+      unauthenticatedDescription="Log in as a seller to browse buyer requests and submit offers."
+    >
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 gap-4">
@@ -392,15 +410,15 @@ export default function BrowseBuyerRequestsPage() {
             Buyer Requests
           </h1>
           <p className="text-slate-500">
-            Find your next customer by browsing active purchase requests.
+            Find your next customer by browsing active buyer requests.
           </p>
         </div>
         <Link
-          href="/create-product-request"
+          href="/seller/dashboard"
           className="flex items-center gap-2 bg-[#607afb] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
         >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          Post a Request
+          <span className="material-symbols-outlined text-[20px]">dashboard</span>
+          Seller Dashboard
         </Link>
       </div>
 
@@ -732,5 +750,6 @@ export default function BrowseBuyerRequestsPage() {
         />
       )}
     </div>
+    </RoleGate>
   );
 }

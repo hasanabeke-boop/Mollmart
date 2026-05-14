@@ -42,7 +42,9 @@ const envSchema = Joi.object({
   SMTP_USERNAME: Joi.string().default('user@example.com'),
   SMTP_PASSWORD: Joi.string().default('password'),
   EMAIL_FROM: Joi.string().email().default('no-reply@example.com'),
-  INTERNAL_API_TOKEN: Joi.string().allow('').default('')
+  INTERNAL_API_TOKEN: Joi.string().allow('').default(''),
+  OPENAI_API_KEY: Joi.string().allow('').default(''),
+  OPENAI_MODEL: Joi.string().default('gpt-5-mini')
 })
   .custom((value, helpers) => {
     if (value.JWT_ACCESS_SECRET == null && value.ACCESS_TOKEN_SECRET == null) {
@@ -142,6 +144,10 @@ const config = {
   },
   internal: {
     api_token: value.INTERNAL_API_TOKEN as string
+  },
+  openai: {
+    apiKey: value.OPENAI_API_KEY as string,
+    model: value.OPENAI_MODEL as string
   },
   requestService: {
     url: `${value.SERVER_URL}/api/v1`,

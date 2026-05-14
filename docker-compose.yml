@@ -54,6 +54,8 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-user@example.com}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-password}
       EMAIL_FROM: ${EMAIL_FROM:-no-reply@example.com}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
     ports:
       - "4040:4040"

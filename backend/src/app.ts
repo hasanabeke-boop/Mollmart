@@ -8,6 +8,7 @@ import isAuth from './modules/auth/middleware/isAuth';
 import { xssMiddleware } from './modules/auth/middleware/xssMiddleware';
 import { authRouter, passwordRouter, verifyEmailRouter } from './modules/auth/routes/v1';
 import adminRoutes from './modules/admin/routes/v1';
+import chatbotRoutes from './modules/chatbot/routes/v1';
 import chatRoutes from './modules/chat/routes/v1';
 import notificationRoutes from './modules/notification/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
@@ -33,7 +34,7 @@ app.get('/health', (_req, res) => {
     status: 'ok',
     service: 'mollmart-backend',
     architecture: 'modular-monolith',
-    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'admin', 'notification']
+    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification']
   });
 });
 
@@ -49,6 +50,7 @@ app.use('/api/v1', profileRoutes);
 app.use('/api/v1', requestRoutes);
 app.use('/api/v1', offerRoutes);
 app.use('/api/v1', chatRoutes);
+app.use('/api/v1', chatbotRoutes);
 app.use('/api/v1', notificationRoutes);
 
 app.get('/secret', isAuth, (_req, res) => {

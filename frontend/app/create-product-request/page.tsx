@@ -1,8 +1,9 @@
 'use client';
 
 import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import { apiFetchWithRefresh } from "@/lib/api";
+import RoleGate from "@/components/auth/RoleGate";
 
 const CATEGORIES = [
   { value: "home-furniture", label: "Home & Furniture" },
@@ -14,26 +15,19 @@ const CATEGORIES = [
 ];
 
 const CURRENCIES = [
-  { code: "USD", label: "USD — US Dollar" },
-  { code: "EUR", label: "EUR — Euro" },
-  { code: "RUB", label: "RUB — Russian Ruble" },
-  { code: "KZT", label: "KZT — Kazakhstani Tenge" },
+  { code: "USD", label: "USD - US Dollar" },
+  { code: "EUR", label: "EUR - Euro" },
+  { code: "RUB", label: "RUB - Russian Ruble" },
+  { code: "KZT", label: "KZT - Kazakhstani Tenge" },
 ];
 
 const MAX_DESC = 1000;
-const MAX_FILES = 3;
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 type FormErrors = {
   title?: string;
   category?: string;
   budget?: string;
   description?: string;
-};
-
-type ImagePreview = {
-  file: File;
-  url: string;
 };
 
 export default function CreateProductRequestPage() {
@@ -44,11 +38,8 @@ export default function CreateProductRequestPage() {
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState<ImagePreview[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validate = (): boolean => {
     const next: FormErrors = {};
@@ -108,39 +99,6 @@ export default function CreateProductRequestPage() {
     }
   };
 
-  const addFiles = useCallback(
-    (fileList: FileList | null) => {
-      if (!fileList) return;
-      const remaining = MAX_FILES - images.length;
-      if (remaining <= 0) return;
-
-      const newImages: ImagePreview[] = [];
-      for (let i = 0; i < Math.min(fileList.length, remaining); i++) {
-        const file = fileList[i];
-        if (file.size > MAX_FILE_SIZE) continue;
-        if (!file.type.startsWith("image/")) continue;
-        newImages.push({ file, url: URL.createObjectURL(file) });
-      }
-      setImages((prev) => [...prev, ...newImages]);
-    },
-    [images.length],
-  );
-
-  const removeImage = (index: number) => {
-    setImages((prev) => {
-      const copy = [...prev];
-      URL.revokeObjectURL(copy[index].url);
-      copy.splice(index, 1);
-      return copy;
-    });
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    addFiles(e.dataTransfer.files);
-  };
-
   const reset = () => {
     setTitle("");
     setCategory("");
@@ -149,14 +107,20 @@ export default function CreateProductRequestPage() {
     setDeadlineLocal("");
     setLocation("");
     setDescription("");
-    images.forEach((img) => URL.revokeObjectURL(img.url));
-    setImages([]);
     setErrors({});
     setSubmitted(false);
   };
 
   if (submitted) {
     return (
+      <RoleGate
+        allowedRoles={["buyer", "admin"]}
+        title="Buyer request area"
+        description="Sellers respond to buyer demand from the request board. To submit offers, open the seller request board instead."
+        ctaHref="/browse-buyer-requests"
+        ctaLabel="Browse buyer requests"
+        unauthenticatedDescription="Log in as a buyer to create and publish requests."
+      >
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-10">
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
@@ -232,14 +196,6 @@ export default function CreateProductRequestPage() {
                 </span>
               </div>
             )}
-            {images.length > 0 && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-500">Images</span>
-                <span className="text-sm font-semibold text-slate-900">
-                  {images.length} attached
-                </span>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -265,10 +221,19 @@ export default function CreateProductRequestPage() {
           </div>
         </div>
       </div>
+      </RoleGate>
     );
   }
 
   return (
+    <RoleGate
+      allowedRoles={["buyer", "admin"]}
+      title="Buyer request area"
+      description="Sellers respond to buyer demand from the request board. To submit offers, open the seller request board instead."
+      ctaHref="/browse-buyer-requests"
+      ctaLabel="Browse buyer requests"
+      unauthenticatedDescription="Log in as a buyer to create and publish requests."
+    >
     <div className="max-w-5xl mx-auto px-4 py-8 md:py-12 mb-24">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Branding & Instructions */}
@@ -564,97 +529,6 @@ export default function CreateProductRequestPage() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-slate-700">
-                  Upload Reference Images{" "}
-                  <span className="text-slate-400 font-normal">
-                    (up to {MAX_FILES})
-                  </span>
-                </label>
-
-                {images.length > 0 && (
-                  <div className="flex gap-3 flex-wrap mb-3">
-                    {images.map((img, i) => (
-                      <div
-                        key={img.url}
-                        className="relative group w-24 h-24 rounded-xl overflow-hidden border border-slate-200"
-                      >
-                        <img
-                          src={img.url}
-                          alt={`Preview ${i + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(i)}
-                          className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <span className="material-symbols-outlined text-white">
-                            delete
-                          </span>
-                        </button>
-                        <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                          {(img.file.size / 1024 / 1024).toFixed(1)}MB
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {images.length < MAX_FILES && (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                    className={`group relative border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
-                      isDragging
-                        ? "border-blue-500 bg-blue-50/50"
-                        : "border-slate-200 hover:border-blue-400 hover:bg-blue-50/30"
-                    }`}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                        isDragging
-                          ? "bg-blue-100"
-                          : "bg-slate-50 group-hover:bg-blue-100"
-                      }`}
-                    >
-                      <span
-                        className={`material-symbols-outlined ${
-                          isDragging
-                            ? "text-blue-600"
-                            : "text-slate-400 group-hover:text-blue-600"
-                        }`}
-                      >
-                        cloud_upload
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">
-                      {isDragging
-                        ? "Drop your images here"
-                        : "Click to upload or drag and drop"}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      PNG, JPG or WEBP (max. 10MB each)
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      className="hidden"
-                      accept="image/png,image/jpeg,image/webp"
-                      multiple
-                      onChange={(e) => {
-                        addFiles(e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Submit */}
@@ -687,5 +561,6 @@ export default function CreateProductRequestPage() {
         </div>
       </div>
     </div>
+    </RoleGate>
   );
 }
