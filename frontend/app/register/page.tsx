@@ -106,8 +106,8 @@ export default function RegisterPage() {
           {verificationToken && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-800">
               <p className="font-semibold">Local verification link</p>
-              <Link className="mt-1 block break-all underline" href={`${API_BASE}/api/v1/verify-email/${verificationToken}`}>
-                {API_BASE}/api/v1/verify-email/{verificationToken}
+              <Link className="mt-1 block break-all underline" href={`/verify-email/${verificationToken}`}>
+                {typeof window !== "undefined" ? window.location.origin : API_BASE}/verify-email/{verificationToken}
               </Link>
             </div>
           )}
@@ -319,9 +319,9 @@ export default function RegisterPage() {
               />
               <label className="text-sm text-slate-600" htmlFor="terms">
                 I agree to the{" "}
-                <a className="text-primary font-medium hover:underline" href="#">Terms of Service</a>{" "}
+                <Link className="text-primary font-medium hover:underline" href="/help">Terms of Service</Link>{" "}
                 and{" "}
-                <a className="text-primary font-medium hover:underline" href="#">Privacy Policy</a>.
+                <Link className="text-primary font-medium hover:underline" href="/help">Privacy Policy</Link>.
               </label>
             </div>
             {fieldErrors.terms && (
