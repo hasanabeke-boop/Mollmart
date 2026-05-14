@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh, resolveUploadedAssetUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
@@ -176,12 +176,15 @@ function budgetBarWidthPercent(amount: number, listMax: number): number {
 function firstAttachmentImageUrl(attachments: unknown): string | undefined {
   if (!Array.isArray(attachments) || attachments.length === 0) return undefined;
   const first = attachments[0];
-  if (typeof first === "string" && /^https?:\/\//i.test(first)) return first;
-  if (first && typeof first === "object" && "fileUrl" in first) {
-    const url = String((first as { fileUrl: unknown }).fileUrl ?? "").trim();
-    return url || undefined;
+  let raw: string | undefined;
+  if (typeof first === "string") {
+    raw = first.trim() || undefined;
+  } else if (first && typeof first === "object") {
+    const o = first as Record<string, unknown>;
+    const v = o.fileUrl ?? o.file_url;
+    raw = v != null ? String(v).trim() : undefined;
   }
-  return undefined;
+  return resolveUploadedAssetUrl(raw);
 }
 
 function parseOptionalMoney(v: unknown): number | undefined {
@@ -831,6 +834,7 @@ export default function BrowseBuyerRequestsPage() {
                   className="w-full h-full object-cover"
                   alt={featuredRequest.title}
                   src={featuredRequest.image}
+                  loading="lazy"
                 />
                 {featuredRequest.urgent && (
                   <div className="absolute top-4 left-4">
@@ -911,6 +915,16 @@ export default function BrowseBuyerRequestsPage() {
               className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col justify-between hover:shadow-lg transition-shadow"
             >
               <div>
+                {req.image ? (
+                  <div className="mb-4 overflow-hidden rounded-2xl h-32 bg-slate-100">
+                    <img
+                      src={req.image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : null}
                 <div className="flex items-center gap-2 mb-4">
                   <div
                     className={`w-10 h-10 rounded-xl ${req.iconBg} flex items-center justify-center ${req.iconColor}`}

@@ -11,6 +11,19 @@ export type ServiceName =
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
 
+/** Use for `<img src>` when the API stores a site-relative upload path (e.g. `/uploads/catalog/...`). */
+export function resolveUploadedAssetUrl(href: string | undefined | null): string | undefined {
+  const s = (href ?? "").trim();
+  if (!s) return undefined;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("//")) return s;
+  if (s.startsWith("/")) {
+    const base = API_BASE.replace(/\/$/, "");
+    return `${base}${s}`;
+  }
+  return s;
+}
+
 const ACCESS_TOKEN_STORAGE_KEY = "mollmart_access_token";
 
 let accessToken: string | null = null;

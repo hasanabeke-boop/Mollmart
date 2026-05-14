@@ -51,7 +51,13 @@ export class DealController {
   };
 
   demoWithdraw = async (req: Request, res: Response): Promise<void> => {
-    const data = await this.dealService.demoWithdraw(req.user as AuthUser, Number(req.body.amount));
+    const body = req.body as { amount: number; cardLast4: string; cardHolderName: string };
+    const data = await this.dealService.demoWithdraw(
+      req.user as AuthUser,
+      Number(body.amount),
+      String(body.cardLast4 ?? ''),
+      String(body.cardHolderName ?? '')
+    );
     res.status(httpStatus.OK).json(data);
   };
 }

@@ -4,6 +4,8 @@ export type ShopOrderLine = {
   id: string;
   productId: string;
   productSlug: string;
+  /** Buyer request id when this line is a paid request deal (not a catalog SKU). */
+  requestId?: string;
   title: string;
   imageUrl: string;
   unitPrice: number;
@@ -142,10 +144,17 @@ export async function fetchWalletMe(): Promise<{ balance: number }> {
   return apiFetchWithRefresh<{ balance: number }>("/api/v1/wallet/me", { service: "deal" });
 }
 
-export async function demoWithdrawWallet(amount: number): Promise<{ ok: true; withdrawn: number; balance: number }> {
+export async function demoWithdrawWallet(
+  amount: number,
+  card: { cardLast4: string; cardHolderName: string },
+): Promise<{ ok: true; withdrawn: number; balance: number }> {
   return apiFetchWithRefresh("/api/v1/wallet/demo-withdraw", {
     method: "POST",
     service: "deal",
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({
+      amount,
+      cardLast4: card.cardLast4.trim(),
+      cardHolderName: card.cardHolderName.trim(),
+    }),
   });
 }

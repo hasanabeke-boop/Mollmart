@@ -61,6 +61,8 @@ export const demoPaySchema = {
 
 export const demoWithdrawSchema = {
   body: Joi.object({
-    amount: Joi.number().positive().max(1_000_000).required()
+    amount: Joi.number().positive().max(1_000_000).required(),
+    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required(),
+    cardHolderName: Joi.string().trim().min(2).max(120).required()
   })
 };

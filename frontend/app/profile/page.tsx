@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
+import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
 import { demoWithdrawWallet, fetchWalletMe } from "@/lib/shop";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 
@@ -55,6 +56,8 @@ export default function UserProfilePage() {
   const [catalogCategories, setCatalogCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletWithdraw, setWalletWithdraw] = useState("");
+  const [walletWithdrawCardName, setWalletWithdrawCardName] = useState("");
+  const [walletWithdrawCardLast4, setWalletWithdrawCardLast4] = useState("");
   const [walletBusy, setWalletBusy] = useState(false);
 
   useEffect(() => {
@@ -573,7 +576,8 @@ export default function UserProfilePage() {
               Seller balance
             </h2>
             <p className="text-sm text-[#4c9a66] mb-6">
-              Funds from completed request deals (demo payments). Withdrawal is simulated — no real payout.
+              Funds from completed request deals (demo payments). Withdrawal is simulated — enter payout card
+              details like checkout (no real transfer).
             </p>
             {user?.role !== "seller" ? (
               <p className="text-sm text-slate-600">Balance is available for seller accounts.</p>
@@ -582,41 +586,87 @@ export default function UserProfilePage() {
                 <div className="rounded-xl border border-[#e7f3eb] bg-[#f5f6f8] p-6 mb-6">
                   <p className="text-xs font-semibold uppercase text-[#4c9a66]">Available</p>
                   <p className="text-3xl font-black text-[#0d1b12]">
-                    {walletBalance == null ? "…" : `$${walletBalance.toFixed(2)}`}
+                    {walletBalance == null ? "…" : formatMoney(walletBalance, DEFAULT_CURRENCY)}
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 max-w-md">
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder="Amount (USD)"
-                    value={walletWithdraw}
-                    onChange={(e) => setWalletWithdraw(e.target.value)}
-                    className="flex-1 rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
-                  />
+                <div className="max-w-md space-y-4">
+                  <p className="text-xs font-semibold uppercase text-[#4c9a66]">Payout card (demo)</p>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
+                    <input
+                      value={walletWithdrawCardName}
+                      onChange={(e) => setWalletWithdrawCardName(e.target.value)}
+                      className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
+                      placeholder="Seller name"
+                      autoComplete="cc-name"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Last 4 digits</label>
+                    <input
+                      value={walletWithdrawCardLast4}
+                      onChange={(e) => setWalletWithdrawCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm tracking-widest"
+                      placeholder="4242"
+                      inputMode="numeric"
+                      autoComplete="cc-number"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">
+                      Amount ({DEFAULT_CURRENCY})
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder={`Amount (${DEFAULT_CURRENCY})`}
+                      value={walletWithdraw}
+                      onChange={(e) => setWalletWithdraw(e.target.value)}
+                      className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
+                    />
+                  </div>
                   <button
                     type="button"
-                    disabled={walletBusy}
+                    disabled={
+                      walletBusy ||
+                      walletWithdrawCardLast4.length !== 4 ||
+                      !walletWithdrawCardName.trim() ||
+                      !Number.isFinite(Number(walletWithdraw)) ||
+                      Number(walletWithdraw) <= 0
+                    }
                     onClick={async () => {
                       const n = Number(walletWithdraw);
                       if (!Number.isFinite(n) || n <= 0) {
                         toastError("Enter a valid amount.");
                         return;
                       }
+                      if (walletWithdrawCardLast4.length !== 4) {
+                        toastError("Enter the last 4 digits of the card.");
+                        return;
+                      }
+                      if (!walletWithdrawCardName.trim()) {
+                        toastError("Enter the name on the card.");
+                        return;
+                      }
                       setWalletBusy(true);
                       try {
-                        const r = await demoWithdrawWallet(n);
+                        const r = await demoWithdrawWallet(n, {
+                          cardLast4: walletWithdrawCardLast4,
+                          cardHolderName: walletWithdrawCardName.trim(),
+                        });
                         setWalletBalance(r.balance);
                         setWalletWithdraw("");
-                        toastSuccess(`Demo withdraw: $${r.withdrawn.toFixed(2)}`);
+                        setWalletWithdrawCardName("");
+                        setWalletWithdrawCardLast4("");
+                        toastSuccess(`Demo withdraw: ${formatMoney(r.withdrawn, DEFAULT_CURRENCY)}`);
                       } catch (e: unknown) {
                         toastError(e instanceof Error ? e.message : "Withdraw failed.");
                       } finally {
                         setWalletBusy(false);
                       }
                     }}
-                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                    className="w-full rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50 sm:w-auto"
                   >
                     {walletBusy ? "…" : "Demo withdraw"}
                   </button>

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCatalogMoney } from "@/lib/catalog";
+import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrder, type ShopOrder } from "@/lib/shop";
 
 function statusLabel(s: ShopOrder["status"]) {
@@ -139,21 +140,33 @@ export default function OrderDetailsPage() {
           <div className="bg-white rounded-xl border border-[#e7f3eb] p-6 shadow-sm">
             <h3 className="text-lg font-bold text-[#0d1b12] mb-6">Items</h3>
             <div className="flex flex-col gap-6">
-              {order.lines.map((line) => (
+              {order.lines.map((line) => {
+                const itemCover = resolveUploadedAssetUrl(line.imageUrl);
+                const itemHref =
+                  line.requestId != null && line.requestId.length > 0
+                    ? isSellerView
+                      ? "/browse-buyer-requests"
+                      : "/my-requests"
+                    : `/products/${line.productSlug}`;
+                return (
                 <div
                   key={line.id}
                   className="flex flex-col sm:flex-row gap-4 pb-6 border-b border-[#e7f3eb] last:border-0 last:pb-0"
                 >
                   <Link
-                    href={`/products/${line.productSlug}`}
-                    className="size-24 sm:size-28 rounded-lg bg-cover bg-center border border-[#e7f3eb] shrink-0 block"
-                    style={{ backgroundImage: `url("${line.imageUrl}")` }}
+                    href={itemHref}
+                    className="size-24 sm:size-28 rounded-lg bg-slate-100 bg-cover bg-center border border-[#e7f3eb] shrink-0 block"
+                    style={itemCover ? { backgroundImage: `url("${itemCover}")` } : undefined}
                   />
                   <div className="flex-1">
                     <div className="flex justify-between items-start gap-4">
                       <div>
                         <h4 className="font-bold text-[#0d1b12] text-lg">{line.title}</h4>
-                        <p className="text-sm text-[#4c9a66] mt-1">Qty {line.quantity}</p>
+                        <p className="text-sm text-[#4c9a66] mt-1">
+                          {line.requestId
+                            ? "Agreed price for this buyer request (not a cart quantity)."
+                            : `Quantity: ${line.quantity}`}
+                        </p>
                       </div>
                       <p className="font-bold text-[#0d1b12]">
                         {formatCatalogMoney(line.unitPrice * line.quantity, line.currency, 2)}
@@ -161,7 +174,8 @@ export default function OrderDetailsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
         </div>

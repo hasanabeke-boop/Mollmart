@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCatalogMoney } from "@/lib/catalog";
+import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrders, type ShopOrder } from "@/lib/shop";
 
 const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
@@ -99,7 +100,8 @@ export default function OrdersPage() {
 
   const rows = useMemo(() => {
     return items.map((order) => {
-      const thumb = order.lines[0]?.imageUrl ?? "";
+      const rawThumb = order.lines[0]?.imageUrl ?? "";
+      const thumb = resolveUploadedAssetUrl(rawThumb) ?? "";
       const title =
         order.lines.length === 1
           ? order.lines[0]?.title ?? "Order"

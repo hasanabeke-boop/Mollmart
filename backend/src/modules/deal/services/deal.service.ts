@@ -5,6 +5,23 @@ import { badRequest, conflict, forbidden, notFound } from '../../offer/utils/api
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import type { DealEventPublisherLike } from './deal-event.service';
 
+const dealOrderShopInclude = {
+  buyer: { select: { id: true, name: true } },
+  seller: { select: { id: true, name: true } },
+  request: {
+    select: {
+      id: true,
+      attachments: {
+        orderBy: { createdAt: 'asc' },
+        take: 1,
+        select: { fileUrl: true }
+      }
+    }
+  }
+} satisfies Prisma.RequestDealOrderInclude;
+
+type DealOrderForShop = Prisma.RequestDealOrderGetPayload<{ include: typeof dealOrderShopInclude }>;
+
 function toNumber(value: Prisma.Decimal | null | undefined): number {
   if (value == null) return 0;
   return Number(value);
@@ -16,23 +33,9 @@ function assertConversationParticipant(conv: { buyerId: string; sellerId: string
   }
 }
 
-function serializeShopLikeOrder(row: {
-  id: string;
-  buyerId: string;
-  sellerId: string;
-  status: CatalogOrderStatus;
-  currency: string;
-  amount: Prisma.Decimal;
-  title: string;
-  trackingNumber: string | null;
-  carrier: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  paidAt: Date;
-  buyer: { id: string; name: string };
-  seller: { id: string; name: string };
-}) {
+function serializeShopLikeOrder(row: DealOrderForShop) {
   const total = toNumber(row.amount);
+  const imageUrl = row.request?.attachments?.[0]?.fileUrl?.trim() ?? '';
   return {
     id: row.id,
     buyerId: row.buyerId,
@@ -55,10 +58,11 @@ function serializeShopLikeOrder(row: {
     lines: [
       {
         id: `${row.id}-line`,
-        productId: row.id,
+        productId: row.requestId,
         productSlug: 'request-deal',
+        requestId: row.requestId,
         title: row.title,
-        imageUrl: '/logo.png',
+        imageUrl,
         unitPrice: total,
         currency: row.currency,
         quantity: 1
@@ -266,10 +270,7 @@ export class DealService {
           currency,
           status: CatalogOrderStatus.processing
         },
-        include: {
-          buyer: { select: { id: true, name: true } },
-          seller: { select: { id: true, name: true } }
-        }
+        include: dealOrderShopInclude
       });
 
       await tx.user.update({
@@ -308,10 +309,7 @@ export class DealService {
         orderBy: { createdAt: 'desc' },
         skip: (p - 1) * l,
         take: l,
-        include: {
-          buyer: { select: { id: true, name: true } },
-          seller: { select: { id: true, name: true } }
-        }
+        include: dealOrderShopInclude
       })
     ]);
 
@@ -327,10 +325,7 @@ export class DealService {
         id: orderId,
         OR: [{ buyerId: user.id }, { sellerId: user.id }]
       },
-      include: {
-        buyer: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true } }
-      }
+      include: dealOrderShopInclude
     });
     if (row == null) {
       throw notFound('Order not found');
@@ -351,10 +346,7 @@ export class DealService {
         orderBy: { createdAt: 'desc' },
         skip: (p - 1) * l,
         take: l,
-        include: {
-          buyer: { select: { id: true, name: true } },
-          seller: { select: { id: true, name: true } }
-        }
+        include: dealOrderShopInclude
       })
     ]);
 
@@ -397,10 +389,7 @@ export class DealService {
     const updated = await prisma.requestDealOrder.update({
       where: { id: orderId },
       data,
-      include: {
-        buyer: { select: { id: true, name: true } },
-        seller: { select: { id: true, name: true } }
-      }
+      include: dealOrderShopInclude
     });
 
     if (input.status !== undefined && updated.status !== previousStatus) {
@@ -428,10 +417,12 @@ export class DealService {
     return { balance: toNumber(row.walletBalance) };
   }
 
-  async demoWithdraw(user: AuthUser, amount: number) {
+  async demoWithdraw(user: AuthUser, amount: number, _cardLast4: string, _cardHolderName: string) {
     if (user.role !== 'seller') {
       throw forbidden('Only sellers can withdraw balance');
     }
+    void _cardLast4;
+    void _cardHolderName;
     const row = await prisma.user.findUnique({
       where: { id: user.id },
       select: { walletBalance: true }
