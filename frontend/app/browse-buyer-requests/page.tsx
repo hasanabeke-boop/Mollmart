@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiFetchWithRefresh } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
+
+type ApiCategory = { id: string; name: string; slug: string };
 
 type BuyerRequest = {
   id: string;
@@ -18,24 +20,125 @@ type BuyerRequest = {
   budget: string;
   budgetMax: number;
   currency: string;
-  barPercent: string;
   description: string;
   postedAgo: string;
   offerCount: number;
   status: string;
   urgent?: boolean;
   image?: string;
+  isNegotiable?: boolean;
 };
 
 const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor: string; barColor: string }> = {
-  electronics: { icon: "computer", iconBg: "bg-blue-100", iconColor: "text-blue-600", barColor: "bg-blue-500" },
-  "home-furniture": { icon: "chair", iconBg: "bg-orange-100", iconColor: "text-orange-600", barColor: "bg-orange-500" },
-  sustainability: { icon: "eco", iconBg: "bg-emerald-100", iconColor: "text-emerald-600", barColor: "bg-emerald-500" },
-  collectibles: { icon: "watch", iconBg: "bg-purple-100", iconColor: "text-purple-600", barColor: "bg-purple-500" },
-  fashion: { icon: "shopping_bag", iconBg: "bg-rose-100", iconColor: "text-rose-600", barColor: "bg-rose-500" },
-  services: { icon: "design_services", iconBg: "bg-cyan-100", iconColor: "text-cyan-600", barColor: "bg-cyan-500" },
+  electronics: {
+    icon: "computer",
+    iconBg: "bg-gradient-to-br from-blue-100 to-sky-100",
+    iconColor: "text-blue-700",
+    barColor: "bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400",
+  },
+  "home-furniture": {
+    icon: "chair",
+    iconBg: "bg-gradient-to-br from-orange-100 to-amber-100",
+    iconColor: "text-orange-700",
+    barColor: "bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400",
+  },
+  sustainability: {
+    icon: "eco",
+    iconBg: "bg-gradient-to-br from-emerald-100 to-teal-100",
+    iconColor: "text-emerald-700",
+    barColor: "bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-400",
+  },
+  collectibles: {
+    icon: "watch",
+    iconBg: "bg-gradient-to-br from-purple-100 to-violet-100",
+    iconColor: "text-purple-700",
+    barColor: "bg-gradient-to-r from-purple-600 via-violet-500 to-fuchsia-400",
+  },
+  fashion: {
+    icon: "shopping_bag",
+    iconBg: "bg-gradient-to-br from-rose-100 to-pink-100",
+    iconColor: "text-rose-700",
+    barColor: "bg-gradient-to-r from-rose-600 via-pink-500 to-fuchsia-400",
+  },
+  services: {
+    icon: "design_services",
+    iconBg: "bg-gradient-to-br from-cyan-100 to-blue-100",
+    iconColor: "text-cyan-700",
+    barColor: "bg-gradient-to-r from-cyan-600 via-blue-500 to-indigo-500",
+  },
 };
-const DEFAULT_STYLE = { icon: "category", iconBg: "bg-gray-100", iconColor: "text-gray-600", barColor: "bg-gray-500" };
+
+const ORPHAN_CATEGORY_STYLES: { icon: string; iconBg: string; iconColor: string; barColor: string }[] = [
+  {
+    icon: "category",
+    iconBg: "bg-gradient-to-br from-violet-100 to-purple-100",
+    iconColor: "text-violet-700",
+    barColor: "bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500",
+  },
+  {
+    icon: "category",
+    iconBg: "bg-gradient-to-br from-sky-100 to-indigo-100",
+    iconColor: "text-sky-700",
+    barColor: "bg-gradient-to-r from-sky-600 via-indigo-500 to-violet-500",
+  },
+  {
+    icon: "category",
+    iconBg: "bg-gradient-to-br from-amber-100 to-orange-100",
+    iconColor: "text-amber-800",
+    barColor: "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500",
+  },
+  {
+    icon: "category",
+    iconBg: "bg-gradient-to-br from-teal-100 to-emerald-100",
+    iconColor: "text-teal-700",
+    barColor: "bg-gradient-to-r from-teal-600 via-emerald-500 to-lime-400",
+  },
+  {
+    icon: "category",
+    iconBg: "bg-gradient-to-br from-fuchsia-100 to-pink-100",
+    iconColor: "text-fuchsia-700",
+    barColor: "bg-gradient-to-r from-fuchsia-600 via-pink-500 to-rose-400",
+  },
+  {
+    icon: "category",
+    iconBg: "bg-gradient-to-br from-indigo-100 to-blue-100",
+    iconColor: "text-indigo-700",
+    barColor: "bg-gradient-to-r from-indigo-600 via-blue-500 to-cyan-400",
+  },
+];
+
+function hashStringToIndex(s: string, modulo: number): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 33 + s.charCodeAt(i)) >>> 0;
+  }
+  return modulo > 0 ? h % modulo : 0;
+}
+
+function resolveCategoryVisualStyle(list: ApiCategory[], categoryId: string) {
+  const slugKey = styleSlugForCategory(list, categoryId);
+  const known = CATEGORY_STYLES[slugKey];
+  if (known != null) return known;
+  const idx = hashStringToIndex(categoryId, ORPHAN_CATEGORY_STYLES.length);
+  return ORPHAN_CATEGORY_STYLES[idx]!;
+}
+
+function lookupCategory(list: ApiCategory[], categoryId: string): ApiCategory | undefined {
+  const t = categoryId.trim();
+  if (!t) return undefined;
+  return list.find((c) => c.id === t || c.slug === t);
+}
+
+function styleSlugForCategory(list: ApiCategory[], categoryId: string): string {
+  return lookupCategory(list, categoryId)?.slug ?? categoryId;
+}
+
+function categoryLabelFromId(list: ApiCategory[], categoryId: string): string {
+  const row = lookupCategory(list, categoryId);
+  const name = row?.name?.trim();
+  if (name) return name;
+  return categoryId.trim() || "Uncategorized";
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -46,7 +149,14 @@ function timeAgo(dateStr: string): string {
   return `Posted ${days}d ago`;
 }
 
-function formatBudget(min?: number, max?: number, currency = "USD"): string {
+function formatBudget(min?: unknown, max?: unknown, currency = "USD"): string {
+  const toNum = (v: unknown): number | undefined => {
+    if (v == null || v === "") return undefined;
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) && !Number.isNaN(n) ? n : undefined;
+  };
+  const minN = toNum(min);
+  const maxN = toNum(max);
   const fmt = (n: number) => {
     try {
       return new Intl.NumberFormat("en-US", {
@@ -58,10 +168,34 @@ function formatBudget(min?: number, max?: number, currency = "USD"): string {
       return `${currency} ${n.toLocaleString()}`;
     }
   };
-  if (typeof min === "number" && typeof max === "number") return `${fmt(min)} - ${fmt(max)}`;
-  if (typeof max === "number") return fmt(max);
-  if (typeof min === "number") return `${fmt(min)}+`;
+  if (minN != null && maxN != null) return `${fmt(minN)} - ${fmt(maxN)}`;
+  if (maxN != null) return fmt(maxN);
+  if (minN != null) return `${fmt(minN)}+`;
   return "Negotiable";
+}
+
+/** Width % for budget bar vs max budget on the current board (same list). */
+function budgetBarWidthPercent(amount: number, listMax: number): number {
+  if (amount <= 0 || listMax <= 0) return 0;
+  const pct = (amount / listMax) * 100;
+  return Math.min(100, Math.max(4, Math.round(pct)));
+}
+
+function firstAttachmentImageUrl(attachments: unknown): string | undefined {
+  if (!Array.isArray(attachments) || attachments.length === 0) return undefined;
+  const first = attachments[0];
+  if (typeof first === "string" && /^https?:\/\//i.test(first)) return first;
+  if (first && typeof first === "object" && "fileUrl" in first) {
+    const url = String((first as { fileUrl: unknown }).fileUrl ?? "").trim();
+    return url || undefined;
+  }
+  return undefined;
+}
+
+function parseOptionalMoney(v: unknown): number | undefined {
+  if (v == null || v === "") return undefined;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) && !Number.isNaN(n) ? n : undefined;
 }
 
 type FilterTab = "recommendations" | "all" | "published" | "has_offers";
@@ -275,6 +409,7 @@ export default function BrowseBuyerRequestsPage() {
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
+  const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
 
   const loadRequests = useCallback(async () => {
     if (!user || (user.role !== "seller" && user.role !== "admin")) return;
@@ -296,26 +431,28 @@ export default function BrowseBuyerRequestsPage() {
           title: string;
           description: string;
           categoryId: string;
-          budgetMin?: number;
-          budgetMax?: number;
+          budgetMin?: number | string;
+          budgetMax?: number | string;
           currency?: string;
           status: string;
           offerCount?: number;
           createdAt: string;
-          attachments?: string[];
+          isNegotiable?: boolean;
+          attachments?: Array<{ fileUrl?: string } | string>;
         }>;
         items?: Array<{
           id: string;
           title: string;
           description: string;
           categoryId: string;
-          budgetMin?: number;
-          budgetMax?: number;
+          budgetMin?: number | string;
+          budgetMax?: number | string;
           currency?: string;
           status: string;
           offerCount?: number;
           createdAt: string;
-          attachments?: string[];
+          isNegotiable?: boolean;
+          attachments?: Array<{ fileUrl?: string } | string>;
         }>;
         hasRecommendationSignals?: boolean;
       }>(`/api/v1/requests?${params.toString()}`, { service: "request" });
@@ -331,31 +468,32 @@ export default function BrowseBuyerRequestsPage() {
         title: string;
         description: string;
         categoryId: string;
-        budgetMin?: number;
-        budgetMax?: number;
+        budgetMin?: number | string;
+        budgetMax?: number | string;
         currency?: string;
         status: string;
         offerCount?: number;
         createdAt: string;
-        attachments?: string[];
+        isNegotiable?: boolean;
+        attachments?: Array<{ fileUrl?: string } | string>;
       }>).map((r) => {
-        const style = CATEGORY_STYLES[r.categoryId] || DEFAULT_STYLE;
-        const max = r.budgetMax || 0;
+        const style = resolveCategoryVisualStyle(catalogCategories, r.categoryId);
+        const maxVal = parseOptionalMoney(r.budgetMax) ?? parseOptionalMoney(r.budgetMin) ?? 0;
         return {
           id: r.id,
           title: r.title,
-          category: r.categoryId,
+          category: categoryLabelFromId(catalogCategories, r.categoryId),
           categoryId: r.categoryId,
           ...style,
           budget: formatBudget(r.budgetMin, r.budgetMax, r.currency || "USD"),
-          budgetMax: max,
+          budgetMax: maxVal,
           currency: r.currency || "USD",
-          barPercent: max > 5000 ? "w-full" : max > 2000 ? "w-3/4" : max > 1000 ? "w-1/2" : "w-1/3",
           description: r.description,
           postedAgo: timeAgo(r.createdAt),
           offerCount: r.offerCount || 0,
           status: r.status,
-          image: r.attachments?.[0],
+          isNegotiable: Boolean(r.isNegotiable),
+          image: firstAttachmentImageUrl(r.attachments),
         };
       });
 
@@ -366,12 +504,34 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab, search, selectedCategory, user]);
+  }, [activeTab, search, selectedCategory, user, catalogCategories]);
 
   useEffect(() => {
+    let cancelled = false;
     const params = new URLSearchParams(window.location.search);
     setSearch(params.get("q") || "");
-    setSelectedCategory(params.get("category") || "");
+    const rawCat = params.get("category")?.trim() || "";
+    (async () => {
+      try {
+        const rows = await apiFetch<ApiCategory[]>("/api/v1/catalog/categories", { service: "catalog" });
+        if (cancelled) return;
+        const list = Array.isArray(rows) ? rows : [];
+        setCatalogCategories(list);
+        if (rawCat) {
+          const byId = list.find((c) => c.id === rawCat);
+          const bySlug = list.find((c) => c.slug === rawCat);
+          setSelectedCategory(byId?.id ?? bySlug?.id ?? rawCat);
+        }
+      } catch {
+        if (!cancelled) {
+          setCatalogCategories([]);
+          if (rawCat) setSelectedCategory(rawCat);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -401,7 +561,8 @@ export default function BrowseBuyerRequestsPage() {
         (r) =>
           r.title.toLowerCase().includes(q) ||
           r.description.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q),
+          r.category.toLowerCase().includes(q) ||
+          r.categoryId.toLowerCase().includes(q),
       );
     }
 
@@ -411,9 +572,20 @@ export default function BrowseBuyerRequestsPage() {
   const featuredRequest = filteredRequests.find((r) => r.image);
   const regularRequests = filteredRequests.filter((r) => r !== featuredRequest);
 
-  const allCategories = Array.from(
-    new Set(requests.map((r) => r.category)),
-  ).filter(Boolean);
+  const categoryFilterOptions = useMemo(() => {
+    const ids = [...new Set(requests.map((r) => r.categoryId))].filter(Boolean);
+    return ids
+      .map((id) => ({
+        id,
+        name: categoryLabelFromId(catalogCategories, id),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [requests, catalogCategories]);
+
+  const boardBudgetMax = useMemo(() => {
+    const nums = filteredRequests.map((r) => r.budgetMax).filter((n) => n > 0);
+    return nums.length > 0 ? Math.max(...nums) : 0;
+  }, [filteredRequests]);
 
   return (
     <RoleGate
@@ -523,20 +695,20 @@ export default function BrowseBuyerRequestsPage() {
           >
             All
           </button>
-          {allCategories.map((cat) => (
+          {categoryFilterOptions.map((opt) => (
             <button
-              key={cat}
+              key={opt.id}
               type="button"
               onClick={() =>
-                setSelectedCategory(selectedCategory === cat ? "" : cat)
+                setSelectedCategory(selectedCategory === opt.id ? "" : opt.id)
               }
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === cat
+                selectedCategory === opt.id
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              {cat}
+              {opt.name}
             </button>
           ))}
           {selectedCategory && (
@@ -646,6 +818,19 @@ export default function BrowseBuyerRequestsPage() {
                       <p className="text-xl font-black text-slate-900">
                         {featuredRequest.budget}
                       </p>
+                      {featuredRequest.isNegotiable ? (
+                        <p className="text-xs text-slate-400 mt-1">Open to other amounts</p>
+                      ) : null}
+                      {boardBudgetMax > 0 && featuredRequest.budgetMax > 0 ? (
+                        <div className="mt-3 w-full max-w-[220px] ml-auto h-2 rounded-full overflow-hidden bg-gradient-to-r from-violet-100/90 via-indigo-50 to-cyan-100/90 ring-1 ring-inset ring-black/[0.04]">
+                          <div
+                            className={`h-full rounded-full ${featuredRequest.barColor}`}
+                            style={{
+                              width: `${budgetBarWidthPercent(featuredRequest.budgetMax, boardBudgetMax)}%`,
+                            }}
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <p className="text-slate-600 line-clamp-2 mb-6">
@@ -715,8 +900,19 @@ export default function BrowseBuyerRequestsPage() {
                       {req.budget}
                     </span>
                   </div>
-                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div className={`${req.barColor} h-full ${req.barPercent}`} />
+                  {req.isNegotiable ? (
+                    <p className="text-[11px] text-slate-400 mb-2">Open to other amounts</p>
+                  ) : null}
+                  <div className="w-full h-1.5 rounded-full overflow-hidden bg-gradient-to-r from-violet-100/90 via-indigo-50 to-cyan-100/90 ring-1 ring-inset ring-black/[0.04]">
+                    <div
+                      className={`${req.barColor} h-full rounded-full transition-[width] duration-300`}
+                      style={{
+                        width:
+                          boardBudgetMax > 0 && req.budgetMax > 0
+                            ? `${budgetBarWidthPercent(req.budgetMax, boardBudgetMax)}%`
+                            : "0%",
+                      }}
+                    />
                   </div>
                 </div>
                 <p className="text-sm text-slate-500 mb-6 line-clamp-2">

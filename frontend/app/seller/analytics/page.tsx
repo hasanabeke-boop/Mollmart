@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import KpiCard from "../../../components/KpiCard";
-import { apiFetchWithRefresh } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
 
@@ -26,6 +26,12 @@ type ConversationItem = {
   status?: string;
 };
 
+type ApiCatalogCategory = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
   if (Array.isArray(value)) return value;
   return value.items || value.data || [];
@@ -36,6 +42,7 @@ export default function SellerAnalyticsPage() {
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<ApiCatalogCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -44,7 +51,7 @@ export default function SellerAnalyticsPage() {
     setLoading(true);
     setError("");
     try {
-      const [offerData, requestData, conversationData] = await Promise.all([
+      const [offerData, requestData, conversationData, categoryData] = await Promise.all([
         apiFetchWithRefresh<{ items?: OfferItem[]; data?: OfferItem[] }>(
           "/api/v1/offers/me?limit=100",
           { service: "offer" },
@@ -57,16 +64,19 @@ export default function SellerAnalyticsPage() {
           "/api/v1/conversations?limit=100",
           { service: "chat" },
         ),
+        apiFetch<ApiCatalogCategory[]>("/api/v1/catalog/categories", { service: "catalog" }).catch(() => []),
       ]);
 
       setOffers(listFrom(offerData));
       setRequests(listFrom(requestData));
       setConversations(listFrom(conversationData));
+      setCatalogCategories(Array.isArray(categoryData) ? categoryData : []);
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to load analytics.");
       setOffers([]);
       setRequests([]);
       setConversations([]);
+      setCatalogCategories([]);
     } finally {
       setLoading(false);
     }
@@ -106,23 +116,40 @@ export default function SellerAnalyticsPage() {
   }, [offers]);
 
   const categoryRows = useMemo(() => {
-    const requestCategory = new Map(requests.map((request) => [request.id, request.categoryId]));
-    const rows = new Map<string, { name: string; requests: number; offers: number }>();
+    const ORPHAN_KEY = "__orphan__";
+    const requestIdToCategory = new Map(requests.map((r) => [r.id, r.categoryId]));
 
-    requests.forEach((request) => {
-      rows.set(request.categoryId, { name: request.categoryId, requests: (rows.get(request.categoryId)?.requests || 0) + 1, offers: rows.get(request.categoryId)?.offers || 0 });
-    });
+    const labelFor = (categoryId: string) => {
+      if (categoryId === ORPHAN_KEY) return "Other";
+      const row = catalogCategories.find((c) => c.id === categoryId || c.slug === categoryId);
+      return row?.name?.trim() || categoryId;
+    };
 
-    offers.forEach((offer) => {
-      const name = requestCategory.get(offer.requestId) || "unknown";
-      const current = rows.get(name) || { name, requests: 0, offers: 0 };
-      rows.set(name, { ...current, offers: current.offers + 1 });
-    });
+    const byCategory = new Map<string, { categoryId: string; label: string; requests: number; offers: number }>();
 
-    return Array.from(rows.values())
-      .sort((a, b) => b.offers - a.offers)
+    for (const r of requests) {
+      const cid = r.categoryId;
+      const prev = byCategory.get(cid);
+      byCategory.set(cid, {
+        categoryId: cid,
+        label: labelFor(cid),
+        requests: (prev?.requests ?? 0) + 1,
+        offers: prev?.offers ?? 0,
+      });
+    }
+
+    for (const o of offers) {
+      const cid = requestIdToCategory.get(o.requestId) ?? ORPHAN_KEY;
+      const prev =
+        byCategory.get(cid) ??
+        { categoryId: cid, label: labelFor(cid), requests: 0, offers: 0 };
+      byCategory.set(cid, { ...prev, offers: prev.offers + 1 });
+    }
+
+    return Array.from(byCategory.values())
+      .sort((a, b) => b.offers - a.offers || b.requests - a.requests)
       .slice(0, 8);
-  }, [offers, requests]);
+  }, [offers, requests, catalogCategories]);
 
   return (
     <RoleGate
@@ -253,8 +280,8 @@ export default function SellerAnalyticsPage() {
                       </td>
                     </tr>
                   ) : categoryRows.map((row) => (
-                    <tr key={row.name} className="hover:bg-[#f5f6f8] transition-colors">
-                      <td className="py-4 px-6 text-sm font-medium text-[#0d1b12]">{row.name}</td>
+                    <tr key={row.categoryId} className="hover:bg-[#f5f6f8] transition-colors">
+                      <td className="py-4 px-6 text-sm font-medium text-[#0d1b12]">{row.label}</td>
                       <td className="py-4 px-6 text-sm text-right text-[#4c9a66]">{row.requests}</td>
                       <td className="py-4 px-6 text-sm text-right text-[#4c9a66]">{row.offers}</td>
                       <td className="py-4 px-6 text-center">
