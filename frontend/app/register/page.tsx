@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth, type ApiError } from "@/context/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,11 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
   const [verificationToken, setVerificationToken] = useState("");
+
+  useEffect(() => {
+    const emailParam = new URLSearchParams(window.location.search).get("email");
+    if (emailParam) setEmail(emailParam);
+  }, []);
 
   if (user) {
     router.replace("/");

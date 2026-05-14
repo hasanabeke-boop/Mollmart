@@ -13,7 +13,8 @@ export const sendResetEmail = async (
   email: string,
   token: string
 ): Promise<boolean> => {
-  const resetLink = `${config.server.url}/api/v1/reset-password/${token}`;
+  const appUrl = config.corsOrigin.replace(/\/$/, '');
+  const resetLink = `${appUrl}/reset-password/${token}`;
   const mailOptions = {
     from: config.email.from,
     to: email,

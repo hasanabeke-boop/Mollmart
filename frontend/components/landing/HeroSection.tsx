@@ -56,7 +56,10 @@ export function HeroSection() {
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDD5u2P0h5u6cmJ3VrwM_YTExrsxYvwQuhUuC20UzPPiyPDpUeGjoIbqtImSrQDrvMGulVnDYs8kjYqFyEqJBzhwDUhKYH4QRwou_bs1qgbfE2upftaoJB1Pbho3uka0PvoMD8fXEz7TSCwi-14E8lSBmRLvlXerjW4razbiB0LU1GyrvkEWvYzHi2slaoScbTpgpt9AeQEszRnV1cDbZNSA8ijt8DaTdoemK8kqoOH9YDz8fTqY7KRDiJGnPWCXc3P6sy5RNTkpkc"
               />
 
-              <div className="absolute top-8 left-8 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-xl border border-white/20 z-20 max-w-[240px] animate-[bounce_3s_infinite] cursor-pointer hover:scale-105 transition-transform">
+              <Link
+                href="/seller/dashboard"
+                className="absolute top-8 left-8 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-xl border border-white/20 z-20 max-w-[240px] animate-[bounce_3s_infinite] hover:scale-105 transition-transform"
+              >
                 <div className="flex gap-3 items-center">
                   <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-primary">
                     <img
@@ -70,7 +73,7 @@ export function HeroSection() {
                     <div className="font-bold text-sm leading-tight">&quot;We answer live requests, not cold leads.&quot;</div>
                   </div>
                 </div>
-              </div>
+              </Link>
 
               <div className="absolute bottom-8 right-8 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-xl border border-white/20 z-20 w-[280px] hover:translate-y-[-5px] transition-transform duration-300">
                 <div className="flex items-center justify-between mb-3">

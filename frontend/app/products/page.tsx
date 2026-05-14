@@ -53,6 +53,16 @@ export default function ShowcaseBrowsePage() {
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initialQ = params.get("q")?.trim();
+    if (initialQ) {
+      setQ(initialQ);
+      setDebouncedQ(initialQ);
+    }
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 400);
@@ -200,13 +210,15 @@ export default function ShowcaseBrowsePage() {
         <aside className="w-full lg:w-64 shrink-0 space-y-8">
           <button
             type="button"
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-expanded={filtersOpen}
             className="lg:hidden flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold shadow-sm"
           >
             <span className="material-symbols-outlined">filter_list</span>
             Filters
           </button>
 
-          <div className="hidden lg:block space-y-8">
+          <div className={`${filtersOpen ? "block" : "hidden"} lg:block space-y-8`}>
             <div className="space-y-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Browse</h3>
               <div className="space-y-2">

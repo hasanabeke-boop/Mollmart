@@ -1005,9 +1005,12 @@ export default function BrowseBuyerRequestsPage() {
                 Buyers are more likely to accept offers that include specific
                 pricing, availability, and a clear next step.
               </p>
-              <button className="bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-50 transition-colors">
+              <Link
+                href="/help"
+                className="inline-flex bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-50 transition-colors"
+              >
                 Learn How
-              </button>
+              </Link>
             </div>
             <div className="relative z-10 w-full md:w-1/3">
               <div className="glass-card p-4 rounded-2xl shadow-2xl rotate-3">

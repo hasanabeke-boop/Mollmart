@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function FinalCtaSection() {
   return (
     <section className="py-16">
@@ -11,15 +13,15 @@ export function FinalCtaSection() {
               Post a request if you need something, or respond as a seller if you can help. Mollmart keeps the matching and negotiation simple.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
-              <a href="/register" className="rounded-lg bg-primary px-8 py-4 text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-[var(--primary-hover)] transition-all transform hover:translate-y-[-2px]">
+              <Link href="/register" className="rounded-lg bg-primary px-8 py-4 text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-[var(--primary-hover)] transition-all transform hover:translate-y-[-2px]">
                 Get Started Now
-              </a>
-              <a
+              </Link>
+              <Link
                 className="text-sm font-semibold leading-6 text-white hover:text-primary transition-colors flex items-center gap-1"
                 href="/help"
               >
                 Learn more <span aria-hidden="true" className="group-hover:translate-x-1 transition-transform">→</span>
-              </a>
+              </Link>
             </div>
           </div>
           <div className="absolute left-1/2 top-1/2 -z-0 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary opacity-20 blur-[120px] group-hover:opacity-30 transition-opacity duration-1000" />
