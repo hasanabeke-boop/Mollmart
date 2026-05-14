@@ -50,14 +50,24 @@ export const sendVerifyEmail = async (
   email: string,
   token: string
 ): Promise<boolean> => {
-  const verifyLink = `${config.server.url}/api/v1/verify-email/${token}`;
+  const appUrl = config.corsOrigin.replace(/\/$/, '');
+  const verifyLink = `${appUrl}/verify-email/${token}`;
   const mailOptions = {
     from: config.email.from,
     to: email,
     subject: 'Email verification',
     html: `
       <p>Please verify your email by clicking the button below:</p>
-      <p><a href="${verifyLink}">Verify Email</a></p>
+      <p>
+        <a
+          href="${verifyLink}"
+          style="display:inline-block;padding:12px 20px;background:#18181b;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;"
+        >
+          Verify Email
+        </a>
+      </p>
+      <p>If the button does not work, copy and paste this link into your browser:</p>
+      <p><a href="${verifyLink}">${verifyLink}</a></p>
     `
   };
 

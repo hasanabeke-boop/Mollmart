@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth, type ApiError, type User } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch } from "@/lib/api";
+import { resendVerificationEmail } from "@/lib/emailVerification";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +25,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationToken, setVerificationToken] = useState("");
 
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -54,6 +58,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setNeedsVerification(false);
+    setVerificationToken("");
     setFieldErrors({});
 
     const errs: Record<string, string> = {};
@@ -75,12 +81,42 @@ export default function LoginPage() {
         apiErr.data.errors.forEach((e) => (map[e.field] = e.message));
         setFieldErrors(map);
       } else if (apiErr.status === 401) {
-        setError(apiErr.data?.message || "Invalid email or password");
+        const msg = apiErr.data?.message || "Invalid email or password";
+        setError(msg);
+        setNeedsVerification(/not verified|confirm your email/i.test(msg));
       } else {
         setError(apiErr.message || "Something went wrong");
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setError("");
+    setVerificationToken("");
+    if (!email.trim()) {
+      setFieldErrors({ email: "Email is required" });
+      return;
+    }
+
+    setResendingVerification(true);
+    try {
+      const res = await resendVerificationEmail(email.trim());
+      if (res.verificationToken) {
+        setVerificationToken(res.verificationToken);
+      }
+      toastSuccess(res.message || "Verification email sent.");
+    } catch (err: unknown) {
+      const apiErr = err as Error & { status?: number; data?: ApiError };
+      const msg =
+        apiErr.status === 409
+          ? "This email is already verified. Try signing in again."
+          : apiErr.data?.message || apiErr.data?.error || apiErr.message || "Could not send verification email.";
+      setError(msg);
+      toastError(msg);
+    } finally {
+      setResendingVerification(false);
     }
   };
 
@@ -209,7 +245,26 @@ export default function LoginPage() {
           {error && (
             <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
               <span className="material-symbols-outlined text-[20px]">error</span>
-              {error}
+              <div className="flex-1">
+                <p>{error}</p>
+                {needsVerification ? (
+                  <div className="mt-3 space-y-2">
+                    <button
+                      type="button"
+                      disabled={resendingVerification}
+                      onClick={handleResendVerification}
+                      className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-red-700 ring-1 ring-red-200 hover:bg-red-100 disabled:opacity-60"
+                    >
+                      {resendingVerification ? "Sending..." : "Resend verification email"}
+                    </button>
+                    {verificationToken ? (
+                      <Link className="block break-all text-xs font-semibold underline" href={`/verify-email/${verificationToken}`}>
+                        Open local verification link
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
 
@@ -333,9 +388,9 @@ export default function LoginPage() {
         </div>
 
         <div className="pt-10 flex gap-6 text-xs font-medium text-slate-400">
-          <a className="hover:text-slate-600" href="#">Privacy Policy</a>
-          <a className="hover:text-slate-600" href="#">Terms of Service</a>
-          <a className="hover:text-slate-600" href="#">Help Center</a>
+          <Link className="hover:text-slate-600" href="/help">Privacy Policy</Link>
+          <Link className="hover:text-slate-600" href="/help">Terms of Service</Link>
+          <Link className="hover:text-slate-600" href="/help">Help Center</Link>
         </div>
       </div>
 

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { uploadCatalogImage } from "@/lib/catalog";
+import { resendVerificationEmail } from "@/lib/emailVerification";
+import { useAuth } from "@/context/AuthContext";
 import RoleGate from "@/components/auth/RoleGate";
 
 type ApiCategory = { id: string; name: string; slug: string };
@@ -73,6 +75,7 @@ export default function CreateProductRequestPage() {
 function CreateProductRequestContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const lastPrefillSlug = useRef<string | null>(null);
@@ -217,9 +220,35 @@ function CreateProductRequestContent() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationToken, setVerificationToken] = useState("");
+
+  const emailVerified = Boolean(user?.emailVerified);
+
+  const handleResendVerification = async () => {
+    if (!user?.email) return;
+    setSubmitError("");
+    setVerificationToken("");
+    setResendingVerification(true);
+    try {
+      const res = await resendVerificationEmail(user.email);
+      if (res.verificationToken) {
+        setVerificationToken(res.verificationToken);
+      }
+    } catch (err: unknown) {
+      const e = err as Error;
+      setSubmitError(e.message || "Could not send verification email.");
+    } finally {
+      setResendingVerification(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (user?.role === "buyer" && !emailVerified) {
+      setSubmitError("Verify your email before creating buyer requests.");
+      return;
+    }
     if (!validate()) return;
 
     setSubmitting(true);
@@ -402,6 +431,57 @@ function CreateProductRequestContent() {
           </div>
         </div>
       </div>
+      </RoleGate>
+    );
+  }
+
+  if (user?.role === "buyer" && !emailVerified) {
+    return (
+      <RoleGate
+        allowedRoles={["buyer", "admin"]}
+        title="Buyer request area"
+        description="Sellers respond to buyer demand from the request board. To submit offers, open the seller request board instead."
+        ctaHref="/browse-buyer-requests"
+        ctaLabel="Browse buyer requests"
+        unauthenticatedDescription="Log in as a buyer to create and publish requests."
+      >
+        <div className="mx-auto flex max-w-xl flex-1 items-center px-4 py-16">
+          <div className="w-full rounded-3xl border border-amber-200 bg-white p-8 text-center shadow-xl shadow-amber-100/60">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <span className="material-symbols-outlined text-4xl">mark_email_unread</span>
+            </div>
+            <h1 className="text-2xl font-black text-slate-900">Verify your email first</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Buyer requests can only be created from verified accounts. Check your inbox for the Mollmart verification link.
+            </p>
+            {submitError ? (
+              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </p>
+            ) : null}
+            {verificationToken ? (
+              <Link className="mt-4 block break-all rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 underline" href={`/verify-email/${verificationToken}`}>
+                Open local verification link
+              </Link>
+            ) : null}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                disabled={resendingVerification}
+                onClick={handleResendVerification}
+                className="flex-1 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 disabled:opacity-60"
+              >
+                {resendingVerification ? "Sending..." : "Resend verification email"}
+              </button>
+              <Link
+                href="/profile"
+                className="flex-1 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Open profile
+              </Link>
+            </div>
+          </div>
+        </div>
       </RoleGate>
     );
   }

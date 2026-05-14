@@ -68,9 +68,14 @@ export const sendVerificationEmail = async (
   });
 
   if (existingToken) {
-    return res
-      .status(httpStatus.BAD_REQUEST)
-      .json({ error: 'Verification email already sent' });
+    return res.status(httpStatus.OK).json(
+      config.email.enabled
+        ? { message: 'Verification email already sent' }
+        : {
+            message: 'Verification email is disabled.',
+            verificationToken: existingToken.token
+          }
+    );
   }
 
   try {

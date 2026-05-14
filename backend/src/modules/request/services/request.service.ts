@@ -1,4 +1,5 @@
 import { RequestStatus } from '@prisma/client';
+import prisma from '../../../config/prisma';
 import { forbidden, notFound, badRequest } from '../utils/apiError';
 import { AuthUser } from '../types/express';
 import {
@@ -31,6 +32,7 @@ export class RequestService {
     if (user.role !== 'buyer') {
       throw forbidden('Only buyers can create requests');
     }
+    await this.ensureBuyerEmailVerified(user.id);
 
     this.validateBudgetRange(input.budgetMin, input.budgetMax);
     this.validateDeadline(input.deadlineAt);
@@ -51,6 +53,9 @@ export class RequestService {
   }
 
   async publishRequest(user: AuthUser, requestId: string): Promise<RequestWithRelations> {
+    if (user.role === 'buyer') {
+      await this.ensureBuyerEmailVerified(user.id);
+    }
     const request = await this.getOwnedRequest(user, requestId);
     this.ensurePublishable(request);
 
@@ -234,6 +239,21 @@ export class RequestService {
 
     if (request.deadlineAt != null && request.deadlineAt <= new Date()) {
       throw badRequest('Request deadline must be in the future before publishing');
+    }
+  }
+
+  private async ensureBuyerEmailVerified(userId: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailVerified: true }
+    });
+
+    if (user == null) {
+      throw forbidden('User account not found');
+    }
+
+    if (user.emailVerified == null) {
+      throw forbidden('Verify your email before creating buyer requests');
     }
   }
 

@@ -23,6 +23,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  emailVerified?: string | boolean | null;
   role: "buyer" | "seller" | "admin";
   status: "active" | "blocked" | "suspended";
 };
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: me.id,
         name: me.name || "",
         email: me.email || "",
+        emailVerified: me.emailVerified ?? null,
         role: (me.role as User["role"]) || "buyer",
         status: (me.status as User["status"]) || "active",
       });
@@ -111,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: me.id,
         name: me.name || "",
         email: me.email || "",
+        emailVerified: me.emailVerified ?? null,
         role: (me.role as User["role"]) || "buyer",
         status: (me.status as User["status"]) || "active",
       };
