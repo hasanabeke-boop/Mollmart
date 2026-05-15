@@ -24,7 +24,7 @@ Use the root `render.yaml` Blueprint to create:
 During the Render Blueprint setup, provide:
 
 ```env
-CORS_ORIGIN=https://mollmart.vercel.app
+CORS_ORIGIN=https://mollmart-owcb.vercel.app,https://mollmart.vercel.app
 SMTP_HOST=your-smtp-host
 SMTP_PORT=587
 SMTP_USERNAME=your-smtp-user

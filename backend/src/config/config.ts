@@ -11,6 +11,7 @@ const envSchema = Joi.object({
   PORT: Joi.number().port().default(4040),
   SERVER_URL: Joi.string().uri().default('http://localhost:4040'),
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+  CORS_ORIGINS: Joi.string().optional().allow(''),
   DATABASE_URL: Joi.string().required(),
   POSTGRES_DB: Joi.string().optional(),
   POSTGRES_USER: Joi.string().optional(),
@@ -61,6 +62,32 @@ const envSchema = Joi.object({
     if (value.JWT_REFRESH_SECRET == null && value.REFRESH_TOKEN_SECRET == null) {
       return helpers.error('any.custom', {
         message: 'JWT_REFRESH_SECRET or REFRESH_TOKEN_SECRET is required'
+      });
+    }
+
+    return value;
+  })
+  .custom((value, helpers) => {
+    if (value.NODE_ENV !== 'production') {
+      return value;
+    }
+
+    const productionUrls = [
+      value.SERVER_URL,
+      value.CORS_ORIGIN,
+      value.CORS_ORIGINS
+    ]
+      .flatMap((raw: string | undefined) => (raw ?? '').split(','))
+      .map((url: string) => url.trim().toLowerCase())
+      .filter((url: string) => url.length > 0);
+
+    const hasLocalhost = productionUrls.some(
+      (url: string) => url.includes('localhost') || url.includes('127.0.0.1')
+    );
+
+    if (hasLocalhost) {
+      return helpers.error('any.custom', {
+        message: 'Production SERVER_URL/CORS_ORIGIN/CORS_ORIGINS must not point to localhost'
       });
     }
 
@@ -135,6 +162,14 @@ const r2Enabled =
   r2SecretAccessKey.length > 0 &&
   r2PublicBaseUrl.length > 0;
 
+const corsOrigins = [
+  value.CORS_ORIGIN as string,
+  value.CORS_ORIGINS as string | undefined
+]
+  .flatMap((raw) => (raw ?? '').split(','))
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter((origin, index, all) => origin.length > 0 && all.indexOf(origin) === index);
+
 const config = {
   nodeEnv,
   node_env: nodeEnv,
@@ -143,8 +178,10 @@ const config = {
     url: value.SERVER_URL as string
   },
   corsOrigin: value.CORS_ORIGIN as string,
+  corsOrigins,
   cors: {
-    cors_origin: value.CORS_ORIGIN as string
+    cors_origin: value.CORS_ORIGIN as string,
+    cors_origins: corsOrigins
   },
   databaseUrl: value.DATABASE_URL as string,
   jwt: {

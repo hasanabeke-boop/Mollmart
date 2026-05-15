@@ -9,7 +9,7 @@ export type ServiceName =
   | "catalog"
   | "deal";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4040";
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://mollmart-backend.onrender.com").replace(/\/$/, "");
 
 /** Use for `<img src>` when the API stores a site-relative upload path (e.g. `/uploads/catalog/...`). */
 export function resolveUploadedAssetUrl(href: string | undefined | null): string | undefined {
@@ -18,8 +18,7 @@ export function resolveUploadedAssetUrl(href: string | undefined | null): string
   if (/^https?:\/\//i.test(s)) return s;
   if (s.startsWith("//")) return s;
   if (s.startsWith("/")) {
-    const base = API_BASE.replace(/\/$/, "");
-    return `${base}${s}`;
+    return `${API_BASE}${s}`;
   }
   return s;
 }
