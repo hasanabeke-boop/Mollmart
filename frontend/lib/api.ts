@@ -9,7 +9,13 @@ export type ServiceName =
   | "catalog"
   | "deal";
 
-export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://mollmart-backend.onrender.com").replace(/\/$/, "");
+const configuredApiBase = process.env.NEXT_PUBLIC_API_URL;
+
+if (process.env.NODE_ENV === "production" && !configuredApiBase) {
+  throw new Error("NEXT_PUBLIC_API_URL is required in production.");
+}
+
+export const API_BASE = (configuredApiBase || "http://localhost:4040").replace(/\/$/, "");
 
 /** Use for `<img src>` when the API stores a site-relative upload path (e.g. `/uploads/catalog/...`). */
 export function resolveUploadedAssetUrl(href: string | undefined | null): string | undefined {

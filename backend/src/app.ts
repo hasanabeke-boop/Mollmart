@@ -53,11 +53,17 @@ app.use(requestLogger);
 
 app.get('/health', (_req, res) => {
   res.status(200).json({
+    status: 'ok'
+  });
+});
+
+app.get('/', (_req, res) => {
+  res.status(200).json({
     status: 'ok',
     service: 'mollmart-backend',
     architecture: 'modular-monolith',
+    apiBasePath: '/api/v1',
     modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'deal']
-
   });
 });
 

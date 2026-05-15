@@ -16,6 +16,8 @@ pnpm-debug.log*
 # environment files
 **/.env
 **/.env.*
+**/.env.local
+**/.env.production
 !**/.env.example
 
 # TypeScript

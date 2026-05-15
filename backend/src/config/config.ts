@@ -10,7 +10,7 @@ const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().port().default(4040),
   SERVER_URL: Joi.string().uri().default('http://localhost:4040'),
-  CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+  CORS_ORIGIN: Joi.string().optional().allow(''),
   CORS_ORIGINS: Joi.string().optional().allow(''),
   DATABASE_URL: Joi.string().required(),
   POSTGRES_DB: Joi.string().optional(),
@@ -68,18 +68,30 @@ const envSchema = Joi.object({
     return value;
   })
   .custom((value, helpers) => {
+    const configuredCorsOrigins = [
+      value.CORS_ORIGIN,
+      value.CORS_ORIGINS
+    ]
+      .flatMap((raw: string | undefined) => (raw ?? '').split(','))
+      .map((url: string) => url.trim())
+      .filter((url: string) => url.length > 0);
+
     if (value.NODE_ENV !== 'production') {
       return value;
     }
 
     const productionUrls = [
       value.SERVER_URL,
-      value.CORS_ORIGIN,
-      value.CORS_ORIGINS
+      ...configuredCorsOrigins
     ]
-      .flatMap((raw: string | undefined) => (raw ?? '').split(','))
       .map((url: string) => url.trim().toLowerCase())
       .filter((url: string) => url.length > 0);
+
+    if (configuredCorsOrigins.length === 0) {
+      return helpers.error('any.custom', {
+        message: 'Production CORS_ORIGIN or CORS_ORIGINS is required'
+      });
+    }
 
     const hasLocalhost = productionUrls.some(
       (url: string) => url.includes('localhost') || url.includes('127.0.0.1')
@@ -170,6 +182,10 @@ const corsOrigins = [
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter((origin, index, all) => origin.length > 0 && all.indexOf(origin) === index);
 
+if (corsOrigins.length === 0 && nodeEnv !== 'production') {
+  corsOrigins.push('http://localhost:5173', 'http://localhost:3000');
+}
+
 const config = {
   nodeEnv,
   node_env: nodeEnv,
@@ -177,7 +193,7 @@ const config = {
     port: Number(value.PORT),
     url: value.SERVER_URL as string
   },
-  corsOrigin: value.CORS_ORIGIN as string,
+  corsOrigin: corsOrigins[0] ?? '',
   corsOrigins,
   cors: {
     cors_origin: value.CORS_ORIGIN as string,
