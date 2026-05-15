@@ -24,6 +24,10 @@ import { requestLogger } from './middleware/logger';
 
 const app: Express = express();
 
+if (config.nodeEnv === 'production') {
+  app.set('trust proxy', 1);
+}
+
 function createCorsError(origin: string): Error & { statusCode: number } {
   const error = new Error(`CORS origin not allowed: ${origin}`) as Error & { statusCode: number };
   error.statusCode = 403;

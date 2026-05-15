@@ -27,10 +27,15 @@ export const getTransporter = async (): Promise<Transporter | null> => {
   if (transporter) return transporter;
 
   if (config.email.enabled) {
+    const smtpPort = parseInt(config.email.smtp.port, 10);
     transporter = nodemailer.createTransport({
       host: config.email.smtp.host,
-      port: parseInt(config.email.smtp.port, 10),
-      secure: false,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      requireTLS: smtpPort === 587,
       auth: {
         user: config.email.smtp.auth.username,
         pass: config.email.smtp.auth.password
