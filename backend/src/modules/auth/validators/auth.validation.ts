@@ -12,7 +12,7 @@ export const signupSchema = {
     email: Joi.string().required().email(),
     password: Joi.string().required().min(6).max(150),
     username: Joi.string().required().min(2).max(50),
-    role: Joi.string().valid('buyer', 'seller').default('buyer')
+    role: Joi.string().valid('buyer', 'seller', 'both').default('buyer')
   })
 };
 
@@ -47,6 +47,21 @@ export const adminUserListSchema = {
     search: Joi.string().trim().allow(''),
     role: Joi.string().valid('buyer', 'seller', 'admin'),
     status: Joi.string().valid('active', 'blocked', 'suspended')
+  })
+};
+
+export const enableMixedModeSchema = {
+  body: Joi.object().max(0)
+};
+
+export const recommendationsOnboardingSchema = {
+  body: Joi.object({
+    action: Joi.string().valid('complete', 'skip').required(),
+    categoryIds: Joi.array().items(Joi.string().trim().min(1).max(100)).max(50).when('action', {
+      is: 'complete',
+      then: Joi.optional(),
+      otherwise: Joi.forbidden()
+    })
   })
 };
 

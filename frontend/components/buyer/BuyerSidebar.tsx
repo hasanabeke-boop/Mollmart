@@ -3,54 +3,45 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-export type SellerNavId =
-  | "dashboard"
-  | "my_showcase"
-  | "new_showcase"
-  | "requests"
-  | "offers"
+export type BuyerNavId =
+  | "my_requests"
+  | "post_request"
+  | "showcase"
+  | "orders"
   | "messages"
-  | "assistant"
-  | "analytics"
-  | "orders";
+  | "assistant";
 
-export function getSellerActiveNav(pathname: string): SellerNavId {
+export function getBuyerActiveNav(pathname: string): BuyerNavId {
+  if (pathname.startsWith("/create-product-request")) return "post_request";
+  if (pathname.startsWith("/my-requests")) return "my_requests";
+  if (pathname.startsWith("/products")) return "showcase";
   if (pathname.startsWith("/orders")) return "orders";
-  if (pathname.startsWith("/seller/analytics")) return "analytics";
-  if (pathname.startsWith("/seller/showcase")) return "my_showcase";
-  if (pathname.startsWith("/seller/products/new")) return "new_showcase";
-  if (pathname.startsWith("/seller/dashboard")) return "dashboard";
-  if (pathname.startsWith("/seller")) return "dashboard";
-  if (pathname.startsWith("/browse-buyer-requests")) return "requests";
   if (pathname === "/chatbot" || pathname.startsWith("/chatbot/")) return "assistant";
   if (pathname === "/chat" || pathname.startsWith("/chat/")) return "messages";
-  return "dashboard";
+  return "my_requests";
 }
 
 const NAV_ITEMS: {
-  id: SellerNavId;
+  id: BuyerNavId;
   icon: string;
   label: string;
   href: string;
-  badge?: number;
 }[] = [
-  { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
-  { id: "my_showcase", icon: "grid_view", label: "My showcase", href: "/seller/showcase" },
-  { id: "new_showcase", icon: "add_box", label: "New listing", href: "/seller/products/new" },
-  { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
+  { id: "my_requests", icon: "playlist_add", label: "My requests", href: "/my-requests" },
+  { id: "post_request", icon: "add_circle", label: "Post request", href: "/create-product-request" },
+  { id: "showcase", icon: "storefront", label: "Showcase", href: "/products" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "assistant", icon: "smart_toy", label: "Assistant", href: "/chatbot" },
-  { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];
 
 type Props = {
-  active: SellerNavId;
+  active: BuyerNavId;
   open: boolean;
   onClose: () => void;
 };
 
-export default function SellerSidebar({ active, open, onClose }: Props) {
+export default function BuyerSidebar({ active, open, onClose }: Props) {
   const { user } = useAuth();
 
   return (
@@ -69,7 +60,7 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex h-full flex-col justify-between p-4">
+        <div className="flex h-full min-h-0 flex-col justify-between p-4">
           <nav className="flex flex-col gap-2 pt-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.id;
@@ -79,40 +70,25 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
                   href={item.href}
                   onClick={onClose}
                   className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                    isActive
-                      ? "bg-primary/10 text-black"
-                      : "text-gray-600 hover:bg-gray-50"
+                    isActive ? "bg-primary/10 text-black" : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  <span
-                    className={`material-symbols-outlined ${
-                      isActive ? "text-green-700" : ""
-                    }`}
-                  >
+                  <span className={`material-symbols-outlined ${isActive ? "text-green-700" : ""}`}>
                     {item.icon}
                   </span>
-                  <span
-                    className={`text-sm ${
-                      isActive ? "font-semibold" : "font-medium"
-                    }`}
-                  >
+                  <span className={`text-sm ${isActive ? "font-semibold" : "font-medium"}`}>
                     {item.label}
                   </span>
-                  {item.badge && (
-                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
           </nav>
-          {/* Bottom user card */}
+
           <div className="flex flex-col gap-2">
             <Link
               href="/profile"
               onClick={onClose}
-              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-600 hover:bg-gray-50 transition-all"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-600 transition-all hover:bg-gray-50"
             >
               <span className="material-symbols-outlined">settings</span>
               <span className="text-sm font-medium">Settings</span>
@@ -123,9 +99,9 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
               </div>
               <div className="flex flex-1 flex-col overflow-hidden">
                 <p className="truncate text-sm font-bold text-[#0d1b12]">
-                  {user?.name || user?.email || "Seller"}
+                  {user?.name || user?.email || "Buyer"}
                 </p>
-                <p className="truncate text-xs text-gray-500">Seller Account</p>
+                <p className="truncate text-xs text-gray-500">Buyer account</p>
               </div>
             </div>
           </div>
@@ -134,4 +110,3 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
     </>
   );
 }
-

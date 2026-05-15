@@ -1,5 +1,10 @@
 import { Notification, Prisma, PrismaClient } from '@prisma/client';
 import prisma from '../../../config/prisma';
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  NotificationPreferences,
+  parseNotificationPreferences
+} from '../../../shared/notificationPreferences';
 import { NotificationRecordInput } from '../types/notification';
 
 export interface NotificationRepositoryLike {
@@ -8,6 +13,11 @@ export interface NotificationRepositoryLike {
   countUnread(userId: string): Promise<number>;
   markRead(userId: string, notificationId: string): Promise<Notification | null>;
   markAllRead(userId: string): Promise<number>;
+  getPreferences(userId: string): Promise<NotificationPreferences>;
+  updatePreferences(
+    userId: string,
+    input: NotificationPreferences
+  ): Promise<NotificationPreferences>;
 }
 
 export class NotificationRepository implements NotificationRepositoryLike {
@@ -95,6 +105,34 @@ export class NotificationRepository implements NotificationRepositoryLike {
     });
 
     return result.count;
+  }
+
+  async getPreferences(userId: string): Promise<NotificationPreferences> {
+    const user = await this.client.user.findUnique({
+      where: { id: userId },
+      select: { notificationPreferencesJson: true }
+    });
+
+    if (user == null) {
+      return { ...DEFAULT_NOTIFICATION_PREFERENCES };
+    }
+
+    return parseNotificationPreferences(user.notificationPreferencesJson);
+  }
+
+  async updatePreferences(
+    userId: string,
+    input: NotificationPreferences
+  ): Promise<NotificationPreferences> {
+    const user = await this.client.user.update({
+      where: { id: userId },
+      data: {
+        notificationPreferencesJson: input as Prisma.InputJsonValue
+      },
+      select: { notificationPreferencesJson: true }
+    });
+
+    return parseNotificationPreferences(user.notificationPreferencesJson);
   }
 }
 

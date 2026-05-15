@@ -11,3 +11,11 @@ export const notificationIdParamSchema = {
     id: Joi.string().trim().required()
   })
 };
+
+export const notificationPreferencesSchema = {
+  body: Joi.object({
+    requestUpdates: Joi.boolean().required(),
+    offerReplies: Joi.boolean().required(),
+    newsletter: Joi.boolean().required()
+  })
+};

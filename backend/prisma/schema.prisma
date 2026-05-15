@@ -177,6 +177,11 @@ model User {
   email                  String?                  @unique
   password               String
   role                   UserRole                 @default(buyer)
+  canBuy                 Boolean                  @default(true)
+  canSell                Boolean                  @default(false)
+  recommendationsOnboardingCompletedAt DateTime?
+  recommendationsOnboardingSkippedAt   DateTime?
+  notificationPreferencesJson          Json?
   status                 UserStatus               @default(active)
   emailVerified          DateTime?
   createdAt              DateTime                 @default(now())
