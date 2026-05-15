@@ -6,6 +6,9 @@ dotenv.config({
   path: path.resolve(__dirname, '../../.env')
 });
 
+// Keep the deployed Vercel app reachable even if Render's CORS env drifts.
+const defaultProductionCorsOrigins = ['https://mollmart-azure.vercel.app'];
+
 const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().port().default(4040),
@@ -70,7 +73,8 @@ const envSchema = Joi.object({
   .custom((value, helpers) => {
     const configuredCorsOrigins = [
       value.CORS_ORIGIN,
-      value.CORS_ORIGINS
+      value.CORS_ORIGINS,
+      ...defaultProductionCorsOrigins
     ]
       .flatMap((raw: string | undefined) => (raw ?? '').split(','))
       .map((url: string) => url.trim())
@@ -176,7 +180,8 @@ const r2Enabled =
 
 const corsOrigins = [
   value.CORS_ORIGIN as string,
-  value.CORS_ORIGINS as string | undefined
+  value.CORS_ORIGINS as string | undefined,
+  ...(nodeEnv === 'production' ? defaultProductionCorsOrigins : [])
 ]
   .flatMap((raw) => (raw ?? '').split(','))
   .map((origin) => origin.trim().replace(/\/$/, ''))

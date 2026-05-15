@@ -23,6 +23,13 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logger';
 
 const app: Express = express();
+
+function createCorsError(origin: string): Error & { statusCode: number } {
+  const error = new Error(`CORS origin not allowed: ${origin}`) as Error & { statusCode: number };
+  error.statusCode = 403;
+  return error;
+}
+
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
     if (origin == null) {
@@ -36,9 +43,10 @@ const corsOptions: CorsOptions = {
       return;
     }
 
-    callback(new Error(`CORS origin not allowed: ${origin}`));
+    callback(createCorsError(origin));
   },
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 204
 };
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
