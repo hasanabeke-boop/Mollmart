@@ -16,6 +16,8 @@ services:
         value: "10000"
       - key: SERVER_URL
         value: "https://mollmart.onrender.com"
+      - key: CORS_ORIGIN
+        value: "https://mollmart-azure.vercel.app"
       - key: CORS_ORIGINS
         value: "https://mollmart-azure.vercel.app"
       - key: DATABASE_URL
@@ -39,6 +41,8 @@ services:
         value: "1d"
       - key: REFRESH_TOKEN_COOKIE_NAME
         value: "jid"
+      - key: INTERNAL_API_TOKEN
+        sync: false
       - key: DEFAULT_PAGE_SIZE
         value: "20"
       - key: MAX_PAGE_SIZE
@@ -50,19 +54,29 @@ services:
       - key: REQUIRE_EMAIL_VERIFICATION
         value: "auto"
       - key: SMTP_HOST
-        sync: false
+        value: "smtp.gmail.com"
       - key: SMTP_PORT
-        sync: false
+        value: "587"
       - key: SMTP_USERNAME
-        sync: false
+        value: "berikkrasava@gmail.com"
       - key: SMTP_PASSWORD
         sync: false
       - key: EMAIL_FROM
-        sync: false
+        value: "berikkrasava@gmail.com"
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
         value: "gpt-5-mini"
+      - key: R2_ENDPOINT
+        value: "https://991ea16d016f4daeff63fc5a37b60026.r2.cloudflarestorage.com"
+      - key: R2_BUCKET
+        value: "mollmart-uploads"
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_PUBLIC_BASE_URL
+        value: "https://pub-9608878ec4b341f089680adefaed560f.r2.dev"
 
   - type: keyvalue
     name: mollmart-redis
