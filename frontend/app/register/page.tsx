@@ -250,7 +250,7 @@ export default function RegisterPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="Full name"
                   className={`w-full rounded-xl bg-white px-11 py-3.5 text-slate-900 border focus:border-primary focus:ring-primary ${fieldErrors.username ? "border-red-400" : "border-slate-200"}`}
                 />
               </div>
