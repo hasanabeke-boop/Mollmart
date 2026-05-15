@@ -39,6 +39,8 @@ export interface RequestBoardQuery {
   sortOrder: 'asc' | 'desc';
   /** From query string; parsed in service. */
   recommended?: boolean | string;
+  /** Set by service: hide the viewer's own buyer requests from the seller board. */
+  excludeBuyerId?: string;
 }
 
 export interface OwnerRequestQuery {

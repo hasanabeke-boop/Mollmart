@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
@@ -31,6 +33,18 @@ function readRecommendedCategoryIds(prefs: unknown): string[] {
 
 type ProfileMainTab = "overview" | "preferences" | "balance";
 
+type NotificationPreferences = {
+  requestUpdates: boolean;
+  offerReplies: boolean;
+  newsletter: boolean;
+};
+
+const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  requestUpdates: true,
+  offerReplies: true,
+  newsletter: false,
+};
+
 function navButtonClass(active: boolean) {
   return `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
     active ? "bg-primary/10 font-medium text-[#0d1b12]" : "text-[#0d1b12] hover:bg-[#f5f6f8]"
@@ -39,8 +53,17 @@ function navButtonClass(active: boolean) {
 
 export default function UserProfilePage() {
   const { user, loading: authLoading, refreshUser } = useAuth();
+  const { activeRole, hasDualWorkspace, enableMixedMode, mixedModeBusy } = useWorkspace();
   const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
+
+  const canEnableMixedMode =
+    Boolean(user) &&
+    user?.role !== "admin" &&
+    !hasDualWorkspace &&
+    Boolean(
+      (user?.canBuy && !user?.canSell) || (!user?.canBuy && user?.canSell),
+    );
 
   const [profileData, setProfileData] = useState<ProfileMeResponse | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -59,6 +82,10 @@ export default function UserProfilePage() {
   const [walletWithdrawCardName, setWalletWithdrawCardName] = useState("");
   const [walletWithdrawCardLast4, setWalletWithdrawCardLast4] = useState("");
   const [walletBusy, setWalletBusy] = useState(false);
+
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
+  const [notifPrefsSaving, setNotifPrefsSaving] = useState(false);
+  const [notifPrefsLoaded, setNotifPrefsLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +146,51 @@ export default function UserProfilePage() {
     if (user) loadProfile();
   }, [user, loadProfile]);
 
+  const loadNotificationPreferences = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await apiFetchWithRefresh<{ preferences: NotificationPreferences }>(
+        "/api/v1/notifications/preferences",
+        { service: "notification" },
+      );
+      setNotifPrefs({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...data.preferences });
+    } catch {
+      setNotifPrefs(DEFAULT_NOTIFICATION_PREFERENCES);
+    } finally {
+      setNotifPrefsLoaded(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) void loadNotificationPreferences();
+  }, [user, loadNotificationPreferences]);
+
+  const saveNotificationPreferences = useCallback(
+    async (next: NotificationPreferences) => {
+      setNotifPrefs(next);
+      setNotifPrefsSaving(true);
+      try {
+        const data = await apiFetchWithRefresh<{ preferences: NotificationPreferences }>(
+          "/api/v1/notifications/preferences",
+          {
+            method: "PATCH",
+            service: "notification",
+            body: JSON.stringify(next),
+          },
+        );
+        setNotifPrefs(data.preferences);
+        toastSuccess("Notification settings saved.");
+      } catch (e: unknown) {
+        setNotifPrefs(notifPrefs);
+        toastError(e instanceof Error ? e.message : "Could not save notification settings.");
+        void loadNotificationPreferences();
+      } finally {
+        setNotifPrefsSaving(false);
+      }
+    },
+    [notifPrefs, loadNotificationPreferences, toastSuccess, toastError],
+  );
+
   const loadStats = useCallback(async () => {
     if (!user) return;
     try {
@@ -128,7 +200,7 @@ export default function UserProfilePage() {
       );
       const conversationCount = conversations.items?.length || conversations.data?.length || 0;
 
-      if (user.role === "seller") {
+      if (activeRole === "seller") {
         const offers = await apiFetchWithRefresh<{ items?: Array<{ status: string }>; data?: Array<{ status: string }> }>(
           "/api/v1/offers/me?limit=100",
           { service: "offer" },
@@ -154,27 +226,27 @@ export default function UserProfilePage() {
     } catch {
       setStats({ primary: 0, secondary: 0, conversations: 0 });
     }
-  }, [user]);
+  }, [user, activeRole]);
 
   useEffect(() => {
     loadStats();
   }, [loadStats]);
 
   const loadWallet = useCallback(async () => {
-    if (!user || user.role !== "seller") return;
+    if (!user || activeRole !== "seller") return;
     try {
       const w = await fetchWalletMe();
       setWalletBalance(typeof w.balance === "number" ? w.balance : 0);
     } catch {
       setWalletBalance(0);
     }
-  }, [user]);
+  }, [user, activeRole]);
 
   useEffect(() => {
-    if (mainTab === "balance" && user?.role === "seller") {
+    if (mainTab === "balance" && activeRole === "seller") {
       void loadWallet();
     }
-  }, [mainTab, user?.role, loadWallet]);
+  }, [mainTab, activeRole, loadWallet]);
 
   const handleSaved = useCallback(async () => {
     await loadProfile();
@@ -184,12 +256,20 @@ export default function UserProfilePage() {
 
   const prefsMode = useMemo<"buyer" | "seller" | null>(() => {
     if (!profileData || !user) return null;
-    if (user.role === "buyer" && profileData.buyerProfile) return "buyer";
-    if (user.role === "seller" && profileData.sellerProfile) return "seller";
-    if (user.role === "admin" && profileData.sellerProfile) return "seller";
-    if (user.role === "admin" && profileData.buyerProfile) return "buyer";
+    if (user.role === "admin") {
+      if (profileData.sellerProfile) return "seller";
+      if (profileData.buyerProfile) return "buyer";
+      return null;
+    }
+    if (hasDualWorkspace) {
+      if (activeRole === "seller" && profileData.sellerProfile) return "seller";
+      if (activeRole === "buyer" && profileData.buyerProfile) return "buyer";
+      return activeRole === "seller" ? "seller" : "buyer";
+    }
+    if (user.canSell && profileData.sellerProfile) return "seller";
+    if (user.canBuy && profileData.buyerProfile) return "buyer";
     return null;
-  }, [user, profileData]);
+  }, [user, profileData, hasDualWorkspace, activeRole]);
 
   const preferenceLabels = useMemo(() => {
     if (!profileData || prefsMode == null) return [];
@@ -280,7 +360,7 @@ export default function UserProfilePage() {
             <span className="material-symbols-outlined">person</span>
             Profile
           </button>
-          {user?.role !== "seller" && (
+          {activeRole !== "seller" && user?.role !== "admin" && (
             <Link
               href="/my-requests"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
@@ -289,7 +369,7 @@ export default function UserProfilePage() {
               My Requests
             </Link>
           )}
-          {user?.role === "seller" && (
+          {activeRole === "seller" && (
             <>
               <Link
                 href="/seller/dashboard"
@@ -315,7 +395,7 @@ export default function UserProfilePage() {
             <span className="material-symbols-outlined">tune</span>
             Preferences
           </button>
-          {user?.role === "seller" && (
+          {activeRole === "seller" && (
             <button
               type="button"
               onClick={() => setMainTab("balance")}
@@ -330,21 +410,21 @@ export default function UserProfilePage() {
         <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[#102216] to-[#1a2e22] text-white">
           <div className="relative z-10 flex flex-col gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">
-              {user?.role === "seller" ? "travel_explore" : "playlist_add"}
+              {activeRole === "seller" ? "travel_explore" : "playlist_add"}
             </span>
             <h4 className="font-bold text-lg">
-              {user?.role === "seller" ? "Find buyer demand" : "Post buyer demand"}
+              {activeRole === "seller" ? "Find buyer demand" : "Post buyer demand"}
             </h4>
             <p className="text-xs text-gray-300 mb-2">
-              {user?.role === "seller"
+              {activeRole === "seller"
                 ? "Respond to live buyer requests and start more conversations."
                 : "Create a request so sellers can respond with offers."}
             </p>
             <Link
-              href={user?.role === "seller" ? "/browse-buyer-requests" : "/create-product-request"}
+              href={activeRole === "seller" ? "/browse-buyer-requests" : "/create-product-request"}
               className="w-full py-2 bg-primary text-[#0d1b12] text-xs font-bold rounded-lg hover:bg-green-400 transition-colors text-center"
             >
-              {user?.role === "seller" ? "Browse Requests" : "Post Request"}
+              {activeRole === "seller" ? "Browse Requests" : "Post Request"}
             </Link>
           </div>
           <div className="absolute -bottom-8 -right-8 size-24 bg-primary/20 rounded-full blur-xl" />
@@ -388,7 +468,7 @@ export default function UserProfilePage() {
                     <span className="material-symbols-outlined text-[18px]">
                       verified_user
                     </span>
-                    {roleLabel(user?.role)} account
+                    {hasDualWorkspace ? "Buyer & seller" : roleLabel(activeRole)} account
                   </span>
                   {location ? (
                     <span className="flex items-center gap-1">
@@ -408,6 +488,7 @@ export default function UserProfilePage() {
               </div>
             </div>
             <div className="flex w-full flex-col items-stretch gap-3 md:w-auto md:items-end">
+              {hasDualWorkspace ? <WorkspaceModeToggle /> : null}
               <button
                 type="button"
                 onClick={() => setEditOpen(true)}
@@ -426,13 +507,13 @@ export default function UserProfilePage() {
             {/* Stats */}
             <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-                <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Offers Sent" : "My Requests"}</p>
+                <p className="text-sm text-[#4c9a66] font-medium">{activeRole === "seller" ? "Offers Sent" : "My Requests"}</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-[#0d1b12]">{stats.primary}</span>
                 </div>
               </div>
               <div className="bg-white p-5 rounded-xl border border-[#e7f3eb] shadow-sm flex flex-col gap-1">
-                <p className="text-sm text-[#4c9a66] font-medium">{user?.role === "seller" ? "Accepted Offers" : "Offers Received"}</p>
+                <p className="text-sm text-[#4c9a66] font-medium">{activeRole === "seller" ? "Accepted Offers" : "Offers Received"}</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-[#0d1b12]">{stats.secondary}</span>
                 </div>
@@ -444,6 +525,35 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </section>
+
+            {canEnableMixedMode ? (
+              <section className="rounded-xl border border-[#e7f3eb] bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-bold text-[#0d1b12]">Buy and sell on one account</h3>
+                    <p className="mt-1 text-sm text-[#4c9a66]">
+                      Enable mixed mode to post buyer requests and respond as a seller. Use the navbar toggle to switch
+                      workspaces anytime.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={mixedModeBusy}
+                    onClick={async () => {
+                      try {
+                        await enableMixedMode();
+                        toastSuccess("Mixed mode enabled. Use Buyer | Seller in the header to switch.");
+                      } catch (e: unknown) {
+                        toastError(e instanceof Error ? e.message : "Could not enable mixed mode.");
+                      }
+                    }}
+                    className="shrink-0 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                  >
+                    {mixedModeBusy ? "Enabling…" : "Enable mixed mode"}
+                  </button>
+                </div>
+              </section>
+            ) : null}
 
             {/* Interests & Notifications */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -482,7 +592,7 @@ export default function UserProfilePage() {
                   >
                     Edit in Preferences
                   </button>
-                  {user?.role === "seller" ? (
+                  {activeRole === "seller" ? (
                     <Link href="/browse-buyer-requests" className="hover:underline">
                       Browse buyer requests
                     </Link>
@@ -500,10 +610,38 @@ export default function UserProfilePage() {
                   <h3 className="font-bold">Notifications</h3>
                 </div>
                 <div className="flex flex-col gap-4">
-                  <ToggleRow label="Request Updates" checked />
-                  <ToggleRow label="Offer Replies" checked />
-                  <ToggleRow label="Newsletter" checked={false} />
-                  <p className="text-xs text-[#4c9a66]">Notification preference API is not available yet, so these controls are read-only.</p>
+                  <ToggleRow
+                    label="Request updates"
+                    description="New requests, deals, and shop orders"
+                    checked={notifPrefs.requestUpdates}
+                    disabled={!notifPrefsLoaded || notifPrefsSaving}
+                    onChange={(checked) =>
+                      void saveNotificationPreferences({ ...notifPrefs, requestUpdates: checked })
+                    }
+                  />
+                  <ToggleRow
+                    label="Offer replies"
+                    description="Offers, acceptances, and chat messages"
+                    checked={notifPrefs.offerReplies}
+                    disabled={!notifPrefsLoaded || notifPrefsSaving}
+                    onChange={(checked) =>
+                      void saveNotificationPreferences({ ...notifPrefs, offerReplies: checked })
+                    }
+                  />
+                  <ToggleRow
+                    label="Email copies"
+                    description="Also send notifications to your email"
+                    checked={notifPrefs.newsletter}
+                    disabled={!notifPrefsLoaded || notifPrefsSaving}
+                    onChange={(checked) =>
+                      void saveNotificationPreferences({ ...notifPrefs, newsletter: checked })
+                    }
+                  />
+                  <p className="text-xs text-[#4c9a66]">
+                    {notifPrefsSaving
+                      ? "Saving…"
+                      : "Account alerts (e.g. blocked account) are always delivered in the app."}
+                  </p>
                 </div>
               </div>
             </section>
@@ -579,8 +717,10 @@ export default function UserProfilePage() {
               Funds from completed request deals (demo payments). Withdrawal is simulated — enter payout card
               details like checkout (no real transfer).
             </p>
-            {user?.role !== "seller" ? (
-              <p className="text-sm text-slate-600">Balance is available for seller accounts.</p>
+            {activeRole !== "seller" ? (
+              <p className="text-sm text-slate-600">
+                Switch to seller mode in the header to view your balance.
+              </p>
             ) : (
               <>
                 <div className="rounded-xl border border-[#e7f3eb] bg-[#f5f6f8] p-6 mb-6">
@@ -682,28 +822,36 @@ export default function UserProfilePage() {
 
 type ToggleRowProps = {
   label: string;
+  description?: string;
   checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
 };
 
-function ToggleRow({ label, checked }: ToggleRowProps) {
+function ToggleRow({ label, description, checked, disabled, onChange }: ToggleRowProps) {
   return (
-    <label className="flex items-center justify-between cursor-pointer group">
-      <span className="text-sm text-[#0d1b12]">{label}</span>
+    <div className="flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-[#0d1b12]">{label}</p>
+        {description ? <p className="text-xs text-[#4c9a66]">{description}</p> : null}
+      </div>
       <button
         type="button"
-        disabled
-        className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
-          checked
-            ? "bg-primary border-primary"
-            : "bg-[#f5f6f8] border-[#e7f3eb]"
+        role="switch"
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors disabled:opacity-50 ${
+          checked ? "bg-primary border-primary" : "bg-[#f5f6f8] border-[#e7f3eb]"
         }`}
       >
         <span
-          className={`absolute h-4 w-4 rounded-full bg-white transition-transform ${
+          className={`absolute h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
             checked ? "translate-x-5" : "translate-x-1"
           }`}
         />
       </button>
-    </label>
+    </div>
   );
 }
+

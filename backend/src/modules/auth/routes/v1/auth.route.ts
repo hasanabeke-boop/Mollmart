@@ -7,8 +7,10 @@ import {
   adminUpdateUserSchema,
   adminUserListSchema,
   changePasswordSchema,
+  enableMixedModeSchema,
   introspectTokenSchema,
   loginSchema,
+  recommendationsOnboardingSchema,
   signupSchema,
   userIdParamSchema
 } from '../../validators/auth.validation';
@@ -33,6 +35,20 @@ authRouter.patch(
   isAuth,
   validate(changePasswordSchema),
   authController.handleChangePassword
+);
+
+authRouter.patch(
+  '/me/enable-mixed-mode',
+  isAuth,
+  validate(enableMixedModeSchema),
+  authController.handleEnableMixedMode
+);
+
+authRouter.patch(
+  '/me/recommendations-onboarding',
+  isAuth,
+  validate(recommendationsOnboardingSchema),
+  authController.handleRecommendationsOnboarding
 );
 
 authRouter.post(
