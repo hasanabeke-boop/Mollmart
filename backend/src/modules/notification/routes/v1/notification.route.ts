@@ -5,7 +5,8 @@ import validate from '../../middleware/validate';
 import asyncHandler from '../../utils/asyncHandler';
 import {
   notificationIdParamSchema,
-  notificationListSchema
+  notificationListSchema,
+  notificationPreferencesSchema
 } from '../../validators/notification.validation';
 
 export function createNotificationRouter(controller: NotificationController): Router {
@@ -14,6 +15,12 @@ export function createNotificationRouter(controller: NotificationController): Ro
   router.use(authenticate);
 
   router.get('/notifications/unread-count', asyncHandler(controller.unreadCount));
+  router.get('/notifications/preferences', asyncHandler(controller.getPreferences));
+  router.patch(
+    '/notifications/preferences',
+    validate(notificationPreferencesSchema),
+    asyncHandler(controller.updatePreferences)
+  );
   router.get('/notifications', validate(notificationListSchema), asyncHandler(controller.list));
   router.post('/notifications/:id/read', validate(notificationIdParamSchema), asyncHandler(controller.markRead));
   router.post('/notifications/read-all', asyncHandler(controller.markAllRead));

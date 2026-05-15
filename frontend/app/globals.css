@@ -5,6 +5,34 @@
   --foreground: #0d1b12;
   --primary-color: #607afb;
   --primary-hover: #4b63e8;
+  /* Matches Header: h-14, xl:h-16 */
+  --app-header-height: 3.5rem;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --app-header-height: 4rem;
+  }
+}
+
+/* Full-height app sidebar (buyer / seller) — fixed to viewport, not transformed parents */
+.app-sidebar {
+  position: fixed;
+  top: var(--app-header-height);
+  bottom: 0;
+  left: 0;
+  height: auto;
+  z-index: 40;
+}
+
+.app-layout-with-sidebar {
+  min-height: calc(100dvh - var(--app-header-height));
+}
+
+@media (min-width: 1024px) {
+  .app-layout-with-sidebar {
+    padding-left: 16rem;
+  }
 }
 
 @theme inline {
@@ -125,4 +153,120 @@ body {
 
 .toast-exit {
   animation: toast-exit 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* Full-screen fade when switching buyer ↔ seller (opacity only — transform breaks fixed sidebars) */
+.workspace-screen-fade {
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.workspace-screen-fade--visible {
+  opacity: 1;
+}
+
+.workspace-screen-fade--hidden {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Segmented workspace toggle */
+.workspace-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  border-radius: 5px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(13, 27, 18, 0.06),
+    0 2px 8px rgba(96, 122, 251, 0.12);
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    transform 0.48s cubic-bezier(0.34, 1.35, 0.64, 1),
+    box-shadow 0.48s ease,
+    width 0.48s cubic-bezier(0.34, 1.35, 0.64, 1);
+  will-change: transform;
+}
+
+.workspace-toggle__thumb--seller {
+  transform: translate3d(100%, 0, 0) scale(1);
+  box-shadow:
+    0 1px 3px rgba(13, 27, 18, 0.08),
+    0 4px 14px rgba(96, 122, 251, 0.2);
+}
+
+.workspace-toggle--animating .workspace-toggle__thumb {
+  transition: none;
+  animation: workspace-toggle-thumb-bounce 0.52s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes workspace-toggle-thumb-bounce {
+  0% {
+    filter: brightness(1);
+  }
+  40% {
+    filter: brightness(1.04);
+    transform: translate3d(var(--thumb-x, 0), 0, 0) scale(0.82);
+  }
+  72% {
+    transform: translate3d(var(--thumb-x, 0), 0, 0) scale(1.06);
+  }
+  100% {
+    filter: brightness(1);
+    transform: translate3d(var(--thumb-x, 0), 0, 0) scale(1);
+  }
+}
+
+.workspace-toggle--animating .workspace-toggle__thumb--seller {
+  --thumb-x: 100%;
+}
+
+.workspace-toggle--animating .workspace-toggle__thumb:not(.workspace-toggle__thumb--seller) {
+  --thumb-x: 0;
+}
+
+.workspace-toggle__btn {
+  position: relative;
+  z-index: 1;
+  border-radius: 5px;
+  padding: 0.25rem 0.5rem;
+  color: #6b7280;
+  transition: color 0.25s ease;
+}
+
+@media (min-width: 640px) {
+  .workspace-toggle__btn {
+    padding: 0.375rem 0.625rem;
+  }
+}
+
+.workspace-toggle__btn--active {
+  color: #0d1b12;
+}
+
+.workspace-toggle__btn:disabled {
+  cursor: wait;
+}
+
+.workspace-toggle__btn:not(:disabled):active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-screen-fade {
+    transition-duration: 0.01ms;
+  }
+
+
+  .workspace-toggle__thumb {
+    transition-duration: 0.01ms;
+  }
+
+  .workspace-toggle--animating .workspace-toggle__thumb {
+    animation: none;
+  }
 }

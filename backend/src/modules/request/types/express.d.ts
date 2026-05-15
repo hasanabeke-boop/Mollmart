@@ -5,6 +5,9 @@ export type UserRole = 'buyer' | 'seller' | 'admin';
 export interface AuthUser {
   id: string;
   role: UserRole;
+  canBuy?: boolean;
+  canSell?: boolean;
+  activeMode?: 'buyer' | 'seller';
 }
 
 declare module 'express-serve-static-core' {

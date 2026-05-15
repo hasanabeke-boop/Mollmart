@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import * as argon2 from 'argon2';
 import { verify, type JwtPayload } from 'jsonwebtoken';
 import prismaClient from '../../../config/prisma';
+import { mapSignupAccountType } from '../../../shared/workspaceAuth';
 import type {
   AdminUpdateUserRequestBody,
   AuthTokenUser,
@@ -46,8 +47,12 @@ const serializeUser = (user: {
   name: string;
   email: string | null;
   role: 'buyer' | 'seller' | 'admin';
+  canBuy: boolean;
+  canSell: boolean;
   status: 'active' | 'blocked' | 'suspended';
   emailVerified: Date | null;
+  recommendationsOnboardingCompletedAt: Date | null;
+  recommendationsOnboardingSkippedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
@@ -56,6 +61,12 @@ const serializeUser = (user: {
   name: user.name,
   email: user.email,
   role: user.role,
+  canBuy: user.canBuy,
+  canSell: user.canSell,
+  hasDualWorkspace: user.canBuy && user.canSell,
+  recommendationsOnboardingPending:
+    user.recommendationsOnboardingCompletedAt == null &&
+    user.recommendationsOnboardingSkippedAt == null,
   status: user.status,
   emailVerified: user.emailVerified,
   createdAt: user.createdAt,
@@ -71,8 +82,12 @@ const activeUserSelect = {
   name: true,
   email: true,
   role: true,
+  canBuy: true,
+  canSell: true,
   status: true,
   emailVerified: true,
+  recommendationsOnboardingCompletedAt: true,
+  recommendationsOnboardingSkippedAt: true,
   createdAt: true,
   updatedAt: true,
   lastLoginAt: true
@@ -142,7 +157,10 @@ export const handleSignUp = async (
   req: TypedRequest<UserSignUpCredentials>,
   res: Response
 ) => {
-  const { username, email, password, role = 'buyer' } = req.body;
+  const { username, email, password, role: accountType = 'buyer' } = req.body;
+  const signupRole: 'buyer' | 'seller' | 'both' =
+    accountType === 'seller' || accountType === 'both' ? accountType : 'buyer';
+  const caps = mapSignupAccountType(signupRole);
 
   // check req.body values
   if (!username || !email || !password) {
@@ -172,7 +190,9 @@ export const handleSignUp = async (
         data: {
           name: username,
           password: hashedPassword,
-          role,
+          role: caps.role,
+          canBuy: caps.canBuy,
+          canSell: caps.canSell,
           ...(!config.auth.requireEmailVerification
             ? { emailVerified: new Date() }
             : {})
@@ -219,7 +239,9 @@ export const handleSignUp = async (
         name: username,
         email,
         password: hashedPassword,
-        role,
+        role: caps.role,
+        canBuy: caps.canBuy,
+        canSell: caps.canSell,
         ...(!config.auth.requireEmailVerification
           ? { emailVerified: new Date() }
           : {})
@@ -472,6 +494,178 @@ export const handleGetMe = async (req: TypedRequest, res: Response) => {
   return res.status(httpStatus.OK).json({
     user: serializeUser(user)
   });
+};
+
+export const handleEnableMixedMode = async (req: TypedRequest, res: Response) => {
+  const userId = resolvePayloadUserId(req.payload);
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: activeUserSelect
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  if (user.role === 'admin') {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Admin accounts already have full access'
+    });
+  }
+
+  if (user.canBuy && user.canSell) {
+    return res.status(httpStatus.OK).json({
+      user: serializeUser(user),
+      message: 'Mixed mode is already enabled'
+    });
+  }
+
+  const updated = await prismaClient.user.update({
+    where: { id: userId },
+    data: {
+      canBuy: true,
+      canSell: true
+    },
+    select: activeUserSelect
+  });
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(updated),
+    message: 'You can now switch between buyer and seller mode in the navigation bar'
+  });
+};
+
+async function upsertRecommendationCategories(
+  userId: string,
+  userName: string,
+  canBuy: boolean,
+  canSell: boolean,
+  categoryIds: string[]
+): Promise<void> {
+  const prefs = { recommendedCategoryIds: categoryIds };
+
+  await prismaClient.$transaction(async (tx) => {
+    const displayLabel = userName.trim() || 'User';
+    const existing = await tx.userProfile.findUnique({
+      where: { userId },
+      include: { sellerProfile: true, buyerProfile: true }
+    });
+
+    if (existing == null) {
+      await tx.userProfile.create({
+        data: {
+          userId,
+          role: canSell && !canBuy ? 'seller' : 'buyer',
+          fullName: displayLabel,
+          ...(canSell
+            ? {
+                sellerProfile: {
+                  create: {
+                    displayName: displayLabel,
+                    preferencesJson: prefs
+                  }
+                }
+              }
+            : {}),
+          ...(canBuy
+            ? {
+                buyerProfile: {
+                  create: {
+                    displayName: displayLabel,
+                    preferencesJson: prefs
+                  }
+                }
+              }
+            : {})
+        }
+      });
+      return;
+    }
+
+    if (canBuy) {
+      if (existing.buyerProfile != null) {
+        await tx.buyerProfile.update({
+          where: { userId },
+          data: { preferencesJson: prefs }
+        });
+      } else {
+        await tx.buyerProfile.create({
+          data: {
+            userId,
+            displayName: displayLabel,
+            preferencesJson: prefs
+          }
+        });
+      }
+    }
+
+    if (canSell) {
+      if (existing.sellerProfile != null) {
+        await tx.sellerProfile.update({
+          where: { userId },
+          data: { preferencesJson: prefs }
+        });
+      } else {
+        await tx.sellerProfile.create({
+          data: {
+            userId,
+            displayName: displayLabel,
+            preferencesJson: prefs
+          }
+        });
+      }
+    }
+  });
+}
+
+export const handleRecommendationsOnboarding = async (
+  req: TypedRequest<{ action: 'complete' | 'skip'; categoryIds?: string[] }>,
+  res: Response
+) => {
+  const userId = resolvePayloadUserId(req.payload);
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: activeUserSelect
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  const { action, categoryIds } = req.body;
+
+  if (action === 'skip') {
+    const updated = await prismaClient.user.update({
+      where: { id: userId },
+      data: { recommendationsOnboardingSkippedAt: new Date() },
+      select: activeUserSelect
+    });
+    return res.status(httpStatus.OK).json({ user: serializeUser(updated) });
+  }
+
+  const ids = Array.isArray(categoryIds)
+    ? categoryIds.map((id) => String(id).trim()).filter((id) => id.length > 0)
+    : [];
+
+  await upsertRecommendationCategories(user.id, user.name, user.canBuy, user.canSell, ids);
+
+  const updated = await prismaClient.user.update({
+    where: { id: userId },
+    data: { recommendationsOnboardingCompletedAt: new Date() },
+    select: activeUserSelect
+  });
+
+  return res.status(httpStatus.OK).json({ user: serializeUser(updated) });
 };
 
 export const handleChangePassword = async (

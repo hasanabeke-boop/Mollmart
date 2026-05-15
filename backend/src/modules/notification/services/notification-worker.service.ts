@@ -2,6 +2,10 @@ import config from '../../../config/config';
 import prisma from '../../../config/prisma';
 import { getRedisSubscriber } from '../../../config/redis';
 import logger from '../../../middleware/logger';
+import {
+  isNotificationAllowed,
+  shouldSendNotificationEmail
+} from '../../../shared/notificationPreferences';
 import { sendNotificationEmail } from '../../auth/utils/sendEmail.util';
 import { NotificationRepositoryLike } from '../repositories/notification.repository';
 import { EventEnvelope } from '../types/notification';
@@ -68,9 +72,18 @@ export class NotificationWorker {
 
     for (const notification of mapped) {
       try {
+        const prefs = await this.notificationRepository.getPreferences(notification.userId);
+        if (!isNotificationAllowed(notification.type, prefs)) {
+          continue;
+        }
+
         const created = await this.notificationRepository.createIfNotExists(notification);
         if (created != null) {
           try {
+            if (!shouldSendNotificationEmail(notification.type, prefs)) {
+              continue;
+            }
+
             const recipient = await prisma.user.findUnique({
               where: { id: notification.userId },
               select: { email: true }

@@ -25,6 +25,10 @@ export type User = {
   email: string;
   emailVerified?: string | boolean | null;
   role: "buyer" | "seller" | "admin";
+  canBuy?: boolean;
+  canSell?: boolean;
+  hasDualWorkspace?: boolean;
+  recommendationsOnboardingPending?: boolean;
   status: "active" | "blocked" | "suspended";
 };
 
@@ -36,7 +40,7 @@ type AuthState = {
     username: string,
     email: string,
     password: string,
-    role: "buyer" | "seller",
+    role: "buyer" | "seller" | "both",
   ) => Promise<{
     message: string;
     requiresEmailVerification?: boolean;
@@ -58,6 +62,21 @@ function unwrapUser(data: MeResponse): User {
   return "user" in data ? data.user : data;
 }
 
+function mapMeToUser(me: User): User {
+  return {
+    id: me.id,
+    name: me.name || "",
+    email: me.email || "",
+    emailVerified: me.emailVerified ?? null,
+    role: (me.role as User["role"]) || "buyer",
+    canBuy: me.canBuy ?? true,
+    canSell: me.canSell ?? false,
+    hasDualWorkspace: me.hasDualWorkspace ?? Boolean(me.canBuy && me.canSell),
+    recommendationsOnboardingPending: me.recommendationsOnboardingPending ?? false,
+    status: (me.status as User["status"]) || "active",
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -66,15 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchMe = useCallback(async () => {
     try {
       const data = await apiFetchWithRefresh<MeResponse>("/api/v1/auth/me", { service: "auth" });
-      const me = unwrapUser(data);
-      setUser({
-        id: me.id,
-        name: me.name || "",
-        email: me.email || "",
-        emailVerified: me.emailVerified ?? null,
-        role: (me.role as User["role"]) || "buyer",
-        status: (me.status as User["status"]) || "active",
-      });
+      setUser(mapMeToUser(unwrapUser(data)));
     } catch {
       setUser(null);
       setAccessToken(null);
@@ -108,15 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let nextUser: User;
     try {
       const meRes = await apiFetch<MeResponse>("/api/v1/auth/me", { service: "auth" });
-      const me = unwrapUser(meRes);
-      nextUser = {
-        id: me.id,
-        name: me.name || "",
-        email: me.email || "",
-        emailVerified: me.emailVerified ?? null,
-        role: (me.role as User["role"]) || "buyer",
-        status: (me.status as User["status"]) || "active",
-      };
+      nextUser = mapMeToUser(unwrapUser(meRes));
     } catch {
       nextUser = { id: "", name: "", email, role: "buyer", status: "active" };
     }
@@ -129,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: string,
       email: string,
       password: string,
-      role: "buyer" | "seller",
+      role: "buyer" | "seller" | "both",
     ) => {
       return await apiFetch<{
         message: string;

@@ -13,7 +13,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"buyer" | "seller">("buyer");
+  const [role, setRole] = useState<"buyer" | "seller" | "both">("buyer");
   const [showPw, setShowPw] = useState(false);
   const [terms, setTerms] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -206,7 +206,7 @@ export default function RegisterPage() {
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Account Type Selection */}
-            <div className="grid grid-cols-2 gap-4 p-1 bg-primary/5 rounded-xl border border-primary/10">
+            <div className="grid grid-cols-3 gap-2 p-1 bg-primary/5 rounded-xl border border-primary/10">
               <label className="cursor-pointer">
                 <input
                   className="peer sr-only"
@@ -230,9 +230,23 @@ export default function RegisterPage() {
                   checked={role === "seller"}
                   onChange={() => setRole("seller")}
                 />
-                <div className="flex items-center justify-center gap-2 rounded-lg py-3 px-4 text-sm font-semibold transition-all peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm text-slate-600 peer-checked:animate-[popScale_0.2s_ease-out]">
+                <div className="flex flex-col items-center justify-center gap-1 rounded-lg py-3 px-2 text-xs font-semibold transition-all peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm text-slate-600 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm">
                   <span className="material-symbols-outlined text-lg">storefront</span>
                   Seller
+                </div>
+              </label>
+              <label className="cursor-pointer">
+                <input
+                  className="peer sr-only"
+                  name="account_type"
+                  type="radio"
+                  value="both"
+                  checked={role === "both"}
+                  onChange={() => setRole("both")}
+                />
+                <div className="flex flex-col items-center justify-center gap-1 rounded-lg py-3 px-2 text-xs font-semibold transition-all peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm text-slate-600 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm">
+                  <span className="material-symbols-outlined text-lg">swap_horiz</span>
+                  Both
                 </div>
               </label>
             </div>
@@ -358,3 +372,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

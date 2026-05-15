@@ -28,6 +28,16 @@ export class NotificationController {
     const result = await this.notificationService.countUnread(req.user!);
     res.status(httpStatus.OK).json(result);
   };
+
+  getPreferences = async (req: Request, res: Response): Promise<void> => {
+    const preferences = await this.notificationService.getPreferences(req.user!);
+    res.status(httpStatus.OK).json({ preferences });
+  };
+
+  updatePreferences = async (req: Request, res: Response): Promise<void> => {
+    const preferences = await this.notificationService.updatePreferences(req.user!, req.body);
+    res.status(httpStatus.OK).json({ preferences });
+  };
 }
 
 export default NotificationController;

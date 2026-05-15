@@ -73,11 +73,16 @@ export class RequestService {
       throw forbidden('Only sellers and admins can browse the request board');
     }
 
+    const boardQuery: RequestBoardQuery = {
+      ...query,
+      ...(user.role === 'admin' ? {} : { excludeBuyerId: user.id })
+    };
+
     const rawRec = query.recommended;
     const recommended = rawRec === true || rawRec === 'true';
 
     if (!recommended) {
-      return this.requestRepository.listSellerBoard(query);
+      return this.requestRepository.listSellerBoard(boardQuery);
     }
 
     const keys = await getSellerRequestRecommendationCategoryKeys(user.id);
@@ -89,15 +94,15 @@ export class RequestService {
       };
     }
 
-    const { recommended: _drop, ...rest } = query;
+    const { recommended: _drop, ...rest } = boardQuery;
     void _drop;
-    const boardQuery: RequestBoardQuery = {
+    const recommendedQuery: RequestBoardQuery = {
       ...rest,
       categoryId: undefined,
       categoryIdsIn: keys
     };
 
-    const result = await this.requestRepository.listSellerBoard(boardQuery);
+    const result = await this.requestRepository.listSellerBoard(recommendedQuery);
     return {
       ...result,
       hasRecommendationSignals: true

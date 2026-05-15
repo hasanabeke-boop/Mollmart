@@ -1,4 +1,5 @@
 import { Notification } from '@prisma/client';
+import { NotificationPreferences } from '../../../shared/notificationPreferences';
 import { AuthUser } from '../types/express';
 import { NotificationListQuery } from '../types/notification';
 import { notFound } from '../utils/apiError';
@@ -28,6 +29,17 @@ export class NotificationService {
   async countUnread(user: AuthUser): Promise<{ count: number }> {
     const count = await this.notificationRepository.countUnread(user.id);
     return { count };
+  }
+
+  async getPreferences(user: AuthUser): Promise<NotificationPreferences> {
+    return this.notificationRepository.getPreferences(user.id);
+  }
+
+  async updatePreferences(
+    user: AuthUser,
+    input: NotificationPreferences
+  ): Promise<NotificationPreferences> {
+    return this.notificationRepository.updatePreferences(user.id, input);
   }
 }
 

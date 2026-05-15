@@ -33,6 +33,13 @@ const ACCESS_TOKEN_STORAGE_KEY = "mollmart_access_token";
 
 let accessToken: string | null = null;
 
+/** Set from WorkspaceProvider so API requests use the correct buyer/seller mode. */
+let activeModeHeaderProvider: (() => string | null) | null = null;
+
+export function setActiveModeHeaderProvider(provider: (() => string | null) | null) {
+  activeModeHeaderProvider = provider;
+}
+
 if (typeof window !== "undefined") {
   try {
     const stored = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -86,6 +93,11 @@ export async function apiFetch<T = unknown>(
 
   if (accessToken) {
     headers["Authorization"] = `Bearer ${accessToken}`;
+  }
+
+  const activeMode = activeModeHeaderProvider?.();
+  if (activeMode === "buyer" || activeMode === "seller") {
+    headers["X-Active-Mode"] = activeMode;
   }
 
   let res: Response;
