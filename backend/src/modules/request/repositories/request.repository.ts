@@ -273,6 +273,7 @@ export class RequestRepository implements RequestRepositoryLike {
       status: {
         in: ['published', 'has_offers']
       },
+      ...(query.excludeBuyerId != null ? { buyerId: { not: query.excludeBuyerId } } : {}),
       AND: andFilters,
       ...(query.categoryIdsIn != null && query.categoryIdsIn.length > 0
         ? { categoryId: { in: query.categoryIdsIn } }
