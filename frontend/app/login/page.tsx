@@ -6,6 +6,7 @@ import { useToast } from "@/context/ToastContext";
 import { apiFetch } from "@/lib/api";
 import { resendVerificationEmail } from "@/lib/emailVerification";
 import Link from "next/link";
+import { MollmartLogo } from "@/components/brand/MollmartLogo";
 import { useRouter } from "next/navigation";
 
 function postLoginPath(role: User["role"]): string {
@@ -181,22 +182,11 @@ export default function LoginPage() {
         />
 
         <div className="relative z-20 flex flex-col justify-between p-16 w-full">
-          <div className="flex items-center gap-3 text-white">
-            <div className="h-8 w-8">
-              <svg
-                fill="none"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-white"
-              >
-                <path
-                  d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-            <span className="text-2xl font-black tracking-tight">Mollmart</span>
-          </div>
+          <MollmartLogo
+            size={32}
+            showWordmark
+            wordmarkClassName="text-2xl font-black tracking-tight text-white"
+          />
 
           <div>
             <h1 className="text-5xl font-extrabold text-white leading-tight mb-6">
@@ -236,21 +226,12 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 bg-white">
         <div className="w-full max-w-md space-y-8 animate-[slide-in-right-bounce_0.8s_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-2 mb-10">
-            <div className="h-6 w-6 text-primary">
-              <svg
-                fill="none"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-              >
-                <path
-                  d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-            <span className="text-xl font-black tracking-tight text-slate-900">Mollmart</span>
+          <div className="mb-10 lg:hidden">
+            <MollmartLogo
+              size={28}
+              showWordmark
+              wordmarkClassName="text-xl font-black tracking-tight text-slate-900"
+            />
           </div>
 
           <div className="text-left">

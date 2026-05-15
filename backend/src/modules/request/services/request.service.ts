@@ -29,8 +29,8 @@ export class RequestService {
   ) {}
 
   async createRequest(user: AuthUser, input: CreateRequestInput): Promise<RequestWithRelations> {
-    if (user.role !== 'buyer') {
-      throw forbidden('Only buyers can create requests');
+    if (user.role !== 'admin' && user.canBuy === false) {
+      throw forbidden('Buyer capability is required to create requests');
     }
     await this.ensureBuyerEmailVerified(user.id);
 
@@ -42,6 +42,7 @@ export class RequestService {
       title: input.title.trim(),
       description: input.description.trim(),
       categoryId: input.categoryId.trim(),
+      quantity: input.quantity ?? 1,
       currency: input.currency.toUpperCase(),
       isNegotiable: input.isNegotiable ?? false,
       attachments: input.attachments ?? [],
@@ -290,6 +291,9 @@ export class RequestService {
     }
     if (input.categoryId !== undefined) {
       updatePayload.categoryId = input.categoryId.trim();
+    }
+    if (input.quantity !== undefined) {
+      updatePayload.quantity = input.quantity;
     }
     if (input.budgetMin !== undefined) {
       updatePayload.budgetMin = input.budgetMin;

@@ -19,6 +19,14 @@ export class DealController {
     res.status(httpStatus.CREATED).json(data);
   };
 
+  applyOfferTotal = async (req: Request, res: Response): Promise<void> => {
+    const data = await this.dealService.applyInitialOfferTotal(
+      req.user as AuthUser,
+      req.params.conversationId
+    );
+    res.status(httpStatus.CREATED).json(data);
+  };
+
   acceptProposal = async (req: Request, res: Response): Promise<void> => {
     const data = await this.dealService.acceptPriceProposal(req.user as AuthUser, req.params.proposalId);
     res.status(httpStatus.OK).json(data);

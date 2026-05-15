@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch, apiFetchWithRefresh, resolveUploadedAssetUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { canUseSellerWorkspace } from "@/lib/workspace";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
+import { computeOfferLineTotal } from "@/lib/offerPricing";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -20,6 +23,7 @@ type BuyerRequest = {
   iconColor: string;
   barColor: string;
   budget: string;
+  quantity: number;
   budgetMax: number;
   currency: string;
   description: string;
@@ -151,7 +155,12 @@ function timeAgo(dateStr: string): string {
   return `Posted ${days}d ago`;
 }
 
-function formatBudget(min?: unknown, max?: unknown, currency?: string): string {
+function formatBudget(
+  min?: unknown,
+  max?: unknown,
+  currency?: string,
+  quantity?: unknown,
+): string {
   const cur = normalizeCurrency(currency);
   const toNum = (v: unknown): number | undefined => {
     if (v == null || v === "") return undefined;
@@ -160,10 +169,22 @@ function formatBudget(min?: unknown, max?: unknown, currency?: string): string {
   };
   const minN = toNum(min);
   const maxN = toNum(max);
-  if (minN != null && maxN != null) return `${formatMoney(minN, cur)} – ${formatMoney(maxN, cur)}`;
-  if (maxN != null) return formatMoney(maxN, cur);
-  if (minN != null) return `${formatMoney(minN, cur)}+`;
-  return "Negotiable";
+  const qty = Math.floor(toNum(quantity) ?? 1);
+  const unitSuffix = " / unit";
+  let price = "Negotiable";
+  if (minN != null && maxN != null) {
+    price = `${formatMoney(minN, cur)} – ${formatMoney(maxN, cur)}${unitSuffix}`;
+  } else if (maxN != null) {
+    price = `${formatMoney(maxN, cur)}${unitSuffix}`;
+  } else if (minN != null) {
+    price = `${formatMoney(minN, cur)}+${unitSuffix}`;
+  }
+  return `${qty}× · ${price}`;
+}
+
+function formatQuantityLabel(quantity?: unknown): string {
+  const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+  return qty === 1 ? "1 item" : `${qty} items`;
 }
 
 /** Width % for budget bar vs max budget on the current board (same list). */
@@ -222,6 +243,12 @@ function OfferModal({
   const [equivHint, setEquivHint] = useState<string | null>(null);
 
   const [sending, setSending] = useState(false);
+  const qty = Math.max(1, Math.floor(request.quantity) || 1);
+  const unitNum = Number(price);
+  const lineTotal =
+    price && Number.isFinite(unitNum) && unitNum > 0
+      ? computeOfferLineTotal(unitNum, qty)
+      : null;
 
   useEffect(() => {
     setOfferCurrency(reqCur);
@@ -314,11 +341,15 @@ function OfferModal({
               Offer Sent!
             </h4>
             <p className="text-slate-500 text-sm mb-2">
-              Your offer of{" "}
+              Your offer:{" "}
               <span className="font-bold text-slate-900">
                 {formatMoney(Number(price), offerCurrency)}
               </span>{" "}
-              for
+              per unit × {qty} ={" "}
+              <span className="font-bold text-slate-900">
+                {formatMoney(computeOfferLineTotal(Number(price), qty), offerCurrency)}
+              </span>{" "}
+              total for
             </p>
             <p className="font-semibold text-slate-800 mb-4">
               &ldquo;{request.title}&rdquo;
@@ -344,11 +375,12 @@ function OfferModal({
               <p className="text-sm text-slate-500 mt-1">
                 Buyer budget: {request.budget}
               </p>
+              <p className="text-sm text-slate-500 mt-1">Quantity: {qty}</p>
             </div>
 
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Your price
+                Your price (per unit)
               </label>
               <div className="flex gap-2">
                 <select
@@ -377,10 +409,15 @@ function OfferModal({
               {equivHint && (
                 <p className="text-xs text-slate-500 leading-relaxed">{equivHint}</p>
               )}
+              {lineTotal != null && lineTotal > 0 && (
+                <p className="text-sm font-semibold text-slate-800">
+                  Order total: {formatMoney(lineTotal, offerCurrency)}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-                <label className="block text-sm font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-700">
                 Estimated availability
               </label>
               <div className="relative">
@@ -442,7 +479,9 @@ function OfferModal({
 
 export default function BrowseBuyerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<FilterTab>("recommendations");
+  const { activeRole } = useWorkspace();
+  const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
+  const [activeTab, setActiveTab] = useState<FilterTab>("published");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -453,7 +492,7 @@ export default function BrowseBuyerRequestsPage() {
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
 
   const loadRequests = useCallback(async () => {
-    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
+    if (!user || !sellerWorkspace) return;
     setLoadingData(true);
     setRequests([]);
     try {
@@ -511,6 +550,7 @@ export default function BrowseBuyerRequestsPage() {
         categoryId: string;
         budgetMin?: number | string;
         budgetMax?: number | string;
+        quantity?: number | string;
         currency?: string;
         status: string;
         offerCount?: number;
@@ -526,7 +566,8 @@ export default function BrowseBuyerRequestsPage() {
           category: categoryLabelFromId(catalogCategories, r.categoryId),
           categoryId: r.categoryId,
           ...style,
-          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency),
+          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency, r.quantity),
+          quantity: Math.max(1, Math.floor(Number(r.quantity) || 1)),
           budgetMax: maxVal,
           currency: normalizeCurrency(r.currency),
           description: r.description,
@@ -545,7 +586,7 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab, search, selectedCategory, user, catalogCategories]);
+  }, [activeTab, search, selectedCategory, user, sellerWorkspace, catalogCategories]);
 
   useEffect(() => {
     let cancelled = false;
@@ -576,12 +617,12 @@ export default function BrowseBuyerRequestsPage() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+    if (authLoading || !user || !sellerWorkspace) {
       setLoadingData(false);
       return;
     }
     loadRequests();
-  }, [loadRequests, authLoading, user]);
+  }, [loadRequests, authLoading, user, sellerWorkspace]);
 
   const filteredRequests = useMemo(() => {
     let data = requests;
@@ -856,7 +897,10 @@ export default function BrowseBuyerRequestsPage() {
                       </h3>
                     </div>
                     <div className="text-right ml-4 shrink-0">
-                      <p className="text-sm text-slate-400 mb-1">Budget</p>
+                      <p className="text-sm text-slate-400 mb-1">
+                        Quantity: {formatQuantityLabel(featuredRequest.quantity)}
+                      </p>
+                      <p className="text-xs text-slate-400 mb-1">Price (per unit)</p>
                       <p className="text-xl font-black text-slate-900">
                         {featuredRequest.budget}
                       </p>
@@ -946,8 +990,14 @@ export default function BrowseBuyerRequestsPage() {
                   )}
                 </div>
                 <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                  <div className="flex justify-between items-center mb-1 text-xs text-slate-500">
+                    <span>Quantity</span>
+                    <span className="font-semibold text-slate-700">
+                      {formatQuantityLabel(req.quantity)}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs text-slate-500">Buyer Budget</span>
+                    <span className="text-xs text-slate-500">Price (per unit)</span>
                     <span className="text-lg font-bold text-slate-900">
                       {req.budget}
                     </span>

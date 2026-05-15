@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
 
 const footerGroups = [
   {
@@ -40,12 +41,13 @@ export function Footer() {
       <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <Link className="flex items-center gap-2 mb-4 group" href="/">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white group-hover:rotate-6 transition-transform">
-                <span className="material-symbols-outlined">storefront</span>
-              </div>
-              <span className="text-xl font-bold text-[#0d1b12]">Mollmart</span>
-            </Link>
+            <MollmartLogoLink
+              href="/"
+              size={32}
+              className="group mb-4"
+              imageClassName="shadow-md transition-transform group-hover:rotate-6"
+              wordmarkClassName="text-xl font-bold text-[#0d1b12]"
+            />
             <p className="text-sm text-gray-500">
               Connecting buyers and sellers through requests, offers, and direct communication.
             </p>

@@ -8,8 +8,11 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { canUseBuyerWorkspace } from "@/lib/workspace";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
+import { computeOfferLineTotal } from "@/lib/offerPricing";
 
 /** Legacy slug keys from older drafts; DB uses Category.id (cuid). */
 const LEGACY_CATEGORY_SLUG_LABELS: Record<string, string> = {
@@ -28,6 +31,7 @@ type RequestItem = {
   title: string;
   description: string;
   categoryId: string;
+  quantity?: number;
   budgetMin?: number;
   budgetMax?: number;
   currency: string;
@@ -64,6 +68,7 @@ function normalizeRequest(raw: Record<string, unknown>): RequestItem {
     title: String(raw.title ?? ""),
     description: String(raw.description ?? ""),
     categoryId: String(raw.categoryId ?? ""),
+    quantity: Math.max(1, Math.floor(dec(raw.quantity) ?? 1)),
     budgetMin: dec(raw.budgetMin),
     budgetMax: dec(raw.budgetMax),
     currency: normalizeCurrency(raw.currency != null ? String(raw.currency) : DEFAULT_CURRENCY),
@@ -79,11 +84,19 @@ function normalizeRequest(raw: Record<string, unknown>): RequestItem {
 function formatBudget(request: RequestItem) {
   const currency = normalizeCurrency(request.currency);
   const fmt = (n: number) => formatMoney(n, currency);
+  const qty = Math.max(1, Math.floor(request.quantity ?? 1));
+  const unitSuffix = " / unit";
 
-  if (request.budgetMin != null && request.budgetMax != null) return `${fmt(request.budgetMin)} - ${fmt(request.budgetMax)}`;
-  if (request.budgetMax != null) return fmt(request.budgetMax);
-  if (request.budgetMin != null) return `${fmt(request.budgetMin)}+`;
-  return "Negotiable";
+  let price = "Negotiable";
+  if (request.budgetMin != null && request.budgetMax != null) {
+    price = `${fmt(request.budgetMin)} - ${fmt(request.budgetMax)}${unitSuffix}`;
+  } else if (request.budgetMax != null) {
+    price = `${fmt(request.budgetMax)}${unitSuffix}`;
+  } else if (request.budgetMin != null) {
+    price = `${fmt(request.budgetMin)}+${unitSuffix}`;
+  }
+
+  return `${qty}× · ${price}`;
 }
 
 function toDatetimeLocalValue(iso: string | undefined | null): string {
@@ -115,6 +128,8 @@ export default function MyRequestsPage() {
   const router = useRouter();
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
+  const buyerWorkspace = canUseBuyerWorkspace(user, activeRole);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [offersByRequest, setOffersByRequest] = useState<Record<string, OfferItem[]>>({});
   const [loading, setLoading] = useState(true);
@@ -127,6 +142,7 @@ export default function MyRequestsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [budgetMax, setBudgetMax] = useState("");
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");
@@ -160,7 +176,7 @@ export default function MyRequestsPage() {
   }, [editModalMounted]);
 
   const loadRequests = useCallback(async () => {
-    if (!user || (user.role !== "buyer" && user.role !== "admin")) return;
+    if (!user || !buyerWorkspace) return;
     setLoading(true);
     setError("");
     try {
@@ -180,15 +196,15 @@ export default function MyRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, user]);
+  }, [toast, user, buyerWorkspace]);
 
   useEffect(() => {
-    if (authLoading || !user || (user.role !== "buyer" && user.role !== "admin")) {
+    if (authLoading || !user || !buyerWorkspace) {
       setLoading(false);
       return;
     }
     loadRequests();
-  }, [loadRequests, authLoading, user]);
+  }, [loadRequests, authLoading, user, buyerWorkspace]);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,6 +229,7 @@ export default function MyRequestsPage() {
     setTitle(r.title);
     setDescription(r.description);
     setCategoryId(r.categoryId);
+    setQuantity(String(r.quantity != null && r.quantity > 0 ? r.quantity : 1));
     setBudgetMax(r.budgetMax != null ? String(r.budgetMax) : "");
     setDeadlineLocal(toDatetimeLocalValue(r.deadlineAt));
     setLocation(r.location ?? "");
@@ -253,9 +270,16 @@ export default function MyRequestsPage() {
         body.categoryId = categoryId;
         body.currency = editRequest.currency || DEFAULT_CURRENCY;
         body.isNegotiable = isNegotiable;
+        const qty = Math.floor(Number(quantity));
+        if (!Number.isFinite(qty) || qty < 1) {
+          setSaveError("Quantity must be at least 1.");
+          setSaving(false);
+          return;
+        }
+        body.quantity = qty;
         const max = budgetMax.trim() ? Number(budgetMax) : undefined;
         if (max !== undefined && (!Number.isFinite(max) || max < 0)) {
-          setSaveError("Enter a valid budget.");
+          setSaveError("Enter a valid price per unit.");
           setSaving(false);
           return;
         }
@@ -498,7 +522,12 @@ export default function MyRequestsPage() {
                   </div>
                   <div className="flex shrink-0 flex-col gap-3 md:items-end">
                     <div className="text-left md:text-right">
-                      <p className="text-xs font-semibold uppercase text-slate-400">Budget</p>
+                      <p className="text-xs font-semibold uppercase text-slate-400">Quantity</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {Math.max(1, request.quantity ?? 1)} item
+                        {(request.quantity ?? 1) !== 1 ? "s" : ""}
+                      </p>
+                      <p className="mt-2 text-xs font-semibold uppercase text-slate-400">Price (per unit)</p>
                       <p className="text-lg font-black text-slate-900">{formatBudget(request)}</p>
                       <p className="mt-1 text-xs text-slate-400">{request.offerCount || 0} offers</p>
                     </div>
@@ -564,12 +593,22 @@ export default function MyRequestsPage() {
                   <div className="mt-4 space-y-3">
                     {offers.length === 0 ? (
                       <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No offers for this request yet.</p>
-                    ) : offers.map((offer) => (
+                    ) : offers.map((offer) => {
+                      const qty = Math.max(1, request.quantity ?? 1);
+                      const unit = Number(offer.price);
+                      const total = computeOfferLineTotal(unit, qty);
+                      return (
                       <div key={offer.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                              Per unit · qty {qty}
+                            </p>
                             <p className="text-lg font-black text-slate-900">
-                              {formatMoney(offer.price, offer.currency)}
+                              {formatMoney(unit, offer.currency)}
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-700">
+                              Total: {formatMoney(total, offer.currency)}
                             </p>
                             <p className="mt-1 text-sm text-slate-600">{offer.message}</p>
                             <p className="mt-2 text-xs text-slate-400">
@@ -589,7 +628,8 @@ export default function MyRequestsPage() {
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -673,16 +713,31 @@ export default function MyRequestsPage() {
                       )}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-500">Budget max ({editRequest.currency})</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={budgetMax}
-                      onChange={(e) => setBudgetMax(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-500">Quantity</label>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-500">
+                        Price per unit ({editRequest.currency})
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={budgetMax}
+                        onChange={(e) => setBudgetMax(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-500">Description</label>

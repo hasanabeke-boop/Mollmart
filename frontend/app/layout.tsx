@@ -10,6 +10,10 @@ import { ToastProvider } from "@/context/ToastContext";
 export const metadata: Metadata = {
   title: "Mollmart",
   description: "Buyer request, seller offer, and negotiation platform",
+  icons: {
+    icon: [{ url: "/brand/icon.svg", type: "image/svg+xml" }],
+    apple: "/brand/icon.svg",
+  },
 };
 
 export default function RootLayout({

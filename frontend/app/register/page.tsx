@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth, type ApiError } from "@/context/AuthContext";
 import Link from "next/link";
+import { MollmartLogo } from "@/components/brand/MollmartLogo";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
 
@@ -150,9 +151,12 @@ export default function RegisterPage() {
         </div>
 
         <div className="relative z-20 px-12 text-white">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="material-symbols-outlined text-4xl">star</span>
-            <h1 className="text-3xl font-black tracking-tight">Mollmart</h1>
+          <div className="mb-8">
+            <MollmartLogo
+              size={40}
+              showWordmark
+              wordmarkClassName="text-3xl font-black tracking-tight text-white"
+            />
           </div>
           <h2 className="text-5xl font-extrabold leading-tight mb-6">
             Empower your
@@ -181,10 +185,11 @@ export default function RegisterPage() {
         <div className="mx-auto w-full max-w-md animate-[fadeIn_0.8s_ease-out_forwards]">
           {/* Mobile logo */}
           <div className="mb-10 lg:hidden">
-            <div className="flex items-center gap-2 text-primary">
-              <span className="material-symbols-outlined font-bold">star</span>
-              <span className="text-xl font-bold tracking-tight">Mollmart</span>
-            </div>
+            <MollmartLogo
+              size={28}
+              showWordmark
+              wordmarkClassName="text-xl font-bold tracking-tight text-slate-900"
+            />
           </div>
 
           <div className="mb-8">

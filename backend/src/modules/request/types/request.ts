@@ -10,6 +10,7 @@ export interface CreateRequestInput {
   title: string;
   description: string;
   categoryId: string;
+  quantity?: number;
   budgetMin?: number;
   budgetMax?: number;
   currency: string;

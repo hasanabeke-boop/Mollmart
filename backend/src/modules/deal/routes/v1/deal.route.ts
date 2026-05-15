@@ -32,6 +32,11 @@ export function createDealRouter(controller: DealController): Router {
     asyncHandler(controller.createProposal)
   );
   router.post(
+    '/conversations/:conversationId/apply-offer-total',
+    validate(conversationIdParamSchema),
+    asyncHandler(controller.applyOfferTotal)
+  );
+  router.post(
     '/price-proposals/:proposalId/accept',
     validate(proposalIdParamSchema),
     asyncHandler(controller.acceptProposal)

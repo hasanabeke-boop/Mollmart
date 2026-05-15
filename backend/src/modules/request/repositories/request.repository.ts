@@ -29,6 +29,7 @@ export interface CreateRequestRecordInput {
   title: string;
   description: string;
   categoryId: string;
+  quantity?: number;
   budgetMin?: number;
   budgetMax?: number;
   currency: string;
@@ -46,6 +47,7 @@ export interface UpdateRequestRecordInput {
   title?: string;
   description?: string;
   categoryId?: string;
+  quantity?: number;
   budgetMin?: number | null;
   budgetMax?: number | null;
   currency?: string;
@@ -75,6 +77,7 @@ export class RequestRepository implements RequestRepositoryLike {
         title: data.title,
         description: data.description,
         categoryId: data.categoryId,
+        quantity: data.quantity ?? 1,
         currency: data.currency,
         isNegotiable: data.isNegotiable,
         ...(data.budgetMin !== undefined ? { budgetMin: data.budgetMin } : {}),

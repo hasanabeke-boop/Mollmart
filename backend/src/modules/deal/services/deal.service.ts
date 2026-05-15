@@ -4,6 +4,11 @@ import type { AuthUser } from '../../request/types/express';
 import { badRequest, conflict, forbidden, notFound } from '../../offer/utils/apiError';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import type { DealEventPublisherLike } from './deal-event.service';
+import {
+  computeOfferLineTotal,
+  normalizeRequestQuantity,
+  roundMoney
+} from '../../../shared/offerPricing';
 
 const dealOrderShopInclude = {
   buyer: { select: { id: true, name: true } },
@@ -11,6 +16,7 @@ const dealOrderShopInclude = {
   request: {
     select: {
       id: true,
+      quantity: true,
       attachments: {
         orderBy: { createdAt: 'asc' },
         take: 1,
@@ -35,6 +41,8 @@ function assertConversationParticipant(conv: { buyerId: string; sellerId: string
 
 function serializeShopLikeOrder(row: DealOrderForShop) {
   const total = toNumber(row.amount);
+  const qty = normalizeRequestQuantity(row.request?.quantity);
+  const unitPrice = qty > 0 ? roundMoney(total / qty) : total;
   const imageUrl = row.request?.attachments?.[0]?.fileUrl?.trim() ?? '';
   return {
     id: row.id,
@@ -63,9 +71,9 @@ function serializeShopLikeOrder(row: DealOrderForShop) {
         requestId: row.requestId,
         title: row.title,
         imageUrl,
-        unitPrice: total,
+        unitPrice,
         currency: row.currency,
-        quantity: 1
+        quantity: qty
       }
     ]
   };
@@ -78,7 +86,7 @@ export class DealService {
     const conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
-        request: { select: { id: true, title: true, currency: true } },
+        request: { select: { id: true, title: true, currency: true, quantity: true } },
         offer: { select: { id: true, price: true, currency: true, status: true } }
       }
     });
@@ -113,17 +121,50 @@ export class DealService {
       agreedAt: conv.agreedAt?.toISOString() ?? null,
       requestTitle: conv.request.title,
       requestCurrency: conv.request.currency,
+      requestQuantity: normalizeRequestQuantity(conv.request.quantity),
       initialOffer:
         conv.offer != null
-          ? {
-              id: conv.offer.id,
-              price: toNumber(conv.offer.price),
-              currency: conv.offer.currency,
-              status: conv.offer.status
-            }
+          ? (() => {
+              const unitPrice = toNumber(conv.offer.price);
+              const requestQuantity = normalizeRequestQuantity(conv.request.quantity);
+              const totalPrice = computeOfferLineTotal(unitPrice, requestQuantity);
+              return {
+                id: conv.offer.id,
+                unitPrice,
+                totalPrice,
+                price: unitPrice,
+                quantity: requestQuantity,
+                currency: conv.offer.currency,
+                status: conv.offer.status
+              };
+            })()
           : null,
       orderId: order?.id ?? null
     };
+  }
+
+  async applyInitialOfferTotal(user: AuthUser, conversationId: string) {
+    const conv = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        request: { select: { currency: true, quantity: true } },
+        offer: { select: { price: true, currency: true } }
+      }
+    });
+    if (conv == null) {
+      throw notFound('Conversation not found');
+    }
+    assertConversationParticipant(conv, user.id);
+    if (conv.offer == null) {
+      throw badRequest('No offer linked to this conversation');
+    }
+
+    const unitPrice = toNumber(conv.offer.price);
+    const requestQuantity = normalizeRequestQuantity(conv.request.quantity);
+    const total = computeOfferLineTotal(unitPrice, requestQuantity);
+    const currency = conv.offer.currency.trim().toUpperCase();
+
+    return this.createPriceProposal(user, conversationId, { amount: total, currency });
   }
 
   async createPriceProposal(user: AuthUser, conversationId: string, input: { amount: number; currency: string }) {
@@ -232,19 +273,18 @@ export class DealService {
   }
 
   async demoPay(user: AuthUser, conversationId: string, _cardLast4: string) {
-    if (user.role !== 'buyer') {
-      throw forbidden('Only the buyer can complete payment');
-    }
-
     const conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: { request: { select: { id: true, title: true } } }
+      include: { request: { select: { id: true, title: true, quantity: true } } }
     });
     if (conv == null) {
       throw notFound('Conversation not found');
     }
     if (conv.buyerId !== user.id) {
       throw forbidden('Only the buyer on this thread can pay');
+    }
+    if (user.canBuy === false) {
+      throw forbidden('Your account cannot complete buyer payments');
     }
     if (conv.agreedPrice == null || conv.agreedCurrency == null) {
       throw badRequest('Agree on a price in chat before paying');

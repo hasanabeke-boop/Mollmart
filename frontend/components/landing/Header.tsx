@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
+import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useState, useRef, useEffect, type ReactNode } from "react";
@@ -94,14 +95,7 @@ export function Header() {
     <header className="sticky top-0 z-50 box-border flex h-14 w-full shrink-0 border-b border-gray-100 bg-white/90 backdrop-blur-md xl:h-16">
       <div className="mx-auto flex h-full min-w-0 max-w-[1600px] flex-1 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-          <Link className="flex items-center gap-2 group" href="/">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/30 group-hover:scale-110 transition-transform duration-300">
-              <span className="material-symbols-outlined text-white">storefront</span>
-            </div>
-            <span className="hidden text-lg font-bold tracking-tight text-[#0d1b12] transition-colors group-hover:text-primary md:inline">
-              Mollmart
-            </span>
-          </Link>
+          <MollmartLogoLink href="/" size={32} />
 
           <form className="hidden min-w-0 md:block md:w-[9.5rem] lg:w-[11rem] xl:w-[13rem]" onSubmit={handleSearch}>
             <label className="group relative flex w-full items-center">

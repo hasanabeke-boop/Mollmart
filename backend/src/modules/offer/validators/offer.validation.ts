@@ -6,6 +6,7 @@ const currency = Joi.string().trim().length(3).uppercase();
 export const createOfferSchema = {
   body: Joi.object({
     requestId: Joi.string().trim().required(),
+    /** Per unit; line total at payment = price × request quantity */
     price: Joi.number().precision(2).greater(0).required(),
     currency: currency.required(),
     message: Joi.string().trim().min(5).max(5000).required(),

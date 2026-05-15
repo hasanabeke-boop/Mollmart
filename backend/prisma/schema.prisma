@@ -284,6 +284,7 @@ model Request {
   title         String
   description   String                 @db.Text
   categoryId    String
+  quantity      Int                    @default(1)
   budgetMin     Decimal?               @db.Decimal(12, 2)
   budgetMax     Decimal?               @db.Decimal(12, 2)
   currency      String                 @db.VarChar(3)

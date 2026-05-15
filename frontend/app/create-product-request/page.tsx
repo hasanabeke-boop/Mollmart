@@ -56,6 +56,7 @@ type RequestPhotoAttachment = {
 type FormErrors = {
   title?: string;
   category?: string;
+  quantity?: string;
   budget?: string;
   description?: string;
 };
@@ -83,6 +84,7 @@ function CreateProductRequestContent() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [currency, setCurrency] = useState("KZT");
+  const [quantity, setQuantity] = useState("1");
   const [budget, setBudget] = useState("");
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");
@@ -208,8 +210,12 @@ function CreateProductRequestContent() {
     else if (title.trim().length < 5)
       next.title = "Title must be at least 5 characters.";
     if (!category) next.category = "Please select a category.";
-    if (!budget) next.budget = "Budget is required.";
-    else if (Number(budget) <= 0) next.budget = "Budget must be greater than 0.";
+    const qty = Math.floor(Number(quantity));
+    if (!quantity.trim() || !Number.isFinite(qty) || qty < 1) {
+      next.quantity = "Quantity must be at least 1.";
+    }
+    if (!budget) next.budget = "Price per unit is required.";
+    else if (Number(budget) <= 0) next.budget = "Price per unit must be greater than 0.";
     if (!description.trim()) next.description = "Description is required.";
     else if (description.trim().length < 20)
       next.description = "Description must be at least 20 characters.";
@@ -245,7 +251,7 @@ function CreateProductRequestContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user?.role === "buyer" && !emailVerified) {
+    if (user && user.role !== "admin" && user.canBuy !== false && !emailVerified) {
       setSubmitError("Verify your email before creating buyer requests.");
       return;
     }
@@ -258,6 +264,7 @@ function CreateProductRequestContent() {
         title: title.trim(),
         description: description.trim(),
         categoryId: category,
+        quantity: Math.floor(Number(quantity)),
         budgetMax: Number(budget),
         currency,
         isNegotiable: false,
@@ -298,6 +305,7 @@ function CreateProductRequestContent() {
     setTitle("");
     setCategory("");
     setCurrency("USD");
+    setQuantity("1");
     setBudget("");
     setDeadlineLocal("");
     setLocation("");
@@ -358,7 +366,11 @@ function CreateProductRequestContent() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-500">Budget</span>
+              <span className="text-sm text-slate-500">Quantity</span>
+              <span className="text-sm font-semibold text-slate-900">{quantity}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-slate-500">Price per unit</span>
               <span className="text-sm font-semibold text-slate-900">
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
@@ -673,9 +685,34 @@ function CreateProductRequestContent() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-700">Quantity</label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => {
+                      setQuantity(e.target.value);
+                      if (errors.quantity) setErrors((p) => ({ ...p, quantity: undefined }));
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl border transition-all outline-none text-slate-900 ${
+                      errors.quantity
+                        ? "border-red-400 focus:ring-2 focus:ring-red-400"
+                        : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    }`}
+                    placeholder="1"
+                    min={1}
+                    step={1}
+                  />
+                  {errors.quantity && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">error</span>
+                      {errors.quantity}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Budget / target price ({currency})
+                    Price per unit ({currency})
                   </label>
                   <input
                     type="number"
@@ -695,7 +732,7 @@ function CreateProductRequestContent() {
                     step={0.01}
                   />
                   <p className="text-xs text-slate-400">
-                    Enter the amount in the currency you selected above.
+                    Target price for one item in the currency you selected above.
                   </p>
                   {errors.budget && (
                     <p className="text-xs text-red-500 flex items-center gap-1">

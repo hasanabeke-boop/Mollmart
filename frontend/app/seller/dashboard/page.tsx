@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { canUseSellerWorkspace } from "@/lib/workspace";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 
 type RequestLead = {
   id: string;
   title: string;
   categoryId: string;
+  quantity?: number;
   budgetMin?: number;
   budgetMax?: number;
   currency?: string;
@@ -41,15 +44,25 @@ function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
 function formatBudget(lead: RequestLead) {
   const currency = normalizeCurrency(lead.currency);
   const fmt = (n: number) => formatMoney(n, currency);
+  const unitSuffix = " / unit";
 
-  if (lead.budgetMin != null && lead.budgetMax != null) return `${fmt(lead.budgetMin)} - ${fmt(lead.budgetMax)}`;
-  if (lead.budgetMax != null) return fmt(lead.budgetMax);
-  if (lead.budgetMin != null) return `${fmt(lead.budgetMin)}+`;
+  if (lead.budgetMin != null && lead.budgetMax != null) {
+    return `${fmt(lead.budgetMin)} - ${fmt(lead.budgetMax)}${unitSuffix}`;
+  }
+  if (lead.budgetMax != null) return `${fmt(lead.budgetMax)}${unitSuffix}`;
+  if (lead.budgetMin != null) return `${fmt(lead.budgetMin)}+${unitSuffix}`;
   return "Negotiable";
+}
+
+function formatQty(lead: RequestLead) {
+  const q = Math.max(1, Math.floor(Number(lead.quantity) || 1));
+  return q === 1 ? "1 item" : `${q} items`;
 }
 
 export default function SellerDashboardPage() {
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
+  const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [requests, setRequests] = useState<RequestLead[]>([]);
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -58,7 +71,7 @@ export default function SellerDashboardPage() {
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
-    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
+    if (!user || !sellerWorkspace) return;
     setLoading(true);
     setError("");
     try {
@@ -88,15 +101,15 @@ export default function SellerDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, sellerWorkspace]);
 
   useEffect(() => {
-    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+    if (authLoading || !user || !sellerWorkspace) {
       setLoading(false);
       return;
     }
     loadData();
-  }, [loadData, authLoading, user]);
+  }, [loadData, authLoading, user, sellerWorkspace]);
 
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -235,7 +248,8 @@ export default function SellerDashboardPage() {
                     <tr>
                       <th className="px-6 py-4 font-medium">Request</th>
                       <th className="px-6 py-4 font-medium">Category</th>
-                      <th className="px-6 py-4 font-medium">Budget</th>
+                      <th className="px-6 py-4 font-medium">Qty</th>
+                      <th className="px-6 py-4 font-medium">Price / unit</th>
                       <th className="px-6 py-4 font-medium">Offers</th>
                       <th className="px-6 py-4 font-medium">Status</th>
                     </tr>
@@ -244,14 +258,14 @@ export default function SellerDashboardPage() {
                     {loading ? (
                       Array.from({ length: 4 }).map((_, index) => (
                         <tr key={index}>
-                          <td colSpan={5} className="px-6 py-4">
+                          <td colSpan={6} className="px-6 py-4">
                             <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
                           </td>
                         </tr>
                       ))
                     ) : filteredRequests.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">
+                        <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-400">
                           No requests found.
                         </td>
                       </tr>
@@ -262,6 +276,7 @@ export default function SellerDashboardPage() {
                           <p className="text-xs text-gray-500">{lead.id}</p>
                         </td>
                         <td className="px-6 py-4 text-gray-600">{lead.categoryId}</td>
+                        <td className="px-6 py-4 text-gray-600">{formatQty(lead)}</td>
                         <td className="px-6 py-4 font-medium text-[#0d1b12]">{formatBudget(lead)}</td>
                         <td className="px-6 py-4 text-gray-600">{lead.offerCount || 0}</td>
                         <td className="px-6 py-4">

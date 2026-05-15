@@ -8,9 +8,11 @@ import {
   acceptPriceProposal,
   demoPayConversation,
   fetchDealState,
+  postApplyOfferTotal,
   postPriceProposal,
   type DealState,
 } from "@/lib/shop";
+import { computeOfferLineTotal, normalizeRequestQuantity } from "@/lib/offerPricing";
 import { useAuth } from "@/context/AuthContext";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 
@@ -54,6 +56,7 @@ type ApiConversation = {
     budgetMax?: string | number | null;
     currency: string;
     location?: string | null;
+    quantity?: number;
   };
   offer?: {
     id: string;
@@ -91,6 +94,7 @@ type Conversation = {
     budgetMax?: string | number | null;
     currency?: string;
     location?: string | null;
+    quantity?: number;
   };
   offer?: {
     id: string;
@@ -171,6 +175,7 @@ function mapConversation(item: ApiConversation, currentUserId?: string): Convers
       budgetMax: item.request?.budgetMax,
       currency: item.request?.currency,
       location: item.request?.location,
+      quantity: item.request?.quantity,
     },
     offer: item.offer || null,
     details: {
@@ -220,10 +225,16 @@ function ChatPageContent() {
   const [proposeCurrency, setProposeCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [dealBusy, setDealBusy] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
+  const [dealPanelOpen, setDealPanelOpen] = useState(false);
   const [cardLast4, setCardLast4] = useState("");
   const [cardName, setCardName] = useState("");
 
   const active = conversations.find((conversation) => conversation.id === activeId);
+  const isBuyerOnThread = Boolean(user?.id && active && active.buyerId === user.id);
+  const isSellerOnThread = Boolean(user?.id && active && active.sellerId === user.id);
+  const canPayAsBuyer = isBuyerOnThread && user?.canBuy !== false;
+  const showPayCta =
+    Boolean(dealState?.agreedPrice != null && dealState?.agreedCurrency && !dealState?.orderId && canPayAsBuyer);
 
   const loadConversations = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!user?.id) return;
@@ -547,9 +558,18 @@ function ChatPageContent() {
                   <p className="truncate text-xs text-[#4c9a66]">{active.request.title}</p>
                 </div>
               </div>
-              <span className="rounded-full bg-[#e7f3eb] px-3 py-1 text-xs font-bold capitalize text-[#0d1b12]">
-                {active.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-full border border-[#e7f3eb] px-3 py-1.5 text-xs font-bold text-[#0d1b12] lg:hidden"
+                  onClick={() => (showPayCta ? setPayOpen(true) : setDealPanelOpen(true))}
+                >
+                  {showPayCta ? "Pay" : "Deal"}
+                </button>
+                <span className="rounded-full bg-[#e7f3eb] px-3 py-1 text-xs font-bold capitalize text-[#0d1b12]">
+                  {active.status}
+                </span>
+              </div>
             </header>
 
             {error && (
@@ -591,6 +611,27 @@ function ChatPageContent() {
               })}
             </div>
 
+            {showPayCta && dealState && (
+              <div className="border-t border-primary/30 bg-primary/10 px-4 py-3 lg:px-6">
+                <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66]">Ready to pay</p>
+                    <p className="text-sm font-bold text-[#0d1b12]">
+                      {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
+                      {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-black hover:bg-[#0fd650]"
+                    onClick={() => setPayOpen(true)}
+                  >
+                    Pay now (demo)
+                  </button>
+                </div>
+              </div>
+            )}
+
             <form
               className="border-t border-[#e7f3eb] bg-white p-4"
               onSubmit={(event) => {
@@ -623,8 +664,31 @@ function ChatPageContent() {
         )}
       </main>
 
+      {active && dealPanelOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          aria-label="Close deal panel"
+          onClick={() => setDealPanelOpen(false)}
+        />
+      )}
       {active && (
-        <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-[#e7f3eb] bg-white lg:flex">
+        <aside
+          className={`${
+            dealPanelOpen ? "fixed inset-y-0 right-0 z-50 flex w-full max-w-sm shadow-2xl" : "hidden"
+          } w-80 shrink-0 flex-col overflow-y-auto border-l border-[#e7f3eb] bg-white lg:relative lg:flex lg:max-w-none`}
+        >
+          <div className="flex items-center justify-between border-b border-[#e7f3eb] px-4 py-3 lg:hidden">
+            <p className="text-sm font-bold text-[#0d1b12]">Deal &amp; payment</p>
+            <button
+              type="button"
+              className="rounded-full p-2 text-[#4c9a66] hover:bg-[#f5f6f8]"
+              onClick={() => setDealPanelOpen(false)}
+              aria-label="Close"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
           <section className="border-b border-[#e7f3eb] p-6">
             <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Request</h2>
             <div className="space-y-3">
@@ -652,9 +716,27 @@ function ChatPageContent() {
             <section className="border-b border-[#e7f3eb] p-6">
               <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Offer</h2>
               <div className="rounded-lg border border-[#e7f3eb] p-4">
-                <p className="text-2xl font-black text-[#0d1b12]">
-                  {formatCurrency(active.offer.price, active.offer.currency)}
-                </p>
+                {(() => {
+                  const qty = normalizeRequestQuantity(active.request.quantity);
+                  const unit = Number(active.offer.price);
+                  const total = computeOfferLineTotal(unit, qty);
+                  return (
+                    <>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66]">
+                        Price per unit · qty {qty}
+                      </p>
+                      <p className="mt-1 text-2xl font-black text-[#0d1b12]">
+                        {formatCurrency(unit, active.offer.currency)}
+                      </p>
+                      <p className="mt-2 text-sm text-[#4c9a66]">
+                        Order total:{" "}
+                        <span className="font-bold text-[#0d1b12]">
+                          {formatCurrency(total, active.offer.currency)}
+                        </span>
+                      </p>
+                    </>
+                  );
+                })()}
                 <p className="mt-1 text-sm font-semibold capitalize text-[#4c9a66]">{active.offer.status}</p>
               </div>
             </section>
@@ -675,7 +757,14 @@ function ChatPageContent() {
                   </div>
                 ) : null}
                 {dealState.initialOffer && !dealState.orderId && (
-                  <div className="flex gap-2">
+                  <div className="space-y-2">
+                    <p className="text-xs text-[#4c9a66]">
+                      Seller offer: {formatCurrency(dealState.initialOffer.unitPrice, dealState.initialOffer.currency)}{" "}
+                      × {dealState.initialOffer.quantity} ={" "}
+                      <span className="font-bold text-[#0d1b12]">
+                        {formatCurrency(dealState.initialOffer.totalPrice, dealState.initialOffer.currency)}
+                      </span>
+                    </p>
                     <button
                       type="button"
                       disabled={dealBusy}
@@ -683,26 +772,26 @@ function ChatPageContent() {
                         if (!active) return;
                         setDealBusy(true);
                         try {
-                          const d = await postPriceProposal(active.id, {
-                            amount: Number(dealState.initialOffer!.price),
-                            currency: dealState.initialOffer!.currency,
-                          });
+                          const d = await postApplyOfferTotal(active.id);
                           setDealState(d);
                           setProposeAmount("");
                         } catch (e) {
-                          setError((e as Error).message || "Could not use offer price.");
+                          setError((e as Error).message || "Could not use offer total.");
                         } finally {
                           setDealBusy(false);
                         }
                       }}
                       className="flex-1 rounded-lg bg-primary py-2 text-xs font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
                     >
-                      Use offer price
+                      Use offer total
                     </button>
                   </div>
                 )}
                 <div className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] p-3">
-                  <p className="text-xs text-[#4c9a66] mb-1">Your counter price</p>
+                  <p className="text-xs text-[#4c9a66] mb-1">
+                    Your counter (order total
+                    {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""})
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     <select
                       value={proposeCurrency}
@@ -755,9 +844,14 @@ function ChatPageContent() {
                 {dealState.agreedPrice != null && dealState.agreedCurrency && !dealState.orderId ? (
                   <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
                     <p className="font-bold text-[#0d1b12]">
-                      Agreed: {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
+                      Agreed total: {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
+                      {dealState.requestQuantity > 1 ? (
+                        <span className="block text-xs font-normal text-[#4c9a66]">
+                          {dealState.requestQuantity} pcs
+                        </span>
+                      ) : null}
                     </p>
-                    {user?.role === "buyer" && active.buyerId === user.id ? (
+                    {canPayAsBuyer ? (
                       <button
                         type="button"
                         className="mt-2 w-full rounded-lg bg-primary py-2 text-xs font-bold text-black"
@@ -765,13 +859,20 @@ function ChatPageContent() {
                       >
                         Pay now (demo)
                       </button>
+                    ) : isSellerOnThread ? (
+                      <p className="mt-2 text-xs text-[#4c9a66]">
+                        Waiting for buyer to pay… They will see <span className="font-bold">Pay now</span>{" "}
+                        in this chat (or the green bar above messages on phone).
+                      </p>
                     ) : (
                       <p className="mt-2 text-xs text-[#4c9a66]">Waiting for buyer to pay…</p>
                     )}
                   </div>
                 ) : null}
                 <div>
-                  <p className="mb-2 text-xs font-semibold text-[#4c9a66]">Recent proposals</p>
+                  <p className="mb-2 text-xs font-semibold text-[#4c9a66]">
+                    Recent proposals <span className="font-normal">(order totals)</span>
+                  </p>
                   <ul className="max-h-40 space-y-2 overflow-y-auto text-sm">
                     {dealState.proposals.length === 0 ? (
                       <li className="text-[#4c9a66]">No price proposals yet.</li>
@@ -866,8 +967,14 @@ function ChatPageContent() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[#e7f3eb] bg-white p-6 shadow-xl">
             <h3 className="mb-1 text-lg font-bold text-[#0d1b12]">Demo payment</h3>
+            {dealState?.agreedPrice != null && dealState.agreedCurrency && (
+              <p className="mb-2 text-base font-bold text-[#0d1b12]">
+                {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
+                {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""}
+              </p>
+            )}
             <p className="mb-4 text-sm text-[#4c9a66]">
-              No real charge. Fill the fields below to simulate checkout for the agreed amount.
+              No real charge. Fill the fields below to simulate checkout for the agreed order total.
             </p>
             <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
             <input

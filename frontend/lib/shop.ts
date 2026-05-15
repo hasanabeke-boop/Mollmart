@@ -91,6 +91,17 @@ export type DealProposal = {
   createdAt: string;
 };
 
+export type DealInitialOffer = {
+  id: string;
+  unitPrice: number;
+  totalPrice: number;
+  /** @deprecated use unitPrice */
+  price: number;
+  quantity: number;
+  currency: string;
+  status: string;
+};
+
 export type DealState = {
   proposals: DealProposal[];
   agreedPrice: number | null;
@@ -98,7 +109,8 @@ export type DealState = {
   agreedAt: string | null;
   requestTitle: string;
   requestCurrency: string;
-  initialOffer: { id: string; price: number; currency: string; status: string } | null;
+  requestQuantity: number;
+  initialOffer: DealInitialOffer | null;
   orderId: string | null;
 };
 
@@ -118,6 +130,17 @@ export async function postPriceProposal(
       method: "POST",
       service: "deal",
       body: JSON.stringify(body),
+    },
+  );
+}
+
+/** Propose line total from linked offer (unit price × request quantity). */
+export async function postApplyOfferTotal(conversationId: string): Promise<DealState> {
+  return apiFetchWithRefresh<DealState>(
+    `/api/v1/conversations/${encodeURIComponent(conversationId)}/apply-offer-total`,
+    {
+      method: "POST",
+      service: "deal",
     },
   );
 }

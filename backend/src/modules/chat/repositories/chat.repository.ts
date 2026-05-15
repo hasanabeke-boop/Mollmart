@@ -30,7 +30,8 @@ const conversationInclude = {
       budgetMin: true,
       budgetMax: true,
       currency: true,
-      location: true
+      location: true,
+      quantity: true
     }
   },
   offer: {
@@ -102,6 +103,7 @@ export type ConversationWithPreview = Conversation & {
     budgetMax: Prisma.Decimal | null;
     currency: string;
     location: string | null;
+    quantity: number;
   };
   offer: {
     id: string;

@@ -38,3 +38,27 @@ export function resolveActiveRole(
   if (canSell) return "seller";
   return "buyer";
 }
+
+/** Buyer flows (my requests, create request) — not only DB `role`, but workspace + canBuy. */
+export function canUseBuyerWorkspace(
+  user: { role: string; canBuy?: boolean } | null | undefined,
+  activeRole?: "buyer" | "seller" | "admin",
+): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (user.canBuy === false) return false;
+  if (user.role === "buyer") return true;
+  return activeRole === "buyer";
+}
+
+/** Seller flows (browse board, seller dashboard) — workspace + canSell, not only DB `role`. */
+export function canUseSellerWorkspace(
+  user: { role: string; canSell?: boolean } | null | undefined,
+  activeRole?: "buyer" | "seller" | "admin",
+): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (user.canSell === false) return false;
+  if (user.role === "seller") return true;
+  return activeRole === "seller";
+}
