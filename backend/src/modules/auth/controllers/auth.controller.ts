@@ -9,6 +9,7 @@ import type {
   AdminUpdateUserRequestBody,
   AuthTokenUser,
   ChangePasswordRequestBody,
+  DeleteAccountRequestBody,
   TokenIntrospectionRequestBody,
   TypedRequest,
   UserLoginCredentials,
@@ -140,6 +141,65 @@ const createEmailVerificationResponse = (
   requiresEmailVerification: true,
   ...(verificationToken ? { verificationToken } : {})
 });
+
+async function deleteUserAccount(userId: string): Promise<void> {
+  await prismaClient.$transaction(async (tx) => {
+    const catalogProducts = await tx.catalogProduct.findMany({
+      where: { sellerId: userId },
+      select: { id: true }
+    });
+    const catalogProductIds = catalogProducts.map((product) => product.id);
+
+    const catalogOrders = await tx.catalogOrder.findMany({
+      where: {
+        OR: [{ buyerId: userId }, { sellerId: userId }]
+      },
+      select: { id: true }
+    });
+    const catalogOrderIds = catalogOrders.map((order) => order.id);
+
+    if (catalogOrderIds.length > 0 || catalogProductIds.length > 0) {
+      await tx.catalogOrderLine.deleteMany({
+        where: {
+          OR: [
+            ...(catalogOrderIds.length > 0 ? [{ orderId: { in: catalogOrderIds } }] : []),
+            ...(catalogProductIds.length > 0 ? [{ productId: { in: catalogProductIds } }] : [])
+          ]
+        }
+      });
+    }
+
+    if (catalogProductIds.length > 0) {
+      await tx.cartItem.deleteMany({
+        where: { productId: { in: catalogProductIds } }
+      });
+    }
+
+    await tx.cartItem.deleteMany({ where: { buyerId: userId } });
+    await tx.catalogOrder.deleteMany({
+      where: {
+        OR: [{ buyerId: userId }, { sellerId: userId }]
+      }
+    });
+    await tx.requestDealOrder.deleteMany({
+      where: {
+        OR: [{ buyerId: userId }, { sellerId: userId }]
+      }
+    });
+    await tx.priceProposal.deleteMany({ where: { proposerId: userId } });
+    await tx.messageReadState.deleteMany({ where: { userId } });
+    await tx.refreshToken.deleteMany({ where: { userId } });
+    await tx.resetToken.deleteMany({ where: { userId } });
+    await tx.emailVerificationToken.deleteMany({ where: { userId } });
+    await tx.account.deleteMany({ where: { userId } });
+    await tx.blockedUser.deleteMany({
+      where: {
+        OR: [{ userId }, { blockedBy: userId }]
+      }
+    });
+    await tx.user.delete({ where: { id: userId } });
+  });
+}
 
 /**
  * This function handles the signup process for new users. It expects a request object with the following properties:
@@ -724,6 +784,49 @@ export const handleChangePassword = async (
   });
 };
 
+export const handleDeleteMyAccount = async (
+  req: TypedRequest<DeleteAccountRequestBody>,
+  res: Response
+) => {
+  const userId = resolvePayloadUserId(req.payload);
+  const { currentPassword } = req.body;
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  if (!currentPassword) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Current password is required'
+    });
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  const isPasswordValid = await argon2.verify(user.password, currentPassword);
+
+  if (!isPasswordValid) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      message: 'Current password is incorrect'
+    });
+  }
+
+  await deleteUserAccount(userId);
+
+  res.clearCookie(
+    config.jwt.refresh_token.cookie_name,
+    clearRefreshTokenCookieConfig
+  );
+
+  return res.sendStatus(httpStatus.NO_CONTENT);
+};
+
 export const handleIntrospectToken = async (
   req: TypedRequest<TokenIntrospectionRequestBody>,
   res: Response
@@ -931,6 +1034,33 @@ export const handleAdminRevokeUserSessions = async (
     message: 'User sessions revoked',
     revokedRefreshTokens: deleted.count
   });
+};
+
+export const handleAdminDeleteUser = async (
+  req: TypedRequest,
+  res: Response
+) => {
+  const userId = req.params['id'] as string;
+  const actingUserId = resolvePayloadUserId(req.payload);
+
+  if (actingUserId === userId) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Admin users cannot delete their own account here'
+    });
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  await deleteUserAccount(userId);
+
+  return res.sendStatus(httpStatus.NO_CONTENT);
 };
 
 /**

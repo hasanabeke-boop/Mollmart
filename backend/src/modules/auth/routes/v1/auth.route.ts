@@ -7,6 +7,7 @@ import {
   adminUpdateUserSchema,
   adminUserListSchema,
   changePasswordSchema,
+  deleteAccountSchema,
   enableMixedModeSchema,
   introspectTokenSchema,
   loginSchema,
@@ -35,6 +36,13 @@ authRouter.patch(
   isAuth,
   validate(changePasswordSchema),
   authController.handleChangePassword
+);
+
+authRouter.delete(
+  '/me',
+  isAuth,
+  validate(deleteAccountSchema),
+  authController.handleDeleteMyAccount
 );
 
 authRouter.patch(
@@ -119,6 +127,13 @@ authRouter.post(
   authorizeAdmin,
   validate(userIdParamSchema),
   authController.handleAdminRevokeUserSessions
+);
+
+authRouter.delete(
+  '/admin/users/:id',
+  authorizeAdmin,
+  validate(userIdParamSchema),
+  authController.handleAdminDeleteUser
 );
 
 export default authRouter;

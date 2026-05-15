@@ -13,7 +13,7 @@ type UserRecord = {
 
 type ActionLog = {
   userId: string;
-  action: "blocked" | "unblocked";
+  action: "blocked" | "unblocked" | "deleted";
   message: string;
   time: string;
 };
@@ -26,6 +26,8 @@ export default function AdminUsersPage() {
   const [blockTarget, setBlockTarget] = useState<UserRecord | null>(null);
   const [blockReason, setBlockReason] = useState("");
   const [blockSaving, setBlockSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<UserRecord | null>(null);
+  const [deleteSaving, setDeleteSaving] = useState(false);
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
 
   const loadUsers = useCallback(async () => {
@@ -100,6 +102,30 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteSaving(true);
+    try {
+      await apiFetchWithRefresh(`/api/v1/auth/admin/users/${deleteTarget.id}`, {
+        method: "DELETE",
+        service: "auth",
+      });
+      setActionLogs((prev) => [
+        { userId: deleteTarget.id, action: "deleted", message: "User account deleted", time: new Date().toLocaleTimeString() },
+        ...prev,
+      ]);
+      setDeleteTarget(null);
+      loadUsers();
+    } catch (err: unknown) {
+      setActionLogs((prev) => [
+        { userId: deleteTarget.id, action: "deleted", message: `Failed: ${(err as Error).message}`, time: new Date().toLocaleTimeString() },
+        ...prev,
+      ]);
+    } finally {
+      setDeleteSaving(false);
+    }
+  };
+
   const STATUS_STYLES: Record<string, string> = {
     active: "bg-green-100 text-green-700",
     blocked: "bg-red-100 text-red-700",
@@ -134,13 +160,13 @@ export default function AdminUsersPage() {
               className={`flex items-center gap-2 p-3 rounded-xl border text-sm ${
                 log.message.startsWith("Failed")
                   ? "bg-red-50 border-red-200 text-red-700"
-                  : log.action === "blocked"
+                    : log.action === "blocked" || log.action === "deleted"
                     ? "bg-amber-50 border-amber-200 text-amber-800"
                     : "bg-green-50 border-green-200 text-green-700"
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">
-                {log.message.startsWith("Failed") ? "error" : log.action === "blocked" ? "block" : "check_circle"}
+                {log.message.startsWith("Failed") ? "error" : log.action === "deleted" ? "delete" : log.action === "blocked" ? "block" : "check_circle"}
               </span>
               <span className="flex-1">{log.message}</span>
               <span className="text-xs opacity-60">{log.time}</span>
@@ -213,6 +239,14 @@ export default function AdminUsersPage() {
                           Block
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(u)}
+                        className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-red-800 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -273,6 +307,49 @@ export default function AdminUsersPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
                   {blockSaving ? "Blocking..." : "Block User"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-[#0d1b12]">Delete User</h3>
+              <button type="button" onClick={() => setDeleteTarget(null)} className="text-gray-400 hover:text-gray-600">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+                <span className="material-symbols-outlined text-red-600">warning</span>
+                <div>
+                  <p className="text-sm font-semibold text-red-800">
+                    Delete {deleteTarget.name || deleteTarget.email || deleteTarget.id}?
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">
+                    This permanently removes the account and related platform data.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteSaving}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {deleteSaving ? "Deleting..." : "Delete User"}
                 </button>
               </div>
             </div>

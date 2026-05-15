@@ -52,7 +52,7 @@ function navButtonClass(active: boolean) {
 }
 
 export default function UserProfilePage() {
-  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const { activeRole, hasDualWorkspace, enableMixedMode, mixedModeBusy } = useWorkspace();
   const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
@@ -86,6 +86,9 @@ export default function UserProfilePage() {
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [notifPrefsSaving, setNotifPrefsSaving] = useState(false);
   const [notifPrefsLoaded, setNotifPrefsLoaded] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -334,6 +337,28 @@ export default function UserProfilePage() {
       toastError(msg);
     } finally {
       setPrefSaving(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (deletePassword.trim().length < 6) {
+      toastError("Enter your current password.");
+      return;
+    }
+
+    setDeleteBusy(true);
+    try {
+      await apiFetchWithRefresh("/api/v1/auth/me", {
+        method: "DELETE",
+        service: "auth",
+        body: JSON.stringify({ currentPassword: deletePassword }),
+      });
+      toastSuccess("Account deleted.");
+      await logout();
+    } catch (e: unknown) {
+      toastError(e instanceof Error ? e.message : "Could not delete account.");
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -645,6 +670,27 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </section>
+
+            <section className="rounded-xl border border-red-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="font-bold text-red-800">Delete account</h3>
+                  <p className="mt-1 text-sm text-red-600">
+                    Permanently remove your account, profile, requests, offers, chats, products, and sessions.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletePassword("");
+                    setDeleteOpen(true);
+                  }}
+                  className="shrink-0 rounded-lg border border-red-200 px-5 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50"
+                >
+                  Delete account
+                </button>
+              </div>
+            </section>
           </>
         ) : mainTab === "preferences" ? (
           <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
@@ -816,6 +862,52 @@ export default function UserProfilePage() {
           </section>
         )}
       </main>
+
+      {deleteOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => setDeleteOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+              <h3 className="text-lg font-bold text-[#0d1b12]">Delete account</h3>
+              <button type="button" onClick={() => setDeleteOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="space-y-5 p-6">
+              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+                This cannot be undone. Enter your current password to confirm deletion.
+              </div>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Current password</span>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  autoComplete="current-password"
+                  autoFocus
+                />
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteOpen(false)}
+                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void deleteAccount()}
+                  disabled={deleteBusy || deletePassword.trim().length < 6}
+                  className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleteBusy ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

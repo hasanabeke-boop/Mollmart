@@ -78,6 +78,10 @@ export interface ChangePasswordRequestBody {
   newPassword: string;
 }
 
+export interface DeleteAccountRequestBody {
+  currentPassword: string;
+}
+
 export interface TokenIntrospectionRequestBody {
   token: string;
 }

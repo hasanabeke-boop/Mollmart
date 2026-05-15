@@ -2,6 +2,7 @@ import Joi from 'joi';
 import type {
   AdminUpdateUserRequestBody,
   ChangePasswordRequestBody,
+  DeleteAccountRequestBody,
   TokenIntrospectionRequestBody,
   UserLoginCredentials,
   UserSignUpCredentials
@@ -27,6 +28,12 @@ export const changePasswordSchema = {
   body: Joi.object<ChangePasswordRequestBody>().keys({
     currentPassword: Joi.string().required().min(6).max(150),
     newPassword: Joi.string().required().min(6).max(150)
+  })
+};
+
+export const deleteAccountSchema = {
+  body: Joi.object<DeleteAccountRequestBody>().keys({
+    currentPassword: Joi.string().required().min(6).max(150)
   })
 };
 
