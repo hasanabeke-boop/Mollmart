@@ -22,7 +22,7 @@ Set these environment variables in Render:
 NODE_ENV=production
 DATABASE_URL=<Render PostgreSQL Internal Database URL>
 SERVER_URL=https://mollmart.onrender.com
-CORS_ORIGINS=https://mollmart-owcb.vercel.app
+CORS_ORIGINS=https://mollmart-azure.vercel.app
 ```
 
 The root `render.yaml` Blueprint can create:
