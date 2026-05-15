@@ -11,15 +11,18 @@ export function useModalPresence(open: boolean, exitMs = 240) {
 
   useEffect(() => {
     if (open) {
-      setMounted(true);
       const id = requestAnimationFrame(() => {
+        setMounted(true);
         requestAnimationFrame(() => setVisible(true));
       });
       return () => cancelAnimationFrame(id);
     }
-    setVisible(false);
+    const id = requestAnimationFrame(() => setVisible(false));
     const t = window.setTimeout(() => setMounted(false), exitMs);
-    return () => window.clearTimeout(t);
+    return () => {
+      cancelAnimationFrame(id);
+      window.clearTimeout(t);
+    };
   }, [open, exitMs]);
 
   return { mounted, visible };

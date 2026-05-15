@@ -13,13 +13,13 @@ export default function VerifyEmailPage() {
     const raw = params?.token;
     return Array.isArray(raw) ? raw[0] : raw;
   }, [params]);
-  const [status, setStatus] = useState<Status>("loading");
-  const [message, setMessage] = useState("Verifying your email...");
+  const [verification, setVerification] = useState<{ status: Status; message: string }>({
+    status: "loading",
+    message: "Verifying your email...",
+  });
 
   useEffect(() => {
     if (!token) {
-      setStatus("error");
-      setMessage("Verification token is missing.");
       return;
     }
 
@@ -27,14 +27,18 @@ export default function VerifyEmailPage() {
     verifyEmailToken(token)
       .then((res) => {
         if (cancelled) return;
-        setStatus("success");
-        setMessage(res.message || "Email verification successful.");
+        setVerification({
+          status: "success",
+          message: res.message || "Email verification successful.",
+        });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         const e = err as Error;
-        setStatus("error");
-        setMessage(e.message || "Invalid or expired verification link.");
+        setVerification({
+          status: "error",
+          message: e.message || "Invalid or expired verification link.",
+        });
       });
 
     return () => {
@@ -42,6 +46,8 @@ export default function VerifyEmailPage() {
     };
   }, [token]);
 
+  const status = token ? verification.status : "error";
+  const message = token ? verification.message : "Verification token is missing.";
   const icon = status === "success" ? "mark_email_read" : status === "error" ? "error" : "hourglass_top";
   const iconClass = status === "success" ? "bg-green-100 text-green-700" : status === "error" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
 

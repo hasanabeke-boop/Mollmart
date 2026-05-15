@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export type DualPriceRangeProps = {
   min: number;
@@ -14,10 +14,13 @@ export default function DualPriceRange({ min, max, rangeMin, rangeMax, onChange 
   const trackRef = useRef<HTMLDivElement>(null);
   const minRef = useRef(min);
   const maxRef = useRef(max);
-  minRef.current = min;
-  maxRef.current = max;
 
   const dragActive = useRef(false);
+
+  useEffect(() => {
+    minRef.current = min;
+    maxRef.current = max;
+  }, [min, max]);
 
   const valueFromClientX = useCallback(
     (clientX: number) => {
@@ -103,8 +106,10 @@ export default function DualPriceRange({ min, max, rangeMin, rangeMax, onChange 
         />
         <button
           type="button"
+          role="slider"
           data-range-thumb="min"
           aria-label="Minimum price"
+          aria-orientation="horizontal"
           aria-valuemin={rangeMin}
           aria-valuemax={max}
           aria-valuenow={min}
@@ -122,8 +127,10 @@ export default function DualPriceRange({ min, max, rangeMin, rangeMax, onChange 
         />
         <button
           type="button"
+          role="slider"
           data-range-thumb="max"
           aria-label="Maximum price"
+          aria-orientation="horizontal"
           aria-valuemin={min}
           aria-valuemax={rangeMax}
           aria-valuenow={max}

@@ -12,14 +12,15 @@ export function Header() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [notifCount, setNotifCount] = useState<number | null>(null);
+  const [notifState, setNotifState] = useState<{ userId: string; count: number | null } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) {
-      setNotifCount(null);
       return;
     }
+
+    const userId = user.id;
     let cancelled = false;
     const load = async () => {
       try {
@@ -27,9 +28,9 @@ export function Header() {
           service: "notification",
         });
         const c = typeof d?.count === "number" ? d.count : 0;
-        if (!cancelled) setNotifCount(c);
+        if (!cancelled) setNotifState({ userId, count: c });
       } catch {
-        if (!cancelled) setNotifCount(null);
+        if (!cancelled) setNotifState({ userId, count: null });
       }
     };
     void load();
@@ -44,6 +45,8 @@ export function Header() {
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [user]);
+
+  const notifCount = user && notifState?.userId === user.id ? notifState.count : null;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
