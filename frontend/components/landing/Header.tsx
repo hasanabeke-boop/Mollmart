@@ -1,6 +1,5 @@
 'use client';
 
-import { Search } from 'lucide-react';
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
@@ -8,7 +7,6 @@ import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 
 const navLinkClass =
   "whitespace-nowrap text-xs font-medium text-[#0d1b12] transition-colors hover:text-primary xl:text-sm";
@@ -24,12 +22,10 @@ function NavLink({ href, children, title }: { href: string; children: ReactNode;
 export function Header() {
   const { user, loading, logout } = useAuth();
   const workspace = useWorkspaceOptional();
-  const router = useRouter();
   const navRole =
     user?.role === "admin" ? "admin" : (workspace?.activeRole ?? user?.role);
   const navFaded = workspace?.modeScreenVisible === false;
   const [menuOpen, setMenuOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const [notifState, setNotifState] = useState<{ userId: string; count: number | null } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -81,36 +77,11 @@ export function Header() {
     await logout();
   };
 
-  const handleSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    const q = search.trim();
-    if (navRole === "buyer") {
-      router.push(q ? `/my-requests?q=${encodeURIComponent(q)}` : "/my-requests");
-      return;
-    }
-    router.push(q ? `/browse-buyer-requests?q=${encodeURIComponent(q)}` : "/browse-buyer-requests");
-  };
-
   return (
     <header className="sticky top-0 z-50 box-border flex h-14 w-full shrink-0 border-b border-gray-100 bg-white/90 backdrop-blur-md xl:h-16">
       <div className="mx-auto flex h-full min-w-0 max-w-[1600px] flex-1 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <MollmartLogoLink href="/" size={32} />
-
-          <form className="hidden min-w-0 md:block md:w-[9.5rem] lg:w-[11rem] xl:w-[13rem]" onSubmit={handleSearch}>
-            <label className="group relative flex w-full items-center">
-              <span className="absolute left-2.5 flex items-center text-gray-400 group-focus-within:text-primary">
-                <Search className="h-3.5 w-3.5" />
-              </span>
-              <input
-                className="w-full rounded-lg border-0 bg-gray-50 py-2 pl-8 pr-2.5 text-xs text-[#0d1b12] placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:ring-offset-0 xl:py-2.5 xl:text-sm"
-                placeholder="Search…"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </label>
-          </form>
         </div>
 
         <nav
