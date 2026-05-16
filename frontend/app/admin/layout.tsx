@@ -22,10 +22,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== "admin")) {
+    if (loading) return;
+
+    if (!user) {
+      router.replace(`/login?returnUrl=${encodeURIComponent(pathname || "/admin")}`);
+      return;
+    }
+
+    if (user.role !== "admin") {
       router.replace("/");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return (
