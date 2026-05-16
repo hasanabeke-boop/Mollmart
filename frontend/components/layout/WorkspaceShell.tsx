@@ -43,21 +43,17 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 
   const showSellerSidebar = activeRole === "seller" || user.role === "admin";
   const modeLabel = showSellerSidebar ? "Seller" : "Buyer";
-  const activeNav = showSellerSidebar
-    ? getSellerActiveNav(pathname)
-    : getBuyerActiveNav(pathname);
-
   return (
     <div className="app-layout-with-sidebar relative w-full flex-1">
       {showSellerSidebar ? (
         <SellerSidebar
-          active={activeNav}
+          active={getSellerActiveNav(pathname)}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
       ) : (
         <BuyerSidebar
-          active={activeNav}
+          active={getBuyerActiveNav(pathname)}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
