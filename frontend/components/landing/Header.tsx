@@ -4,12 +4,15 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
+import { useLanguage } from "@/context/LanguageContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useState, useRef, useEffect } from "react";
 
 export function Header() {
   const { user, loading, logout } = useAuth();
+  const { t } = useLanguage();
   const workspace = useWorkspaceOptional();
   const navRole =
     user?.role === "admin" ? "admin" : (workspace?.activeRole ?? user?.role);
@@ -74,6 +77,7 @@ export function Header() {
 
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
+          <LanguageSwitcher />
           {loading ? (
             <div className="h-8 w-14 animate-pulse rounded-lg bg-gray-100" />
           ) : user ? (
@@ -130,7 +134,7 @@ export function Header() {
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                     >
                       <span className="material-symbols-outlined text-[20px]">receipt_long</span>
-                      Order history
+                      {t("Order history")}
                     </Link>
                     )}
                     <Link
@@ -139,7 +143,7 @@ export function Header() {
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                     >
                       <span className="material-symbols-outlined text-[20px]">person</span>
-                      Profile
+                      {t("Profile")}
                     </Link>
                     {navRole === "admin" && (
                       <Link
@@ -148,7 +152,7 @@ export function Header() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-                        Admin panel
+                        {t("Admin panel")}
                       </Link>
                     )}
                     {navRole !== "seller" && navRole !== "admin" && (
@@ -158,7 +162,7 @@ export function Header() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[20px]">playlist_add</span>
-                        My Requests
+                        {t("My Requests")}
                       </Link>
                     )}
                     {(navRole === "seller" || navRole === "admin") && (
@@ -168,7 +172,7 @@ export function Header() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[20px]">storefront</span>
-                        Seller Dashboard
+                        {t("Seller Dashboard")}
                       </Link>
                     )}
                     {(navRole === "seller" || navRole === "admin") && (
@@ -178,7 +182,7 @@ export function Header() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[20px]">grid_view</span>
-                        My showcase
+                        {t("My showcase")}
                       </Link>
                     )}
                     {(navRole === "seller" || navRole === "admin") && (
@@ -188,7 +192,7 @@ export function Header() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[20px]">inventory_2</span>
-                        New showcase listing
+                        {t("New showcase listing")}
                       </Link>
                     )}
                     <div className="border-t border-gray-100 mt-1 pt-1">
@@ -198,7 +202,7 @@ export function Header() {
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
                       >
                         <span className="material-symbols-outlined text-[20px]">logout</span>
-                        Sign Out
+                        {t("Sign Out")}
                       </button>
                     </div>
                   </div>
@@ -218,13 +222,13 @@ export function Header() {
                 href="/login"
                 className="hidden rounded-lg px-4 py-2 text-sm font-bold text-[#0d1b12] hover:bg-black/5 sm:block transition-colors"
               >
-                Log In
+                {t("Log In")}
               </Link>
               <Link
                 href="/register"
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-primary/30 hover:bg-[var(--primary-hover)]"
               >
-                Sign Up
+                {t("Sign Up")}
               </Link>
             </div>
           )}

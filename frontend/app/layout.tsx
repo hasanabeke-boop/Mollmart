@@ -3,7 +3,9 @@ import "./globals.css";
 import { Header } from "@/components/landing/Header";
 import WorkspaceShell from "@/components/layout/WorkspaceShell";
 import WorkspaceModeTransition from "@/components/nav/WorkspaceModeTransition";
+import AutoTranslator from "@/components/i18n/AutoTranslator";
 import { AuthProvider } from "@/context/AuthContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { ToastProvider } from "@/context/ToastContext";
 
@@ -30,20 +32,23 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <AuthProvider>
-          <WorkspaceProvider>
-            <ToastProvider>
-              <div className="relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
-                <Header />
-                <main className="flex-1 self-stretch">
-                  <WorkspaceShell>
-                    <WorkspaceModeTransition>{children}</WorkspaceModeTransition>
-                  </WorkspaceShell>
-                </main>
-              </div>
-            </ToastProvider>
-          </WorkspaceProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <WorkspaceProvider>
+              <ToastProvider>
+                <AutoTranslator />
+                <div className="relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
+                  <Header />
+                  <main className="flex-1 self-stretch">
+                    <WorkspaceShell>
+                      <WorkspaceModeTransition>{children}</WorkspaceModeTransition>
+                    </WorkspaceShell>
+                  </main>
+                </div>
+              </ToastProvider>
+            </WorkspaceProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
