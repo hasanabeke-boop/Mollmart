@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ChatbotReply = {
   reply: string;
@@ -66,6 +67,7 @@ function toHistoryItem(item: Message): ChatbotHistoryItem {
 
 export default function ChatbotPage() {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const pathname = usePathname();
   const starterPrompts = user?.role ? [...promptsByRole[user.role], "What do we need to deploy?"] : baseStarterPrompts;
   const [messages, setMessages] = useState<Message[]>([
@@ -118,6 +120,7 @@ export default function ChatbotPage() {
           })),
           currentPath: pathname,
           userRole: user?.role,
+          language,
         }),
       });
 

@@ -10,6 +10,7 @@ export interface ChatbotMessageInput {
   history?: ChatbotHistoryItem[];
   currentPath?: string;
   userRole?: 'buyer' | 'seller' | 'admin';
+  language?: 'en' | 'ru' | 'kk';
 }
 
 export interface ChatbotReply {

@@ -18,6 +18,8 @@ type ChatbotIntent =
   | 'assistant_setup'
   | 'fallback';
 
+type ChatbotLanguage = NonNullable<ChatbotMessageInput['language']>;
+
 const validIntents = [
   'greeting',
   'buyer_request',
@@ -153,6 +155,194 @@ const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 
   }
 };
 
+const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string, string>> = {
+  ru: {
+    'How do I create a request?': 'Как создать запрос?',
+    'How do sellers send offers?': 'Как продавцы отправляют предложения?',
+    'How does chat work?': 'Как работает чат?',
+    'What should I write in a request?': 'Что написать в запросе?',
+    'How do I publish a draft?': 'Как опубликовать черновик?',
+    'How do I compare offers?': 'Как сравнить предложения?',
+    'How do I accept an offer?': 'Как принять предложение?',
+    'Why do I see no offers?': 'Почему я не вижу предложений?',
+    'Can I edit my request?': 'Можно ли редактировать запрос?',
+    'How do I find buyer requests?': 'Как найти запросы покупателей?',
+    'How do I make a strong offer?': 'Как сделать сильное предложение?',
+    'Where is seller dashboard?': 'Где панель продавца?',
+    'Why can I not send two offers?': 'Почему нельзя отправить два предложения?',
+    'What should my offer message include?': 'Что должно быть в сообщении предложения?',
+    'Where are my seller metrics?': 'Где мои метрики продавца?',
+    'Why do I have no conversations?': 'Почему нет диалогов?',
+    'How do unread messages work?': 'Как работают непрочитанные сообщения?',
+    'Where is chat?': 'Где чат?',
+    'How do I edit profile?': 'Как редактировать профиль?',
+    'What should seller profile include?': 'Что должен содержать профиль продавца?',
+    'Where are preferences?': 'Где настройки предпочтений?',
+    'Where are notifications?': 'Где уведомления?',
+    'Why no notification appears?': 'Почему уведомление не появляется?',
+    'How do message notifications work?': 'Как работают уведомления сообщений?',
+    'Which env values are required?': 'Какие env значения обязательны?',
+    'How do I rebuild Docker?': 'Как пересобрать Docker?',
+    'Can Redis be disabled?': 'Можно ли отключить Redis?',
+    'How do I disable email verification?': 'Как отключить подтверждение email?',
+    'Why login fails?': 'Почему вход не работает?',
+    'How do I reset password?': 'Как сбросить пароль?',
+    'How do I manage categories?': 'Как управлять категориями?',
+    'How does moderation work?': 'Как работает модерация?',
+    'Where are users?': 'Где пользователи?',
+    'What happens after accepting an offer?': 'Что происходит после принятия предложения?',
+    'Can we add payments later?': 'Можно ли добавить платежи позже?',
+    'Where do I put the API key?': 'Куда добавить API ключ?',
+    'Which model should I use?': 'Какую модель использовать?',
+    'Open Post Request': 'Открыть создание запроса',
+    'Enter title, category, budget, and details': 'Укажите название, категорию, бюджет и детали',
+    'Save draft, then publish from My Requests': 'Сохраните черновик и опубликуйте из Моих запросов',
+    'Open My Requests': 'Открыть Мои запросы',
+    'Review offers under a published request': 'Просмотрите предложения под опубликованным запросом',
+    'Accept the best offer to open chat': 'Примите лучшее предложение, чтобы открыть чат',
+    'Open Buyer Requests': 'Открыть запросы покупателей',
+    'Filter or search active requests': 'Фильтруйте или ищите активные запросы',
+    'Choose a request that matches your service': 'Выберите запрос, подходящий вашей услуге',
+    'Open a buyer request': 'Откройте запрос покупателя',
+    'Enter price, timeframe, and message': 'Введите цену, срок и сообщение',
+    'Send one clear offer': 'Отправьте одно понятное предложение',
+    'Accept an offer first': 'Сначала примите предложение',
+    'Open Messages': 'Открыть сообщения',
+    'Continue details directly with the other user': 'Продолжайте обсуждение напрямую с другим пользователем',
+    'Open Profile': 'Открыть профиль',
+    'Update base details': 'Обновите основные данные',
+    'Save changes': 'Сохраните изменения',
+    'Open Notifications': 'Открыть уведомления',
+    'Review unread items': 'Просмотрите непрочитанные элементы',
+    'Open the linked request or chat': 'Откройте связанный запрос или чат',
+    'Set production environment variables': 'Настройте production env переменные',
+    'Run Prisma migrations': 'Запустите миграции Prisma',
+    'Build frontend and backend images/services': 'Соберите frontend и backend образы/сервисы',
+    'Check email and password': 'Проверьте email и пароль',
+    'Confirm account status': 'Проверьте статус аккаунта',
+    'Check email verification setting': 'Проверьте настройку подтверждения email',
+    'Open Admin': 'Открыть админ-панель',
+    'Review users/categories/moderation': 'Проверьте пользователей, категории и модерацию',
+    'Apply changes carefully': 'Применяйте изменения аккуратно',
+    'Use chat for final details': 'Используйте чат для финальных деталей',
+    'Handle payment or delivery outside Mollmart': 'Оплату или доставку оформляйте вне Mollmart',
+    'Add unsupported features only when you build them': 'Добавляйте неподдерживаемые функции только после реализации',
+    'Set OPENAI_API_KEY': 'Установите OPENAI_API_KEY',
+    'Choose OPENAI_MODEL': 'Выберите OPENAI_MODEL',
+    'Restart/rebuild backend': 'Перезапустите или пересоберите backend'
+  },
+  kk: {
+    'How do I create a request?': 'Сұранысты қалай жасаймын?',
+    'How do sellers send offers?': 'Сатушылар ұсынысты қалай жібереді?',
+    'How does chat work?': 'Чат қалай жұмыс істейді?',
+    'What should I write in a request?': 'Сұранысқа не жазу керек?',
+    'How do I publish a draft?': 'Черновикті қалай жариялаймын?',
+    'How do I compare offers?': 'Ұсыныстарды қалай салыстырамын?',
+    'How do I accept an offer?': 'Ұсынысты қалай қабылдаймын?',
+    'Why do I see no offers?': 'Неге ұсыныстар көрінбейді?',
+    'Can I edit my request?': 'Сұранысты өңдеуге бола ма?',
+    'How do I find buyer requests?': 'Сатып алушы сұраныстарын қалай табамын?',
+    'How do I make a strong offer?': 'Жақсы ұсынысты қалай жасаймын?',
+    'Where is seller dashboard?': 'Сатушы панелі қайда?',
+    'Why can I not send two offers?': 'Неге екі ұсыныс жіберуге болмайды?',
+    'What should my offer message include?': 'Ұсыныс хабарында не болуы керек?',
+    'Where are my seller metrics?': 'Сатушы метрикалары қайда?',
+    'Why do I have no conversations?': 'Неге диалог жоқ?',
+    'How do unread messages work?': 'Оқылмаған хабарлар қалай жұмыс істейді?',
+    'Where is chat?': 'Чат қайда?',
+    'How do I edit profile?': 'Профильді қалай өңдеймін?',
+    'What should seller profile include?': 'Сатушы профилінде не болуы керек?',
+    'Where are preferences?': 'Қалаулар қайда?',
+    'Where are notifications?': 'Хабарландырулар қайда?',
+    'Why no notification appears?': 'Неге хабарландыру шықпайды?',
+    'How do message notifications work?': 'Хабарлама ескертулері қалай жұмыс істейді?',
+    'Which env values are required?': 'Қандай env мәндері міндетті?',
+    'How do I rebuild Docker?': 'Docker-ді қалай қайта жинаймын?',
+    'Can Redis be disabled?': 'Redis-ті өшіруге бола ма?',
+    'How do I disable email verification?': 'Email растауды қалай өшіремін?',
+    'Why login fails?': 'Кіру неге сәтсіз?',
+    'How do I reset password?': 'Құпиясөзді қалай қалпына келтіремін?',
+    'How do I manage categories?': 'Санаттарды қалай басқарамын?',
+    'How does moderation work?': 'Модерация қалай жұмыс істейді?',
+    'Where are users?': 'Пайдаланушылар қайда?',
+    'What happens after accepting an offer?': 'Ұсынысты қабылдағаннан кейін не болады?',
+    'Can we add payments later?': 'Төлемдерді кейін қосуға бола ма?',
+    'Where do I put the API key?': 'API кілтін қайда қоямын?',
+    'Which model should I use?': 'Қай модельді қолданамын?',
+    'Open Post Request': 'Сұраныс жасау бетін ашу',
+    'Enter title, category, budget, and details': 'Атауын, санатын, бюджетін және мәліметін енгізіңіз',
+    'Save draft, then publish from My Requests': 'Черновикті сақтап, Менің сұраныстарымнан жариялаңыз',
+    'Open My Requests': 'Менің сұраныстарымды ашу',
+    'Review offers under a published request': 'Жарияланған сұраныстағы ұсыныстарды қараңыз',
+    'Accept the best offer to open chat': 'Чат ашу үшін ең жақсы ұсынысты қабылдаңыз',
+    'Open Buyer Requests': 'Сатып алушы сұраныстарын ашу',
+    'Filter or search active requests': 'Белсенді сұраныстарды сүзу немесе іздеу',
+    'Choose a request that matches your service': 'Қызметіңізге сәйкес сұранысты таңдаңыз',
+    'Open a buyer request': 'Сатып алушы сұранысын ашыңыз',
+    'Enter price, timeframe, and message': 'Баға, мерзім және хабарлама енгізіңіз',
+    'Send one clear offer': 'Бір нақты ұсыныс жіберіңіз',
+    'Accept an offer first': 'Алдымен ұсынысты қабылдаңыз',
+    'Open Messages': 'Хабарламаларды ашу',
+    'Continue details directly with the other user': 'Мәліметтерді басқа пайдаланушымен тікелей жалғастырыңыз',
+    'Open Profile': 'Профильді ашу',
+    'Update base details': 'Негізгі деректерді жаңарту',
+    'Save changes': 'Өзгерістерді сақтау',
+    'Open Notifications': 'Хабарландыруларды ашу',
+    'Review unread items': 'Оқылмағандарды қарау',
+    'Open the linked request or chat': 'Байланысты сұранысты немесе чатты ашу',
+    'Set production environment variables': 'Production env айнымалыларын орнатыңыз',
+    'Run Prisma migrations': 'Prisma миграцияларын іске қосыңыз',
+    'Build frontend and backend images/services': 'Frontend және backend образдарын/сервистерін жинаңыз',
+    'Check email and password': 'Email және құпиясөзді тексеріңіз',
+    'Confirm account status': 'Аккаунт күйін тексеріңіз',
+    'Check email verification setting': 'Email растау баптауын тексеріңіз',
+    'Open Admin': 'Админді ашу',
+    'Review users/categories/moderation': 'Пайдаланушылар, санаттар және модерацияны қарау',
+    'Apply changes carefully': 'Өзгерістерді мұқият қолданыңыз',
+    'Use chat for final details': 'Соңғы мәліметтер үшін чатты қолданыңыз',
+    'Handle payment or delivery outside Mollmart': 'Төлем немесе жеткізуді Mollmart-тан тыс орындаңыз',
+    'Add unsupported features only when you build them': 'Қолдау жоқ функцияларды іске асырғаннан кейін ғана қосыңыз',
+    'Set OPENAI_API_KEY': 'OPENAI_API_KEY орнатыңыз',
+    'Choose OPENAI_MODEL': 'OPENAI_MODEL таңдаңыз',
+    'Restart/rebuild backend': 'Backend-ті қайта іске қосыңыз немесе қайта жинаңыз'
+  }
+};
+
+const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotIntent, string>> = {
+  ru: {
+    greeting: 'Я помогу покупателям, продавцам и администраторам с запросами Mollmart, предложениями, чатом после принятия предложения, профилями, уведомлениями, админ-инструментами и деплоем.',
+    buyer_request: 'Процесс покупателя: создайте запрос с понятным названием, категорией, бюджетом, сроком/локацией при необходимости и полезными деталями. Сначала он сохраняется как черновик; опубликуйте его в Моих запросах, когда будете готовы получать предложения продавцов.',
+    buyer_offers: 'Чтобы управлять предложениями, откройте Мои запросы, выберите опубликованный запрос и сравните предложения продавцов. Принятие предложения открывает диалог в Сообщениях.',
+    seller_board: 'Процесс продавца: откройте Запросы покупателей, найдите или отфильтруйте активные запросы, затем откройте подходящий и отправьте предложение. Покупатель увидит его под своим запросом.',
+    seller_offer: 'Сильное предложение продавца содержит реалистичную цену в валюте запроса, срок выполнения и короткое сообщение о том, что вы можете предоставить.',
+    chat: 'Сообщения создаются после того, как покупатель принимает предложение продавца. Если чат пустой, сначала проверьте, принято ли предложение для этого запроса.',
+    profile: 'Профиль нужен для заполнения данных аккаунта. Продавцам важно держать информацию понятной, а покупатели могут использовать предпочтения для будущих запросов.',
+    notifications: 'Уведомления показывают важные события: новые предложения, принятые предложения, сообщения, изменения модерации и статус аккаунта.',
+    deployment: 'Минимальный деплой требует production env значения, PostgreSQL, backend hosting, frontend hosting, миграции Prisma и безопасные JWT/OpenAI/SMTP секреты. Redis обычно можно сделать опциональным.',
+    account: 'Для проблем с аккаунтом проверьте email/пароль, статус аккаунта, необходимость email-подтверждения, JWT secrets и подключение к базе данных backend.',
+    admin: 'Админ-экраны нужны для управления пользователями, категориями и модерацией. Админ-действия должны быть отделены от обычных buyer/seller сценариев.',
+    platform_limits: 'Mollmart сейчас связывает покупателей и продавцов, собирает предложения и открывает чат после принятия. Checkout, escrow, shipping labels и доставка пока не являются частью платформы.',
+    assistant_setup: 'Помощник использует OPENAI_API_KEY и OPENAI_MODEL на backend. Если ключ отсутствует или API падает, включается локальная справка Mollmart.',
+    fallback: 'Я могу помочь с процессами Mollmart: запросы покупателей, предложения продавцов, чат после принятия, профили, уведомления, вход, админка и деплой. Уточните, что вы хотите сделать на этом экране.'
+  },
+  kk: {
+    greeting: 'Мен сатып алушыларға, сатушыларға және админдерге Mollmart сұраныстары, ұсыныстар, қабылданған ұсыныстан кейінгі чат, профильдер, хабарландырулар, админ құралдары және деплой бойынша көмектесемін.',
+    buyer_request: 'Сатып алушы процесі: анық атауы, санаты, бюджеті, қажет болса мерзімі/орны және пайдалы мәліметтері бар сұраныс жасаңыз. Ол алдымен черновик болады; ұсыныстар алуға дайын кезде Менің сұраныстарымнан жариялаңыз.',
+    buyer_offers: 'Ұсыныстарды басқару үшін Менің сұраныстарымды ашып, жарияланған сұранысты таңдаңыз да, сатушылар ұсыныстарын салыстырыңыз. Ұсынысты қабылдау Хабарламаларда диалог ашады.',
+    seller_board: 'Сатушы процесі: Сатып алушы сұраныстарын ашып, белсенді сұраныстарды іздеңіз немесе сүзгіден өткізіңіз, сәйкес сұранысты ашып ұсыныс жіберіңіз.',
+    seller_offer: 'Жақсы сатушы ұсынысында сұраныс валютасындағы нақты баға, орындау мерзімі және не ұсына алатыныңыз туралы қысқа хабарлама болады.',
+    chat: 'Хабарламалар сатып алушы сатушы ұсынысын қабылдағаннан кейін жасалады. Чат бос болса, алдымен сол сұраныста ұсыныс қабылданғанын тексеріңіз.',
+    profile: 'Профиль аккаунт деректерін толтыруға арналған. Сатушылар ақпаратты түсінікті ұстауы керек, ал сатып алушылар болашақ сұраныстар үшін қалауларды қолдана алады.',
+    notifications: 'Хабарландырулар жаңа ұсыныстар, қабылданған ұсыныстар, хабарлар, модерация өзгерістері және аккаунт күйі сияқты маңызды оқиғаларды көрсетеді.',
+    deployment: 'Минималды деплой үшін production env мәндері, PostgreSQL, backend hosting, frontend hosting, Prisma миграциялары және қауіпсіз JWT/OpenAI/SMTP құпиялары керек. Redis көбіне опционалды бола алады.',
+    account: 'Аккаунт мәселелері үшін email/құпиясөзді, аккаунт күйін, email растау талабын, JWT secrets және backend дерекқор қосылымын тексеріңіз.',
+    admin: 'Админ экрандары пайдаланушыларды, санаттарды және модерацияны басқаруға арналған. Админ әрекеттері buyer/seller сценарийлерінен бөлек болуы керек.',
+    platform_limits: 'Mollmart қазір сатып алушылар мен сатушыларды сәйкестендіреді, ұсыныстар жинайды және қабылдаудан кейін чат ашады. Checkout, escrow, shipping labels және жеткізу әзірге платформа бөлігі емес.',
+    assistant_setup: 'Көмекші backend жағында OPENAI_API_KEY және OPENAI_MODEL қолданады. Кілт жоқ болса немесе API істемесе, локал Mollmart анықтамасы қосылады.',
+    fallback: 'Мен Mollmart процестерімен көмектесе аламын: сатып алушы сұраныстары, сатушы ұсыныстары, қабылдаудан кейінгі чат, профильдер, хабарландырулар, кіру, админ және деплой. Осы экранда не істегіңіз келетінін нақтылаңыз.'
+  }
+};
+
 type OpenAIResponse = {
   output_text?: string;
   output?: Array<{
@@ -235,14 +425,16 @@ export class ChatbotService {
   private createLocalReply(input: ChatbotMessageInput): ChatbotReply {
     const intent = this.detectIntent(input);
     const response = responses[intent];
+    const language = this.normalizeLanguage(input.language);
+    const reply = language === 'en' ? response.reply : localizedReplies[language][intent];
 
     return {
       intent,
-      reply: this.withContext(input, intent, response.reply),
-      suggestions: response.suggestions,
+      reply: this.withContext(input, intent, reply),
+      suggestions: this.translateList(response.suggestions, language),
       source: 'local',
       suggestedRoute: this.routeForIntent(intent, input.userRole),
-      actions: actionsByIntent[intent] ?? [],
+      actions: this.translateList(actionsByIntent[intent] ?? [], language),
       confidence: intent === 'fallback' ? 0.42 : 0.78
     };
   }
@@ -323,6 +515,7 @@ export class ChatbotService {
       'Use the current role and path when helpful. If role is buyer, prefer buyer actions. If role is seller, prefer seller board/dashboard actions. If role is admin, mention admin routes only when relevant.',
       'Use conversation memory logically: if the user asks a short follow-up such as "where", "how", "why", "next", "what about that", or "show me", keep answering about the latest remembered Mollmart topic unless the new message clearly changes topic.',
       `Current role available to you: ${input.userRole || 'guest'}. Current path: ${input.currentPath || 'unknown'}.`,
+      `Reply language: ${this.languageName(this.normalizeLanguage(input.language))}. Return reply, suggestions, and actions in that language.`,
       'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/users.',
       'Do not invent checkout, payment, escrow, shipping labels, delivery tracking, file uploads for requests, realtime websocket features, or unsupported social login. If asked, explain they are not currently part of Mollmart.',
       'For deployment: mention production env, secure secrets, PostgreSQL, Prisma migrations, frontend/backend build, Docker rebuild, CORS/SERVER_URL, and optional Redis when relevant.',
@@ -409,6 +602,25 @@ export class ChatbotService {
 
   private limitReply(reply: string): string {
     return reply.length <= 1200 ? reply : `${reply.slice(0, 1197)}...`;
+  }
+
+  private normalizeLanguage(language: ChatbotMessageInput['language']): ChatbotLanguage {
+    return language === 'ru' || language === 'kk' ? language : 'en';
+  }
+
+  private languageName(language: ChatbotLanguage): string {
+    if (language === 'ru') return 'Russian';
+    if (language === 'kk') return 'Kazakh';
+    return 'English';
+  }
+
+  private translateText(text: string, language: ChatbotLanguage): string {
+    if (language === 'en') return text;
+    return chatbotTranslations[language][text] ?? text;
+  }
+
+  private translateList(items: string[], language: ChatbotLanguage): string[] {
+    return items.map((item) => this.translateText(item, language));
   }
 
   private routeForIntent(intent: ChatbotIntent, role?: ChatbotMessageInput['userRole']): string {
@@ -535,14 +747,36 @@ export class ChatbotService {
     const role = input.userRole;
 
     if (role === 'buyer' && ['seller_board', 'seller_offer'].includes(intent)) {
+      if (input.language === 'ru') {
+        return `${reply} Ваша текущая роль — покупатель, поэтому для страниц продавца может понадобиться аккаунт продавца.`;
+      }
+      if (input.language === 'kk') {
+        return `${reply} Қазіргі рөліңіз — сатып алушы, сондықтан сатушы беттері үшін сатушы аккаунты қажет болуы мүмкін.`;
+      }
       return `${reply} Your current role is buyer, so you may need a seller account to use seller-only pages.`;
     }
 
     if (role === 'seller' && ['buyer_request', 'buyer_offers'].includes(intent)) {
+      if (input.language === 'ru') {
+        return `${reply} Ваша текущая роль — продавец, поэтому управление запросами покупателя может требовать аккаунт покупателя.`;
+      }
+      if (input.language === 'kk') {
+        return `${reply} Қазіргі рөліңіз — сатушы, сондықтан сатып алушы сұраныстарын басқару үшін сатып алушы аккаунты қажет болуы мүмкін.`;
+      }
       return `${reply} Your current role is seller, so buyer request management may require a buyer account.`;
     }
 
     if (intent === 'fallback') {
+      if (input.language === 'ru') {
+        return input.currentPath
+          ? `${reply} Сейчас вы на ${input.currentPath}; скажите, что хотите сделать на этом экране.`
+          : reply;
+      }
+      if (input.language === 'kk') {
+        return input.currentPath
+          ? `${reply} Қазір сіз ${input.currentPath} бетінде тұрсыз; осы экранда не істегіңіз келетінін айтыңыз.`
+          : reply;
+      }
       return input.currentPath
         ? `${reply} You are currently on ${input.currentPath}; tell me what you are trying to do from this screen.`
         : reply;

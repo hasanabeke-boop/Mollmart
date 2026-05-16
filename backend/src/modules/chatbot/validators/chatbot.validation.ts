@@ -15,6 +15,7 @@ export const chatbotMessageSchema = {
       .max(20)
       .optional(),
     currentPath: Joi.string().trim().max(200).optional(),
-    userRole: Joi.string().valid('buyer', 'seller', 'admin').optional()
+    userRole: Joi.string().valid('buyer', 'seller', 'admin').optional(),
+    language: Joi.string().valid('en', 'ru', 'kk').optional()
   })
 };
