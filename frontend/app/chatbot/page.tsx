@@ -82,12 +82,10 @@ export default function ChatbotPage() {
   const [suggestions, setSuggestions] = useState(starterPrompts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const listRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
+    endRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, loading]);
 
   const sendMessage = async (text: string) => {
@@ -160,8 +158,8 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-[#f5f6f8]">
-      <main className="flex min-w-0 flex-1 flex-col">
+    <div className="app-page-min-height bg-[#f5f6f8]">
+      <main className="min-w-0">
         <header className="border-b border-[#e7f3eb] bg-white px-4 py-4 lg:px-8">
           <div className="mx-auto flex max-w-5xl items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl border border-[#d9eadf] bg-[#f6fbf8] text-sm font-black tracking-tight text-[#0d1b12]">
@@ -176,7 +174,7 @@ export default function ChatbotPage() {
           </div>
         </header>
 
-        <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+        <div className="px-4 py-6 lg:px-8">
           <div className="mx-auto flex max-w-5xl flex-col gap-4">
             {messages.map((message) => {
               const mine = message.role === "user";
@@ -224,6 +222,7 @@ export default function ChatbotPage() {
                 </div>
               </div>
             )}
+            <div ref={endRef} aria-hidden />
           </div>
         </div>
 

@@ -33,9 +33,9 @@ export default function RootLayout({
         <AuthProvider>
           <WorkspaceProvider>
             <ToastProvider>
-              <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
+              <div className="relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[#f5f7fa] text-[#0d1b12]">
                 <Header />
-                <main className="flex min-h-0 flex-1 flex-col self-stretch">
+                <main className="flex-1 self-stretch">
                   <WorkspaceShell>
                     <WorkspaceModeTransition>{children}</WorkspaceModeTransition>
                   </WorkspaceShell>
