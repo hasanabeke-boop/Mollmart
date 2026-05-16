@@ -171,7 +171,7 @@ export function Header() {
                 className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
                 aria-label="Assistant chat"
               >
-                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
               </Link>
               <Link
                 href="/notifications"
@@ -293,7 +293,7 @@ export function Header() {
                 className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
                 aria-label="Assistant chat"
               >
-                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
               </Link>
               <Link
                 href="/login"

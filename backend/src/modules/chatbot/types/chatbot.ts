@@ -1,6 +1,8 @@
 export interface ChatbotHistoryItem {
   role: 'user' | 'assistant';
   content: string;
+  intent?: string;
+  suggestedRoute?: string;
 }
 
 export interface ChatbotMessageInput {
