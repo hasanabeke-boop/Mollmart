@@ -138,9 +138,9 @@ export default function SellerDashboardPage() {
       ctaLabel="Open my requests"
       unauthenticatedDescription="Log in as a seller to view the seller dashboard."
     >
-    <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
-      <main className="flex min-h-[calc(100vh-4rem)] flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-6 backdrop-blur">
+    <div className="app-page-min-height relative w-full bg-[#f5f6f8]">
+      <main className="app-page-min-height flex flex-col">
+        <header className="sticky top-[var(--app-header-height)] z-20 flex h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-6 backdrop-blur">
           <div className="hidden max-w-md flex-1 md:flex">
             <div className="relative w-full">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">

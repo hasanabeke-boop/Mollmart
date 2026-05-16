@@ -63,8 +63,8 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      <div className="flex min-h-0 w-full min-h-full flex-1 flex-col">
-        <div className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-3 border-b border-[#e7f3eb] bg-white/95 px-4 backdrop-blur lg:hidden">
+      <div className="w-full">
+        <div className="sticky top-[var(--app-header-height)] z-20 flex h-12 shrink-0 items-center gap-3 border-b border-[#e7f3eb] bg-white/95 px-4 backdrop-blur lg:hidden">
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900"

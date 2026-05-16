@@ -164,8 +164,8 @@ export default function SellerAnalyticsPage() {
       ctaLabel="Open my requests"
       unauthenticatedDescription="Log in as a seller to view analytics."
     >
-    <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
-      <main className="mx-auto flex h-full min-h-[calc(100vh-4rem)] max-w-7xl flex-1 flex-col space-y-8 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="app-page-min-height relative w-full bg-[#f5f6f8]">
+      <main className="app-page-min-height mx-auto flex max-w-7xl flex-col space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#0d1b12]">

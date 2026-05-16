@@ -29,6 +29,10 @@
   min-height: calc(100dvh - var(--app-header-height));
 }
 
+.app-page-min-height {
+  min-height: calc(100dvh - var(--app-header-height));
+}
+
 @media (min-width: 1024px) {
   .app-layout-with-sidebar {
     padding-left: 16rem;
