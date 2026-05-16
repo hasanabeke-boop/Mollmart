@@ -40,7 +40,7 @@ const NAV_ITEMS: {
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
-  { id: "assistant", icon: "smart_toy", label: "Assistant", href: "/chatbot" },
+  { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
   { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];
 

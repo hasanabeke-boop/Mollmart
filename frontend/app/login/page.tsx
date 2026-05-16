@@ -10,6 +10,7 @@ import { MollmartLogo } from "@/components/brand/MollmartLogo";
 import { useRouter } from "next/navigation";
 
 function postLoginPath(role: User["role"]): string {
+  if (role === "admin") return "/admin";
   if (role === "seller") return "/browse-buyer-requests";
   if (role === "buyer") return "/my-requests";
   return "/";

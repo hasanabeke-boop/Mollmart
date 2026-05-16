@@ -75,6 +75,10 @@ const routeByIntent: Partial<Record<ChatbotIntent, string>> = {
   assistant_setup: '/chatbot'
 };
 
+const intentByRoute = new Map(
+  Object.entries(routeByIntent).map(([intent, route]) => [route, intent as ChatbotIntent])
+);
+
 const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
   buyer_request: ['Open Post Request', 'Enter title, category, budget, and details', 'Save draft, then publish from My Requests'],
   buyer_offers: ['Open My Requests', 'Review offers under a published request', 'Accept the best offer to open chat'],
@@ -92,7 +96,7 @@ const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
 
 const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 'suggestedRoute' | 'actions' | 'confidence'>> = {
   greeting: {
-    reply: 'Hi, I am Mollmart Assistant. I can guide buyers, sellers, and admins through the real Mollmart flow: requests, offers, accepted-offer chat, profiles, notifications, and deployment.',
+    reply: 'I can guide buyers, sellers, and admins through Mollmart requests, offers, accepted-offer chat, profiles, notifications, admin tools, and deployment.',
     suggestions: defaultSuggestions
   },
   buyer_request: {
@@ -247,7 +251,13 @@ export class ChatbotService {
     const intent = this.detectIntent(input);
     const recentHistory = (input.history ?? [])
       .slice(-10)
-      .map((item) => `${item.role === 'user' ? 'User' : 'Assistant'}: ${item.content}`)
+      .map((item) => {
+        const meta = [
+          item.intent ? `topic=${item.intent}` : '',
+          item.suggestedRoute ? `route=${item.suggestedRoute}` : ''
+        ].filter(Boolean);
+        return `${item.role === 'user' ? 'User' : 'Assistant'}: ${item.content}${meta.length ? ` [${meta.join(', ')}]` : ''}`;
+      })
       .join('\n');
 
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -261,6 +271,7 @@ export class ChatbotService {
         instructions: this.buildSystemPrompt(input),
         input: [
           recentHistory ? `Recent conversation:\n${recentHistory}` : '',
+          this.describeConversationMemory(input),
           `Current path: ${input.currentPath || 'unknown'}`,
           `Current user role: ${input.userRole || 'guest'}`,
           `Detected intent hint: ${intent}`,
@@ -310,6 +321,7 @@ export class ChatbotService {
       'You are Mollmart Assistant, a smart support chatbot inside the Mollmart marketplace app.',
       'Mollmart is not a checkout store. Correct flow: buyers publish product/service requests; sellers browse buyer requests and submit offers; when a buyer accepts an offer, a buyer-seller conversation opens in Messages.',
       'Use the current role and path when helpful. If role is buyer, prefer buyer actions. If role is seller, prefer seller board/dashboard actions. If role is admin, mention admin routes only when relevant.',
+      'Use conversation memory logically: if the user asks a short follow-up such as "where", "how", "why", "next", "what about that", or "show me", keep answering about the latest remembered Mollmart topic unless the new message clearly changes topic.',
       `Current role available to you: ${input.userRole || 'guest'}. Current path: ${input.currentPath || 'unknown'}.`,
       'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/users.',
       'Do not invent checkout, payment, escrow, shipping labels, delivery tracking, file uploads for requests, realtime websocket features, or unsupported social login. If asked, explain they are not currently part of Mollmart.',
@@ -443,28 +455,73 @@ export class ChatbotService {
     }
 
     const contextualIntent = this.detectContextIntent(input);
-    if (contextualIntent && this.isFollowUp(text)) {
-      add(contextualIntent, 2.5);
+    const isFollowUp = this.isFollowUp(text);
+    if (contextualIntent && isFollowUp) {
+      add(contextualIntent, 3.5);
     }
 
     const [bestIntent, bestScore] = [...scores.entries()].sort((a, b) => b[1] - a[1])[0] ?? ['fallback', 0];
-    return bestScore >= 3 ? bestIntent : 'fallback';
+    if (bestScore >= 3) {
+      return bestIntent;
+    }
+
+    return contextualIntent && isFollowUp ? contextualIntent : 'fallback';
   }
 
   private detectContextIntent(input: ChatbotMessageInput): ChatbotIntent | null {
-    const previousUserMessages = (input.history ?? [])
-      .filter((item) => item.role === 'user' && normalizeText(item.content) !== normalizeText(input.message))
-      .slice(-3)
+    const recentItems = (input.history ?? [])
+      .filter((item) => !(item.role === 'user' && normalizeText(item.content) === normalizeText(input.message)))
+      .slice(-8)
       .reverse();
 
-    for (const item of previousUserMessages) {
-      const intent = this.detectIntent({ message: item.content, userRole: input.userRole, currentPath: input.currentPath });
+    for (const item of recentItems) {
+      if (typeof item.intent === 'string') {
+        const intent = this.normalizeIntent(item.intent, 'fallback');
+        if (intent !== 'fallback' && intent !== 'greeting') {
+          return intent;
+        }
+      }
+
+      if (typeof item.suggestedRoute === 'string') {
+        const intent = intentByRoute.get(item.suggestedRoute.trim());
+        if (intent && intent !== 'fallback' && intent !== 'greeting') {
+          return intent;
+        }
+      }
+    }
+
+    for (const item of recentItems.filter((historyItem) => historyItem.role === 'user')) {
+      const intent = this.detectIntent({
+        message: item.content,
+        userRole: input.userRole,
+        currentPath: input.currentPath,
+        history: []
+      });
       if (intent !== 'fallback' && intent !== 'greeting') {
         return intent;
       }
     }
 
     return null;
+  }
+
+  private describeConversationMemory(input: ChatbotMessageInput): string {
+    const intent = this.detectContextIntent(input);
+    if (!intent) {
+      return '';
+    }
+
+    const route = this.routeForIntent(intent, input.userRole);
+    const lastUsefulUserMessage = (input.history ?? [])
+      .filter((item) => item.role === 'user' && normalizeText(item.content) !== normalizeText(input.message))
+      .slice(-1)[0]?.content;
+
+    return [
+      'Conversation memory:',
+      `Latest topic: ${intent}.`,
+      route ? `Relevant route: ${route}.` : '',
+      lastUsefulUserMessage ? `Previous user goal: ${lastUsefulUserMessage}` : ''
+    ].filter(Boolean).join('\n');
   }
 
   private isFollowUp(text: string): boolean {

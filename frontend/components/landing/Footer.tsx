@@ -58,7 +58,7 @@ export function Footer() {
               </Link>
               <Link className="text-gray-400 hover:text-primary transition-colors hover:scale-110" href="/chatbot">
                 <span className="sr-only">Assistant</span>
-                <span className="material-symbols-outlined">smart_toy</span>
+                <span className="material-symbols-outlined">chat_bubble</span>
               </Link>
             </div>
           </div>

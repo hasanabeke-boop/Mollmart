@@ -32,7 +32,7 @@ const NAV_ITEMS: {
   { id: "showcase", icon: "storefront", label: "Showcase", href: "/products" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
-  { id: "assistant", icon: "smart_toy", label: "Assistant", href: "/chatbot" },
+  { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
 ];
 
 type Props = {

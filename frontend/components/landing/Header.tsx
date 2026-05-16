@@ -122,6 +122,7 @@ export function Header() {
               Post
             </NavLink>
           )}
+          {navRole === "admin" && <NavLink href="/admin">Admin</NavLink>}
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
@@ -141,7 +142,7 @@ export function Header() {
                 className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
                 aria-label="Assistant chat"
               >
-                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
               </Link>
               <Link
                 href="/notifications"
@@ -192,6 +193,16 @@ export function Header() {
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Profile
                     </Link>
+                    {navRole === "admin" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0d1b12] hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                        Admin panel
+                      </Link>
+                    )}
                     {navRole !== "seller" && navRole !== "admin" && (
                       <Link
                         href="/my-requests"
@@ -253,7 +264,7 @@ export function Header() {
                 className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
                 aria-label="Assistant chat"
               >
-                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
               </Link>
               <Link
                 href="/login"
