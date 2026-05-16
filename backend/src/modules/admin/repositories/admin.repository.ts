@@ -58,6 +58,28 @@ export interface AdminRepositoryLike {
   blockUser(userId: string, reason: string, blockedBy: string): Promise<BlockedUser>;
   unblockUser(userId: string): Promise<BlockedUser | null>;
   getDashboardSummary(): Promise<AdminDashboardSummary>;
+  listRequestsForAdmin(page: number, limit: number, q?: string): Promise<{
+    items: Array<{
+      id: string;
+      title: string;
+      status: string;
+      currency: string;
+      quantity: number;
+      offerCount: number;
+      offersCount: number;
+      dealOrdersCount: number;
+      createdAt: string;
+      publishedAt: string | null;
+      categoryId: string;
+      buyer: {
+        id: string;
+        name: string;
+        email: string | null;
+      };
+    }>;
+    meta: ReturnType<typeof buildPageMeta>;
+  }>;
+  deleteRequestById(requestId: string): Promise<boolean>;
 }
 
 export class AdminRepository implements AdminRepositoryLike {
