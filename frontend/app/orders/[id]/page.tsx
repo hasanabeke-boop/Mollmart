@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrder, type ShopOrder } from "@/lib/shop";
@@ -25,6 +26,7 @@ export default function OrderDetailsPage() {
   const params = useParams<{ id: string }>();
   const id = typeof params.id === "string" ? params.id : "";
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
   const router = useRouter();
   const [order, setOrder] = useState<ShopOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function OrderDetailsPage() {
 
   if (!user) return null;
 
-  const isSellerView = user.role === "seller";
+  const isSellerView = activeRole === "seller" || user.role === "admin";
 
   if (loading) {
     return <div className="mx-auto max-w-[1280px] px-6 py-16 text-center text-slate-500">Loading order…</div>;

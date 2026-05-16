@@ -5,6 +5,7 @@ import type { User } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { uploadProfileAvatar } from "@/lib/profile";
+import { canEditBuyerProfile, canEditSellerProfile } from "@/lib/workspace";
 
 export type ProfileMeResponse = {
   userId: string;
@@ -46,6 +47,8 @@ function emptyToUndefined(s: string): string | undefined {
 
 export default function EditProfileModal({ open, onClose, user, profile, onSaved }: Props) {
   const { error: toastError, info: toastInfo } = useToast();
+  const showSellerSection = canEditSellerProfile(user) && Boolean(profile?.sellerProfile);
+  const showBuyerSection = canEditBuyerProfile(user) && Boolean(profile?.buyerProfile);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
@@ -196,7 +199,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     if (av.length > 0) baseBody.avatarUrl = av;
 
     const sellerBody: Record<string, unknown> = {};
-    if (user.role === "seller" && profile.sellerProfile) {
+    if (showSellerSection && profile?.sellerProfile) {
       const dn = sellerDisplayName.trim();
       if (dn.length >= 2) sellerBody.displayName = dn;
       const desc = sellerDescription.trim();
@@ -210,7 +213,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     }
 
     const buyerBody: Record<string, unknown> = {};
-    if (user.role === "buyer" && profile.buyerProfile) {
+    if (showBuyerSection && profile?.buyerProfile) {
       const dn = buyerDisplayName.trim();
       if (dn.length >= 2) buyerBody.displayName = dn;
       const bc = buyerCity.trim();
@@ -243,6 +246,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
         await apiFetchWithRefresh("/api/v1/profiles/me/seller", {
           method: "PATCH",
           service: "profile",
+          activeMode: "seller",
           body: JSON.stringify(sellerBody),
         });
       }
@@ -250,6 +254,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
         await apiFetchWithRefresh("/api/v1/profiles/me/buyer", {
           method: "PATCH",
           service: "profile",
+          activeMode: "buyer",
           body: JSON.stringify(buyerBody),
         });
       }
@@ -383,7 +388,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
             </p>
           </section>
 
-          {user.role === "seller" && profile?.sellerProfile && (
+          {showSellerSection && (
             <section className="space-y-3 border-t border-[#e7f3eb] pt-4">
               <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Seller storefront</h3>
               <label className="block">
@@ -433,7 +438,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
             </section>
           )}
 
-          {user.role === "buyer" && profile?.buyerProfile && (
+          {showBuyerSection && (
             <section className="space-y-3 border-t border-[#e7f3eb] pt-4">
               <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Buyer profile</h3>
               <label className="block">

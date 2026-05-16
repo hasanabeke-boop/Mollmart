@@ -5,10 +5,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
-type AdminNavId = "dashboard" | "categories" | "moderation" | "users" | "orders";
+type AdminNavId = "dashboard" | "categories" | "requests" | "moderation" | "users" | "orders";
 
 function getActiveNav(pathname: string): AdminNavId {
   if (pathname.startsWith("/admin/categories")) return "categories";
+  if (pathname.startsWith("/admin/requests")) return "requests";
   if (pathname.startsWith("/admin/moderation")) return "moderation";
   if (pathname.startsWith("/admin/users")) return "users";
   if (pathname.startsWith("/admin/orders")) return "orders";
@@ -50,14 +51,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="relative flex h-[calc(100vh-4rem)] bg-[#f5f6f8]">
+    <div className="app-layout-with-sidebar relative flex min-h-[calc(100dvh-var(--app-header-height))] flex-1 bg-[#f5f6f8]">
       <AdminSidebar
         active={getActiveNav(pathname)}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="flex flex-1 flex-col lg:ml-64 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-[#e7f3eb] bg-white/90 backdrop-blur px-4 lg:px-6">
           <button
             type="button"

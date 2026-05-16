@@ -73,12 +73,14 @@ export type ApiError = {
   errors?: { field: string; message: string }[];
 };
 
-export async function apiFetch<T = unknown>(
-  path: string,
-  options: RequestInit & { service?: ServiceName } = {},
-): Promise<T> {
-  const fetchOptions: RequestInit & { service?: ServiceName } = { ...options };
-  delete fetchOptions.service;
+export type ApiFetchOptions = RequestInit & {
+  service?: ServiceName;
+  /** Overrides workspace header for this request (e.g. PATCH seller profile while UI is in buyer mode). */
+  activeMode?: "buyer" | "seller";
+};
+
+export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const { activeMode: activeModeOverride, service: _service, ...fetchOptions } = options;
 
   const isFormData =
     typeof FormData !== "undefined" && fetchOptions.body != null && fetchOptions.body instanceof FormData;
@@ -95,7 +97,7 @@ export async function apiFetch<T = unknown>(
     headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  const activeMode = activeModeHeaderProvider?.();
+  const activeMode = activeModeOverride ?? activeModeHeaderProvider?.();
   if (activeMode === "buyer" || activeMode === "seller") {
     headers["X-Active-Mode"] = activeMode;
   }
@@ -152,7 +154,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 export async function apiFetchWithRefresh<T = unknown>(
   path: string,
-  options: RequestInit & { service?: ServiceName } = {},
+  options: ApiFetchOptions = {},
 ): Promise<T> {
   try {
     return await apiFetch<T>(path, options);

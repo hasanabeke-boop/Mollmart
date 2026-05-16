@@ -6,25 +6,13 @@ import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
-import { useState, useRef, useEffect, type ReactNode } from "react";
-
-const navLinkClass =
-  "whitespace-nowrap text-xs font-medium text-[#0d1b12] transition-colors hover:text-primary xl:text-sm";
-
-function NavLink({ href, children, title }: { href: string; children: ReactNode; title?: string }) {
-  return (
-    <Link href={href} title={title ?? (typeof children === "string" ? children : undefined)} className={navLinkClass}>
-      {children}
-    </Link>
-  );
-}
+import { useState, useRef, useEffect } from "react";
 
 export function Header() {
   const { user, loading, logout } = useAuth();
   const workspace = useWorkspaceOptional();
   const navRole =
     user?.role === "admin" ? "admin" : (workspace?.activeRole ?? user?.role);
-  const navFaded = workspace?.modeScreenVisible === false;
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifState, setNotifState] = useState<{ userId: string; count: number | null } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -79,51 +67,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 box-border flex h-14 w-full shrink-0 border-b border-gray-100 bg-white/90 backdrop-blur-md xl:h-16">
-      <div className="mx-auto flex h-full min-w-0 max-w-[1600px] flex-1 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
+      <div className="mx-auto flex h-full min-w-0 max-w-[1600px] flex-1 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <MollmartLogoLink href="/" size={32} />
         </div>
 
-        <nav
-          className={`hidden min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto px-1 transition-opacity duration-300 ease-in-out [scrollbar-width:none] lg:flex xl:gap-3 [&::-webkit-scrollbar]:hidden ${
-            navFaded ? "pointer-events-none opacity-0" : "opacity-100"
-          }`}
-          aria-label="Main"
-        >
-          {navRole === "buyer" ? (
-            <NavLink href="/my-requests" title="My requests">
-              Requests
-            </NavLink>
-          ) : (
-            <NavLink href="/browse-buyer-requests">Browse</NavLink>
-          )}
-          {navRole !== "seller" && navRole !== "admin" && <NavLink href="/products">Showcase</NavLink>}
-          {user && navRole !== "seller" && navRole !== "admin" && (
-            <NavLink href="/orders" title="Order history">
-              Orders
-            </NavLink>
-          )}
-          {(!user || navRole === "seller" || navRole === "admin" || Boolean(user?.canSell)) && (
-            <NavLink href="/seller/dashboard">Sell</NavLink>
-          )}
-          {(navRole === "seller" || navRole === "admin") && (
-            <NavLink href="/seller/showcase" title="My showcase">
-              Showcase
-            </NavLink>
-          )}
-          {(navRole === "seller" || navRole === "admin") && (
-            <NavLink href="/seller/products/new" title="New showcase listing">
-              <span className="2xl:hidden">+ Listing</span>
-              <span className="hidden 2xl:inline">New listing</span>
-            </NavLink>
-          )}
-          {(!user || navRole === "buyer" || navRole === "admin") && (
-            <NavLink href="/create-product-request" title="Post a product request">
-              Post
-            </NavLink>
-          )}
-          {navRole === "admin" && <NavLink href="/admin">Admin</NavLink>}
-        </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
           {loading ? (

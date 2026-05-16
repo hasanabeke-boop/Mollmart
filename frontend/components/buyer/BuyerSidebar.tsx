@@ -9,10 +9,14 @@ export type BuyerNavId =
   | "showcase"
   | "orders"
   | "messages"
-  | "assistant";
+  | "assistant"
+  | "admin";
 
 export function getBuyerActiveNav(pathname: string): BuyerNavId {
+  if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/create-product-request")) return "post_request";
+  if (pathname.startsWith("/profile")) return "my_requests";
+  if (pathname.startsWith("/notifications")) return "my_requests";
   if (pathname.startsWith("/my-requests")) return "my_requests";
   if (pathname.startsWith("/products")) return "showcase";
   if (pathname.startsWith("/orders")) return "orders";
@@ -82,6 +86,28 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
                 </Link>
               );
             })}
+            {user?.role === "admin" && (
+              <Link
+                href="/admin"
+                onClick={onClose}
+                className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  active === "admin"
+                    ? "bg-red-50 text-red-800"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <span
+                  className={`material-symbols-outlined ${
+                    active === "admin" ? "text-red-600" : ""
+                  }`}
+                >
+                  admin_panel_settings
+                </span>
+                <span className={`text-sm ${active === "admin" ? "font-semibold" : "font-medium"}`}>
+                  Admin
+                </span>
+              </Link>
+            )}
           </nav>
 
           <div className="flex flex-col gap-2">

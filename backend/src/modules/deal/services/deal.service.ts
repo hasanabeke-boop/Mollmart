@@ -446,6 +446,17 @@ export class DealService {
     return serializeShopLikeOrder(updated);
   }
 
+  async deleteRequestOrderAdmin(orderId: string): Promise<void> {
+    try {
+      await prisma.requestDealOrder.delete({ where: { id: orderId } });
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+        throw notFound('Order not found');
+      }
+      throw e;
+    }
+  }
+
   async getWallet(user: AuthUser) {
     const row = await prisma.user.findUnique({
       where: { id: user.id },

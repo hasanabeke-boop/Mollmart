@@ -82,6 +82,8 @@ export async function patchAdminCatalogOrder(
   });
 }
 
+export { deleteAdminRequestOrder, deleteAdminCatalogOrder, fetchAdminShopCatalogOrders } from "@/lib/admin";
+
 export type DealProposal = {
   id: string;
   proposerId: string;

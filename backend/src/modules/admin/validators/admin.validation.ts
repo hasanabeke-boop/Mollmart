@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
 
 export const categoryCreateSchema = {
   body: Joi.object({
@@ -52,6 +53,20 @@ export const moderationCaseUpdateSchema = {
 export const userIdParamSchema = {
   params: Joi.object({
     userId: Joi.string().trim().required()
+  })
+};
+
+export const adminIdParamSchema = {
+  params: Joi.object({
+    id: Joi.string().trim().min(1).required()
+  })
+};
+
+export const adminRequestListSchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1).custom(normalizePage),
+    limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
+    q: Joi.string().trim().max(200).optional()
   })
 };
 

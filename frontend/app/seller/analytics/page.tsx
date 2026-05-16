@@ -5,7 +5,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import KpiCard from "../../../components/KpiCard";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { canUseSellerWorkspace } from "@/lib/workspace";
 
 type OfferItem = {
   id: string;
@@ -39,6 +41,8 @@ function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
 
 export default function SellerAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
+  const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -47,7 +51,7 @@ export default function SellerAnalyticsPage() {
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
-    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
+    if (!sellerWorkspace) return;
     setLoading(true);
     setError("");
     try {
@@ -80,15 +84,15 @@ export default function SellerAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [sellerWorkspace]);
 
   useEffect(() => {
-    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+    if (authLoading || !sellerWorkspace) {
       setLoading(false);
       return;
     }
     loadData();
-  }, [loadData, authLoading, user]);
+  }, [loadData, authLoading, sellerWorkspace]);
 
   const acceptedOffers = offers.filter((offer) => offer.status === "accepted").length;
   const activeConversations = conversations.filter((conversation) => conversation.status !== "closed").length;

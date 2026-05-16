@@ -62,3 +62,21 @@ export function canUseSellerWorkspace(
   if (user.role === "seller") return true;
   return activeRole === "seller";
 }
+
+/** Profile editor: seller storefront fields (DB role may stay `buyer` in mixed mode). */
+export function canEditSellerProfile(
+  user: { role: string; canSell?: boolean } | null | undefined,
+): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  return user.canSell !== false;
+}
+
+/** Profile editor: buyer profile fields. */
+export function canEditBuyerProfile(
+  user: { role: string; canBuy?: boolean } | null | undefined,
+): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  return user.canBuy !== false;
+}

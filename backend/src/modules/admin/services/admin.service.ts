@@ -181,6 +181,17 @@ export class AdminService {
   async getDashboardSummary() {
     return this.adminRepository.getDashboardSummary();
   }
+
+  async listRequests(page: number, limit: number, q?: string) {
+    return this.adminRepository.listRequestsForAdmin(page, limit, q);
+  }
+
+  async deleteRequest(_user: AuthUser, requestId: string): Promise<void> {
+    const deleted = await this.adminRepository.deleteRequestById(requestId);
+    if (!deleted) {
+      throw notFound('Request not found');
+    }
+  }
 }
 
 export default AdminService;

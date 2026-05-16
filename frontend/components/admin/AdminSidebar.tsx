@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-type AdminNavId = "dashboard" | "categories" | "moderation" | "users" | "orders";
+type AdminNavId = "dashboard" | "categories" | "requests" | "moderation" | "users" | "orders";
 
 const NAV_ITEMS: {
   id: AdminNavId;
@@ -13,7 +13,8 @@ const NAV_ITEMS: {
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/admin" },
   { id: "categories", icon: "category", label: "Categories", href: "/admin/categories" },
-  { id: "orders", icon: "receipt_long", label: "Request orders", href: "/admin/orders" },
+  { id: "requests", icon: "description", label: "Buyer requests", href: "/admin/requests" },
+  { id: "orders", icon: "receipt_long", label: "Orders", href: "/admin/orders" },
   { id: "moderation", icon: "gavel", label: "Moderation", href: "/admin/moderation" },
   { id: "users", icon: "group", label: "Users", href: "/admin/users" },
 ];
@@ -31,13 +32,15 @@ export default function AdminSidebar({ active, open, onClose }: Props) {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/30 lg:hidden"
+          style={{ top: "var(--app-header-height)" }}
           onClick={onClose}
+          aria-hidden
         />
       )}
 
       <aside
-        className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 flex ${
+        className={`app-sidebar flex w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >

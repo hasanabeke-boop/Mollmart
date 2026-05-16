@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrders, type ShopOrder } from "@/lib/shop";
@@ -53,6 +54,7 @@ function statusBadge(status: ShopOrder["status"]) {
 
 export default function OrdersPage() {
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<(typeof STATUS_TABS)[number]["id"]>("all");
   const [page, setPage] = useState(1);
@@ -93,7 +95,7 @@ export default function OrdersPage() {
     setPage(1);
   };
 
-  const isSellerView = user?.role === "seller";
+  const isSellerView = activeRole === "seller" || user?.role === "admin";
 
   const totalPages = Math.max(1, meta.totalPages);
   const startIndex = (meta.page - 1) * meta.limit;

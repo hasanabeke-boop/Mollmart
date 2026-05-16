@@ -13,8 +13,11 @@ import {
   type ShowcasePageMeta,
 } from "@/lib/showcaseSeller";
 import { useToast } from "@/context/ToastContext";
+import RoleGate from "@/components/auth/RoleGate";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
+import { canUseSellerWorkspace } from "@/lib/workspace";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -26,6 +29,8 @@ function mergeFilesFromInput(list: FileList | null): File[] {
 export default function SellerShowcaseManagePage() {
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
+  const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
 
   const [items, setItems] = useState<ShowcaseMineProduct[]>([]);
   const [meta, setMeta] = useState<ShowcasePageMeta | null>(null);
@@ -53,8 +58,6 @@ export default function SellerShowcaseManagePage() {
   const [deleteTarget, setDeleteTarget] = useState<ShowcaseMineProduct | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const canUse = user?.role === "seller" || user?.role === "admin";
-
   const editModalOpen = Boolean(editOpen && editItem);
   const { mounted: editModalMounted, visible: editModalVisible } = useModalPresence(editModalOpen);
 
@@ -81,7 +84,7 @@ export default function SellerShowcaseManagePage() {
   }, []);
 
   const load = useCallback(async () => {
-    if (!canUse) return;
+    if (!sellerWorkspace) return;
     setLoading(true);
     setError("");
     try {
@@ -97,16 +100,16 @@ export default function SellerShowcaseManagePage() {
     } finally {
       setLoading(false);
     }
-  }, [canUse, page, toast]);
+  }, [sellerWorkspace, page, toast]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!canUse) {
+    if (!sellerWorkspace) {
       setLoading(false);
       return;
     }
     void load();
-  }, [authLoading, canUse, load]);
+  }, [authLoading, sellerWorkspace, load]);
 
   const openEdit = useCallback((p: ShowcaseMineProduct) => {
     setEditItem(p);
@@ -220,28 +223,17 @@ export default function SellerShowcaseManagePage() {
     [],
   );
 
-  if (authLoading) {
-    return (
-      <main className="mx-auto max-w-5xl px-4 py-12 text-slate-500">
-        Loading…
-      </main>
-    );
-  }
-
-  if (!canUse) {
-    return (
-      <main className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-slate-700 mb-4">Sign in as a seller to manage your showcase.</p>
-        <Link href="/login" className="text-primary font-semibold hover:underline">
-          Log in
-        </Link>
-      </main>
-    );
-  }
-
   const totalPages = meta?.totalPages ?? 1;
 
   return (
+    <RoleGate
+      allowedRoles={["seller", "admin"]}
+      title="Seller workspace"
+      description="Manage your showcase in seller mode. Switch to seller using the toggle in the navbar."
+      ctaHref="/seller/products/new"
+      ctaLabel="New listing"
+      unauthenticatedDescription="Log in to manage your showcase."
+    >
     <main className="mx-auto max-w-5xl px-4 py-8 pb-20">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -551,5 +543,6 @@ export default function SellerShowcaseManagePage() {
         onConfirm={runDelete}
       />
     </main>
+    </RoleGate>
   );
 }
