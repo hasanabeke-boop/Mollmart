@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export default function WorkspaceModeToggle() {
   const { hasDualWorkspace, visualMode, setActiveMode, isModeTransitioning } = useWorkspace();
-  const [thumbAnimating, setThumbAnimating] = useState(false);
+  const toggleRef = useRef<HTMLDivElement | null>(null);
   const skipThumbAnimRef = useRef(true);
 
   useEffect(() => {
@@ -13,8 +13,10 @@ export default function WorkspaceModeToggle() {
       skipThumbAnimRef.current = false;
       return;
     }
-    setThumbAnimating(true);
-    const t = window.setTimeout(() => setThumbAnimating(false), 520);
+    const toggle = toggleRef.current;
+    if (toggle == null) return;
+    toggle.classList.add("workspace-toggle--animating");
+    const t = window.setTimeout(() => toggle.classList.remove("workspace-toggle--animating"), 520);
     return () => window.clearTimeout(t);
   }, [visualMode]);
 
@@ -24,9 +26,8 @@ export default function WorkspaceModeToggle() {
 
   return (
     <div
-      className={`workspace-toggle relative grid min-w-[7.25rem] shrink-0 grid-cols-2 rounded-md border border-gray-200 bg-gray-50 p-0.5 text-[10px] font-bold sm:min-w-[8rem] sm:text-xs ${
-        thumbAnimating ? "workspace-toggle--animating" : ""
-      }`}
+      ref={toggleRef}
+      className="workspace-toggle relative grid min-w-[7.25rem] shrink-0 grid-cols-2 rounded-md border border-gray-200 bg-gray-50 p-0.5 text-[10px] font-bold sm:min-w-[8rem] sm:text-xs"
       role="group"
       aria-label="Workspace mode"
     >

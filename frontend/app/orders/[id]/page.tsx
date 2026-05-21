@@ -7,9 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
-import { fetchMyOrder, type ShopOrder } from "@/lib/shop";
+import { fetchMyRequestDealOrder, type RequestDealOrder } from "@/lib/requestDeals";
 
-function statusLabel(s: ShopOrder["status"]) {
+function statusLabel(s: RequestDealOrder["status"]) {
   switch (s) {
     case "processing":
       return "Processing";
@@ -28,7 +28,7 @@ export default function OrderDetailsPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useWorkspace();
   const router = useRouter();
-  const [order, setOrder] = useState<ShopOrder | null>(null);
+  const [order, setOrder] = useState<RequestDealOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -44,7 +44,7 @@ export default function OrderDetailsPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchMyOrder(id);
+        const data = await fetchMyRequestDealOrder(id);
         if (!cancelled) setOrder(data);
       } catch (e: unknown) {
         const err = e as Error & { status?: number };
@@ -108,7 +108,7 @@ export default function OrderDetailsPage() {
 
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-[#0d1b12] tracking-tight mb-2">Order details</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-[#0d1b12] tracking-tight mb-2">Request-deal details</h1>
           <p className="text-[#4c9a66]">
             {isSellerView ? "Sale" : "Placed"} {placedOn} · {order.lines.length} line{order.lines.length === 1 ? "" : "s"} ·{" "}
             {formatCatalogMoney(order.total, order.currency, 2)}
@@ -119,7 +119,7 @@ export default function OrderDetailsPage() {
           href={`/orders/${order.id}/tracking`}
           className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:opacity-90 w-full md:w-auto shadow-md"
         >
-          <span className="material-symbols-outlined">local_shipping</span>
+          <span className="material-symbols-outlined">route</span>
           Tracking
         </Link>
       </div>
@@ -135,12 +135,12 @@ export default function OrderDetailsPage() {
                 {order.carrier ? ` · ${order.carrier}` : null}
               </p>
             ) : (
-              <p className="text-sm text-slate-500 mt-2">Tracking will appear when the order ships.</p>
+              <p className="text-sm text-slate-500 mt-2">Tracking appears after an admin adds status details.</p>
             )}
           </div>
 
           <div className="bg-white rounded-xl border border-[#e7f3eb] p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#0d1b12] mb-6">Items</h3>
+            <h3 className="text-lg font-bold text-[#0d1b12] mb-6">Request deal</h3>
             <div className="flex flex-col gap-6">
               {order.lines.map((line) => {
                 const itemCover = resolveUploadedAssetUrl(line.imageUrl);
@@ -166,7 +166,7 @@ export default function OrderDetailsPage() {
                         <h4 className="font-bold text-[#0d1b12] text-lg">{line.title}</h4>
                         <p className="text-sm text-[#4c9a66] mt-1">
                           {line.requestId
-                            ? "Agreed price for this buyer request (not a cart quantity)."
+                            ? "Agreed price for this buyer request."
                             : `Quantity: ${line.quantity}`}
                         </p>
                       </div>
@@ -191,7 +191,7 @@ export default function OrderDetailsPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-[#e7f3eb] p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#0d1b12] mb-4">Shipping</h3>
+            <h3 className="text-lg font-bold text-[#0d1b12] mb-4">Contact details</h3>
             {order.shippingName || order.shippingAddress ? (
               <address className="not-italic text-sm text-[#0d1b12] leading-relaxed whitespace-pre-wrap">
                 {order.shippingName ? <span className="font-bold block mb-1">{order.shippingName}</span> : null}
@@ -201,7 +201,7 @@ export default function OrderDetailsPage() {
                 ) : null}
               </address>
             ) : (
-              <p className="text-sm text-slate-500">No shipping details on file.</p>
+              <p className="text-sm text-slate-500">No contact details on file.</p>
             )}
           </div>
 
@@ -213,7 +213,7 @@ export default function OrderDetailsPage() {
                 <span>{formatCatalogMoney(order.subtotal, order.currency, 2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#4c9a66]">Shipping</span>
+                <span className="text-[#4c9a66]">Handling</span>
                 <span>{formatCatalogMoney(order.shippingAmount, order.currency, 2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-[#e7f3eb]">

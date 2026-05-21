@@ -10,6 +10,7 @@
     "build": "tsc --project tsconfig.build.json",
     "start": "npm run build && cross-env NODE_ENV=production node dist/index.js",
     "test": "jest --runInBand",
+    "test:smoke": "cross-env NODE_ENV=test REQUIRE_EMAIL_VERIFICATION=false REDIS_ENABLED=false RUN_SMOKE_TESTS=true jest --runInBand src/__test__/smoke.test.ts",
     "coverage": "jest --coverage",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",

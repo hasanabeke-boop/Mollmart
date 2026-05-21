@@ -1,5 +1,5 @@
 import { apiFetchWithRefresh } from "@/lib/api";
-import type { PageMeta, ShopOrder } from "@/lib/shop";
+import type { PageMeta } from "@/lib/requestDeals";
 
 export type AdminRequestRow = {
   id: string;
@@ -36,39 +36,8 @@ export async function deleteAdminRequest(id: string): Promise<void> {
   });
 }
 
-export async function fetchAdminShopCatalogOrders(
-  page = 1,
-  limit = 20,
-  status?: string,
-): Promise<{ items: ShopOrder[]; meta: PageMeta }> {
-  const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
-  if (status) qs.set("status", status);
-  return apiFetchWithRefresh<{ items: ShopOrder[]; meta: PageMeta }>(
-    `/api/v1/admin/catalog-orders?${qs.toString()}`,
-    { service: "admin" },
-  );
-}
-
 export async function deleteAdminRequestOrder(id: string): Promise<void> {
   await apiFetchWithRefresh(`/api/v1/admin/request-orders/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    service: "admin",
-  });
-}
-
-export async function patchAdminShopCatalogOrder(
-  id: string,
-  body: Partial<{ status: ShopOrder["status"]; trackingNumber: string | null; carrier: string | null }>,
-): Promise<ShopOrder> {
-  return apiFetchWithRefresh<ShopOrder>(`/api/v1/admin/catalog-orders/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    service: "admin",
-    body: JSON.stringify(body),
-  });
-}
-
-export async function deleteAdminCatalogOrder(id: string): Promise<void> {
-  await apiFetchWithRefresh(`/api/v1/admin/catalog-orders/${encodeURIComponent(id)}`, {
     method: "DELETE",
     service: "admin",
   });

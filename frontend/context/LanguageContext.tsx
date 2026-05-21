@@ -43,12 +43,7 @@ function getInitialLanguage(): Language {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(defaultLanguage);
-
-  useEffect(() => {
-    const next = getInitialLanguage();
-    setLanguageState(next);
-  }, []);
+  const [language, setLanguageState] = useState<Language>(() => getInitialLanguage());
 
   useEffect(() => {
     document.documentElement.lang = language;

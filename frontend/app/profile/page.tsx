@@ -9,7 +9,7 @@ import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
-import { demoWithdrawWallet, fetchWalletMe } from "@/lib/shop";
+import { demoWithdrawWallet, fetchWalletMe } from "@/lib/requestDeals";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 
 type ProfileStats = {
@@ -637,7 +637,7 @@ export default function UserProfilePage() {
                 <div className="flex flex-col gap-4">
                   <ToggleRow
                     label="Request updates"
-                    description="New requests, deals, and shop orders"
+                    description="New requests, offers, and request-deal orders"
                     checked={notifPrefs.requestUpdates}
                     disabled={!notifPrefsLoaded || notifPrefsSaving}
                     onChange={(checked) =>
@@ -760,8 +760,8 @@ export default function UserProfilePage() {
               Seller balance
             </h2>
             <p className="text-sm text-[#4c9a66] mb-6">
-              Funds from completed request deals (demo payments). Withdrawal is simulated — enter payout card
-              details like checkout (no real transfer).
+              Funds from completed request deals (demo payments). Withdrawal is simulated with payout card details;
+              no real transfer is made.
             </p>
             {activeRole !== "seller" ? (
               <p className="text-sm text-slate-600">

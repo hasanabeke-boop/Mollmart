@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCatalogMoney } from "@/lib/catalog";
-import { fetchMyOrder, type ShopOrder } from "@/lib/shop";
+import { fetchMyRequestDealOrder, type RequestDealOrder } from "@/lib/requestDeals";
 
-function stepsForStatus(s: ShopOrder["status"]) {
+function stepsForStatus(s: RequestDealOrder["status"]) {
   const base = [
     { key: "processing", label: "Processing", done: false },
     { key: "shipped", label: "Shipped", done: false },
@@ -30,7 +30,7 @@ export default function OrderTrackingPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [order, setOrder] = useState<ShopOrder | null>(null);
+  const [order, setOrder] = useState<RequestDealOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,7 +46,7 @@ export default function OrderTrackingPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchMyOrder(id);
+        const data = await fetchMyRequestDealOrder(id);
         if (!cancelled) setOrder(data);
       } catch (e: unknown) {
         const err = e as Error & { status?: number };
@@ -115,7 +115,7 @@ export default function OrderTrackingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-2xl bg-white border border-[#e7f3eb] p-6 shadow-sm">
-              <h1 className="text-2xl font-black text-[#0d1b12] mb-1">Shipment status</h1>
+              <h1 className="text-2xl font-black text-[#0d1b12] mb-1">Tracking status</h1>
               <p className="text-sm text-slate-600 mb-6">
                 Order total {formatCatalogMoney(order.total, order.currency, 2)} · Seller {order.seller.name}
               </p>
@@ -133,7 +133,7 @@ export default function OrderTrackingPage() {
                         {s.label}
                       </p>
                       {'key' in s && s.key === 'processing' ? (
-                        <p className="text-xs text-slate-500 mt-0.5">We notified the seller to prepare your package.</p>
+                        <p className="text-xs text-slate-500 mt-0.5">We notified the seller about the paid request deal.</p>
                       ) : null}
                     </div>
                   </li>

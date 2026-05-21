@@ -3,40 +3,33 @@
 import { useCallback, useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { formatCatalogMoney } from "@/lib/catalog";
+import { deleteAdminRequestOrder } from "@/lib/admin";
 import {
-  deleteAdminCatalogOrder,
-  deleteAdminRequestOrder,
-  fetchAdminShopCatalogOrders,
-  patchAdminShopCatalogOrder,
-} from "@/lib/admin";
-import { fetchAdminCatalogOrders, patchAdminCatalogOrder, type ShopOrder } from "@/lib/shop";
+  fetchAdminRequestDealOrders,
+  patchAdminRequestDealOrder,
+  type RequestDealOrder,
+} from "@/lib/requestDeals";
 
-const STATUSES: ShopOrder["status"][] = ["processing", "shipped", "delivered", "cancelled"];
-
-type OrderTab = "request_deals" | "catalog_shop";
+const STATUSES: RequestDealOrder["status"][] = ["processing", "shipped", "delivered", "cancelled"];
 
 export default function AdminOrdersPage() {
-  const [tab, setTab] = useState<OrderTab>("request_deals");
-  const [items, setItems] = useState<ShopOrder[]>([]);
+  const [items, setItems] = useState<RequestDealOrder[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ShopOrder | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RequestDealOrder | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [drafts, setDrafts] = useState<
-    Record<string, { status: ShopOrder["status"]; trackingNumber: string; carrier: string }>
+    Record<string, { status: RequestDealOrder["status"]; trackingNumber: string; carrier: string }>
   >({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data =
-        tab === "catalog_shop"
-          ? await fetchAdminShopCatalogOrders(page, 20)
-          : await fetchAdminCatalogOrders(page, 20);
+      const data = await fetchAdminRequestDealOrders(page, 20);
       setItems(data.items ?? []);
       setMeta(data.meta ?? { page: 1, limit: 20, total: 0, totalPages: 1 });
       const next: typeof drafts = {};
@@ -54,11 +47,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, tab]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [tab]);
+  }, [page]);
 
   useEffect(() => {
     void load();
@@ -75,11 +64,7 @@ export default function AdminOrdersPage() {
         trackingNumber: d.trackingNumber.trim() || null,
         carrier: d.carrier.trim() || null,
       };
-      if (tab === "catalog_shop") {
-        await patchAdminShopCatalogOrder(orderId, body);
-      } else {
-        await patchAdminCatalogOrder(orderId, body);
-      }
+      await patchAdminRequestDealOrder(orderId, body);
       await load();
     } catch (e: unknown) {
       setError((e as Error).message || "Save failed");
@@ -93,11 +78,7 @@ export default function AdminOrdersPage() {
     setDeleting(true);
     setError("");
     try {
-      if (tab === "catalog_shop") {
-        await deleteAdminCatalogOrder(deleteTarget.id);
-      } else {
-        await deleteAdminRequestOrder(deleteTarget.id);
-      }
+      await deleteAdminRequestOrder(deleteTarget.id);
       setDeleteTarget(null);
       await load();
     } catch (e: unknown) {
@@ -112,29 +93,10 @@ export default function AdminOrdersPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-black text-[#0d1b12]">Orders</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Request deals come from paid chats; catalog shop orders come from the showcase cart. Deleting an order removes
-          it from history; the related chat or request stays.
+          Request-deal orders come from accepted-offer chats after demo payment. Update status, carrier, and tracking
+          number for the diploma tracking flow. Deleting an order removes it from history; the related chat or request
+          stays.
         </p>
-        <div className="mt-4 flex gap-2 border-b border-gray-200">
-          <button
-            type="button"
-            onClick={() => setTab("request_deals")}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
-              tab === "request_deals" ? "border-red-600 text-red-700" : "border-transparent text-gray-500"
-            }`}
-          >
-            Request deals
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("catalog_shop")}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
-              tab === "catalog_shop" ? "border-red-600 text-red-700" : "border-transparent text-gray-500"
-            }`}
-          >
-            Catalog shop
-          </button>
-        </div>
       </div>
 
       {error ? (
@@ -192,7 +154,7 @@ export default function AdminOrdersPage() {
                             ...prev,
                             [o.id]: {
                               ...(prev[o.id] ?? { status: o.status, trackingNumber: "", carrier: "" }),
-                              status: e.target.value as ShopOrder["status"],
+                              status: e.target.value as RequestDealOrder["status"],
                             },
                           }))
                         }

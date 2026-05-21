@@ -45,6 +45,7 @@ const knownRoutes = new Set([
   '/my-requests',
   '/browse-buyer-requests',
   '/chat',
+  '/orders',
   '/chatbot',
   '/notifications',
   '/seller/dashboard',
@@ -53,6 +54,7 @@ const knownRoutes = new Set([
   '/admin',
   '/admin/categories',
   '/admin/moderation',
+  '/admin/orders',
   '/admin/users'
 ]);
 
@@ -86,13 +88,13 @@ const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
   buyer_offers: ['Open My Requests', 'Review offers under a published request', 'Accept the best offer to open chat'],
   seller_board: ['Open Buyer Requests', 'Filter or search active requests', 'Choose a request that matches your service'],
   seller_offer: ['Open a buyer request', 'Enter price, timeframe, and message', 'Send one clear offer'],
-  chat: ['Accept an offer first', 'Open Messages', 'Continue details directly with the other user'],
+  chat: ['Accept an offer first', 'Open Messages', 'Agree on price, then use demo payment'],
   profile: ['Open Profile', 'Update base details', 'Save changes'],
   notifications: ['Open Notifications', 'Review unread items', 'Open the linked request or chat'],
   deployment: ['Set production environment variables', 'Run Prisma migrations', 'Build frontend and backend images/services'],
   account: ['Check email and password', 'Confirm account status', 'Check email verification setting'],
-  admin: ['Open Admin', 'Review users/categories/moderation', 'Apply changes carefully'],
-  platform_limits: ['Use chat for final details', 'Handle payment or delivery outside Mollmart', 'Add unsupported features only when you build them'],
+  admin: ['Open Admin', 'Review users/categories/moderation/orders', 'Apply changes carefully'],
+  platform_limits: ['Use chat for final price', 'Demo payment creates a request order', 'Real payment, escrow, and shipping labels are outside scope'],
   assistant_setup: ['Set OPENAI_API_KEY', 'Choose OPENAI_MODEL', 'Restart/rebuild backend']
 };
 
@@ -118,15 +120,15 @@ const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 
     suggestions: ['Why can I not send two offers?', 'What should my offer message include?', 'Where are my seller metrics?']
   },
   chat: {
-    reply: 'Messages are created after a buyer accepts a seller offer. If the chat page is empty, first check whether an offer has been accepted for that request.',
-    suggestions: ['Why do I have no conversations?', 'How do unread messages work?', 'Where is chat?']
+    reply: 'Messages are created after a buyer accepts a seller offer. In chat, both sides can agree on a final price; then the buyer can run a demo payment, which creates a request-deal order for tracking.',
+    suggestions: ['Why do I have no conversations?', 'How does demo payment work?', 'Where is chat?']
   },
   profile: {
     reply: 'Profile is where users complete account details. Sellers should keep seller information clear so buyers trust their offers; buyers can use preferences to shape future requests.',
     suggestions: ['How do I edit profile?', 'What should seller profile include?', 'Where are preferences?']
   },
   notifications: {
-    reply: 'Notifications surface important events such as new offers, accepted offers, messages, moderation changes, and account status updates.',
+    reply: 'Notifications surface important events such as new offers, accepted offers, messages, demo payments, order status changes, moderation changes, and account status updates.',
     suggestions: ['Where are notifications?', 'Why no notification appears?', 'How do message notifications work?']
   },
   deployment: {
@@ -138,12 +140,12 @@ const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 
     suggestions: ['How do I disable email verification?', 'Why login fails?', 'How do I reset password?']
   },
   admin: {
-    reply: 'Admin screens are for user management, categories, and moderation. Keep admin actions separate from buyer and seller workflows so normal users only see their role-specific screens.',
-    suggestions: ['How do I manage categories?', 'How does moderation work?', 'Where are users?']
+    reply: 'Admin screens are for user management, categories, moderation, and request-deal orders. Admins can update order status, carrier, and tracking number for the diploma tracking flow.',
+    suggestions: ['How do I manage categories?', 'How does moderation work?', 'Where are orders?']
   },
   platform_limits: {
-    reply: 'Mollmart currently matches buyers and sellers, collects offers, and opens chat after acceptance. It does not provide checkout, escrow, in-app payment, shipping labels, or delivery tracking yet.',
-    suggestions: ['What happens after accepting an offer?', 'Can we add payments later?', 'How does chat work?']
+    reply: 'Mollmart currently supports request matching, seller offers, accepted-offer chat, agreed-price demo payment, request-deal orders, and tracking status. The payment is simulated: no real card charge, escrow, shipping label, refund, or carrier integration is provided.',
+    suggestions: ['What happens after accepting an offer?', 'How does demo payment work?', 'Where are orders?']
   },
   assistant_setup: {
     reply: 'The assistant uses OPENAI_API_KEY and OPENAI_MODEL on the backend. If the key is missing or the API fails, it falls back to local Mollmart guidance.',
@@ -191,7 +193,6 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'How does moderation work?': 'Как работает модерация?',
     'Where are users?': 'Где пользователи?',
     'What happens after accepting an offer?': 'Что происходит после принятия предложения?',
-    'Can we add payments later?': 'Можно ли добавить платежи позже?',
     'Where do I put the API key?': 'Куда добавить API ключ?',
     'Which model should I use?': 'Какую модель использовать?',
     'Open Post Request': 'Открыть создание запроса',
@@ -225,7 +226,6 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'Review users/categories/moderation': 'Проверьте пользователей, категории и модерацию',
     'Apply changes carefully': 'Применяйте изменения аккуратно',
     'Use chat for final details': 'Используйте чат для финальных деталей',
-    'Handle payment or delivery outside Mollmart': 'Оплату или доставку оформляйте вне Mollmart',
     'Add unsupported features only when you build them': 'Добавляйте неподдерживаемые функции только после реализации',
     'Set OPENAI_API_KEY': 'Установите OPENAI_API_KEY',
     'Choose OPENAI_MODEL': 'Выберите OPENAI_MODEL',
@@ -266,7 +266,6 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'How does moderation work?': 'Модерация қалай жұмыс істейді?',
     'Where are users?': 'Пайдаланушылар қайда?',
     'What happens after accepting an offer?': 'Ұсынысты қабылдағаннан кейін не болады?',
-    'Can we add payments later?': 'Төлемдерді кейін қосуға бола ма?',
     'Where do I put the API key?': 'API кілтін қайда қоямын?',
     'Which model should I use?': 'Қай модельді қолданамын?',
     'Open Post Request': 'Сұраныс жасау бетін ашу',
@@ -300,7 +299,6 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'Review users/categories/moderation': 'Пайдаланушылар, санаттар және модерацияны қарау',
     'Apply changes carefully': 'Өзгерістерді мұқият қолданыңыз',
     'Use chat for final details': 'Соңғы мәліметтер үшін чатты қолданыңыз',
-    'Handle payment or delivery outside Mollmart': 'Төлем немесе жеткізуді Mollmart-тан тыс орындаңыз',
     'Add unsupported features only when you build them': 'Қолдау жоқ функцияларды іске асырғаннан кейін ғана қосыңыз',
     'Set OPENAI_API_KEY': 'OPENAI_API_KEY орнатыңыз',
     'Choose OPENAI_MODEL': 'OPENAI_MODEL таңдаңыз',
@@ -321,7 +319,7 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     deployment: 'Минимальный деплой требует production env значения, PostgreSQL, backend hosting, frontend hosting, миграции Prisma и безопасные JWT/OpenAI/SMTP секреты. Redis обычно можно сделать опциональным.',
     account: 'Для проблем с аккаунтом проверьте email/пароль, статус аккаунта, необходимость email-подтверждения, JWT secrets и подключение к базе данных backend.',
     admin: 'Админ-экраны нужны для управления пользователями, категориями и модерацией. Админ-действия должны быть отделены от обычных buyer/seller сценариев.',
-    platform_limits: 'Mollmart сейчас связывает покупателей и продавцов, собирает предложения и открывает чат после принятия. Checkout, escrow, shipping labels и доставка пока не являются частью платформы.',
+    platform_limits: 'Mollmart поддерживает запросы, предложения, чат после принятия, демо-оплату, request-deal заказы и статус отслеживания. Реальная оплата картой, escrow, shipping labels, возвраты и интеграции с перевозчиками не входят в текущий scope.',
     assistant_setup: 'Помощник использует OPENAI_API_KEY и OPENAI_MODEL на backend. Если ключ отсутствует или API падает, включается локальная справка Mollmart.',
     fallback: 'Я могу помочь с процессами Mollmart: запросы покупателей, предложения продавцов, чат после принятия, профили, уведомления, вход, админка и деплой. Уточните, что вы хотите сделать на этом экране.'
   },
@@ -337,7 +335,7 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     deployment: 'Минималды деплой үшін production env мәндері, PostgreSQL, backend hosting, frontend hosting, Prisma миграциялары және қауіпсіз JWT/OpenAI/SMTP құпиялары керек. Redis көбіне опционалды бола алады.',
     account: 'Аккаунт мәселелері үшін email/құпиясөзді, аккаунт күйін, email растау талабын, JWT secrets және backend дерекқор қосылымын тексеріңіз.',
     admin: 'Админ экрандары пайдаланушыларды, санаттарды және модерацияны басқаруға арналған. Админ әрекеттері buyer/seller сценарийлерінен бөлек болуы керек.',
-    platform_limits: 'Mollmart қазір сатып алушылар мен сатушыларды сәйкестендіреді, ұсыныстар жинайды және қабылдаудан кейін чат ашады. Checkout, escrow, shipping labels және жеткізу әзірге платформа бөлігі емес.',
+    platform_limits: 'Mollmart сұраныстарды, ұсыныстарды, қабылдаудан кейінгі чатты, демо төлемді, request-deal тапсырыстарын және бақылау статусын қолдайды. Нақты карта төлемі, escrow, shipping labels, қайтарымдар және тасымалдаушы интеграциялары қазіргі scope-қа кірмейді.',
     assistant_setup: 'Көмекші backend жағында OPENAI_API_KEY және OPENAI_MODEL қолданады. Кілт жоқ болса немесе API істемесе, локал Mollmart анықтамасы қосылады.',
     fallback: 'Мен Mollmart процестерімен көмектесе аламын: сатып алушы сұраныстары, сатушы ұсыныстары, қабылдаудан кейінгі чат, профильдер, хабарландырулар, кіру, админ және деплой. Осы экранда не істегіңіз келетінін нақтылаңыз.'
   }
@@ -511,13 +509,13 @@ export class ChatbotService {
   private buildSystemPrompt(input: ChatbotMessageInput): string {
     return [
       'You are Mollmart Assistant, a smart support chatbot inside the Mollmart marketplace app.',
-      'Mollmart is not a checkout store. Correct flow: buyers publish product/service requests; sellers browse buyer requests and submit offers; when a buyer accepts an offer, a buyer-seller conversation opens in Messages.',
+      'Current Mollmart diploma scope is Option B: buyers publish product/service requests; sellers browse buyer requests and submit offers; when a buyer accepts an offer, a buyer-seller conversation opens in Messages; both sides can agree on a final price; the buyer can run demo payment; a request-deal order is created for tracking.',
       'Use the current role and path when helpful. If role is buyer, prefer buyer actions. If role is seller, prefer seller board/dashboard actions. If role is admin, mention admin routes only when relevant.',
       'Use conversation memory logically: if the user asks a short follow-up such as "where", "how", "why", "next", "what about that", or "show me", keep answering about the latest remembered Mollmart topic unless the new message clearly changes topic.',
       `Current role available to you: ${input.userRole || 'guest'}. Current path: ${input.currentPath || 'unknown'}.`,
       `Reply language: ${this.languageName(this.normalizeLanguage(input.language))}. Return reply, suggestions, and actions in that language.`,
-      'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/users.',
-      'Do not invent checkout, payment, escrow, shipping labels, delivery tracking, file uploads for requests, realtime websocket features, or unsupported social login. If asked, explain they are not currently part of Mollmart.',
+      'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /orders, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/orders, /admin/users.',
+      'Demo payment, request-deal orders, and tracking status are supported. Do not invent real card charging, escrow, shipping labels, carrier integrations, refunds, file uploads for requests, realtime websocket features, or unsupported social login.',
       'For deployment: mention production env, secure secrets, PostgreSQL, Prisma migrations, frontend/backend build, Docker rebuild, CORS/SERVER_URL, and optional Redis when relevant.',
       'For API assistant setup: mention OPENAI_API_KEY and OPENAI_MODEL in backend env, and that local fallback works without a key.',
       'Be logical: answer the question first, then give 2-4 concrete next actions. If the request is vague, ask one direct clarifying question and still give the safest next step.',
@@ -653,7 +651,7 @@ export class ChatbotService {
     if (hasAnyPhrase(text, ['deploy', 'deployment', 'production', 'hosting', 'docker', 'build image', 'rebuild', 'vercel', 'render', 'railway', 'env'])) add('deployment', 5);
     if (hasAnyPhrase(text, ['login', 'log in', 'signup', 'sign up', 'register', 'password', 'email', 'email verification', 'forgot password'])) add('account', 5);
     if (hasAnyPhrase(text, ['admin', 'moderation', 'category', 'categories', 'users', 'block user'])) add('admin', 5);
-    if (hasAnyPhrase(text, ['payment', 'checkout', 'cart', 'shipping', 'delivery tracking', 'escrow', 'refund', 'invoice'])) add('platform_limits', 6);
+    if (hasAnyPhrase(text, ['payment', 'demo payment', 'checkout', 'cart', 'shipping', 'delivery tracking', 'tracking', 'order', 'orders', 'escrow', 'refund', 'invoice'])) add('platform_limits', 6);
     if (hasAnyPhrase(text, ['openai', 'api key', 'model', 'smart assistant', 'ai assistant'])) add('assistant_setup', 5);
 
     if (input.userRole === 'buyer') {

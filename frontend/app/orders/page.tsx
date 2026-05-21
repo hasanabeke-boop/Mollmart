@@ -7,9 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
-import { fetchMyOrders, type ShopOrder } from "@/lib/shop";
+import { fetchMyRequestDealOrders, type RequestDealOrder } from "@/lib/requestDeals";
 
-const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
+const STATUS_TABS: { id: "all" | RequestDealOrder["status"]; label: string }[] = [
   { id: "all", label: "All orders" },
   { id: "processing", label: "Processing" },
   { id: "shipped", label: "Shipped" },
@@ -19,7 +19,7 @@ const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
-function statusBadge(status: ShopOrder["status"]) {
+function statusBadge(status: RequestDealOrder["status"]) {
   if (status === "delivered") {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
@@ -58,7 +58,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<(typeof STATUS_TABS)[number]["id"]>("all");
   const [page, setPage] = useState(1);
-  const [items, setItems] = useState<ShopOrder[]>([]);
+  const [items, setItems] = useState<RequestDealOrder[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,7 +69,7 @@ export default function OrdersPage() {
     setError("");
     try {
       const status = activeTab === "all" ? undefined : activeTab;
-      const data = await fetchMyOrders(page, PAGE_SIZE, status);
+      const data = await fetchMyRequestDealOrders(page, PAGE_SIZE, status);
       setItems(data.items ?? []);
       setMeta(data.meta ?? { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
     } catch (e: unknown) {
@@ -98,8 +98,6 @@ export default function OrdersPage() {
   const isSellerView = activeRole === "seller" || user?.role === "admin";
 
   const totalPages = Math.max(1, meta.totalPages);
-  const startIndex = (meta.page - 1) * meta.limit;
-
   const rows = useMemo(() => {
     return items.map((order) => {
       const rawThumb = order.lines[0]?.imageUrl ?? "";
@@ -126,8 +124,8 @@ export default function OrdersPage() {
         </h1>
         <p className="text-[#4c9a66]">
           {isSellerView
-            ? "Orders from paid request deals — open an order to see details and tracking."
-            : "Orders after you pay from chat — track delivery and details here."}
+            ? "Request-deal orders from paid chats. Open one to see details and tracking."
+            : "Request-deal orders after demo payment in chat. Track status and details here."}
         </p>
       </div>
 

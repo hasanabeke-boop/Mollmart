@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 
 export default function CartRedirectPage() {
   const router = useRouter();
+
   useEffect(() => {
     router.replace("/browse-buyer-requests");
   }, [router]);
+
   return (
     <main className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-slate-500">
-      Cart is no longer used. Redirecting…
+      This old route now redirects to buyer requests.
     </main>
   );
 }

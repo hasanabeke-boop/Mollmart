@@ -1,10 +1,9 @@
 import { apiFetchWithRefresh } from "@/lib/api";
 
-export type ShopOrderLine = {
+export type RequestDealOrderLine = {
   id: string;
   productId: string;
   productSlug: string;
-  /** Buyer request id when this line is a paid request deal (not a catalog SKU). */
   requestId?: string;
   title: string;
   imageUrl: string;
@@ -13,7 +12,7 @@ export type ShopOrderLine = {
   quantity: number;
 };
 
-export type ShopOrder = {
+export type RequestDealOrder = {
   id: string;
   buyerId: string;
   sellerId: string;
@@ -32,7 +31,7 @@ export type ShopOrder = {
   paidAt?: string;
   seller: { id: string; name: string };
   buyer: { id: string; name: string };
-  lines: ShopOrderLine[];
+  lines: RequestDealOrderLine[];
 };
 
 export type PageMeta = {
@@ -42,47 +41,50 @@ export type PageMeta = {
   totalPages: number;
 };
 
-export async function fetchMyOrders(
+export async function fetchMyRequestDealOrders(
   page = 1,
   limit = 20,
   status?: string,
-): Promise<{ items: ShopOrder[]; meta: PageMeta }> {
+): Promise<{ items: RequestDealOrder[]; meta: PageMeta }> {
   const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (status && status !== "all") qs.set("status", status);
-  return apiFetchWithRefresh<{ items: ShopOrder[]; meta: PageMeta }>(`/api/v1/request-orders?${qs.toString()}`, {
+  return apiFetchWithRefresh<{ items: RequestDealOrder[]; meta: PageMeta }>(
+    `/api/v1/request-orders?${qs.toString()}`,
+    { service: "deal" },
+  );
+}
+
+export async function fetchMyRequestDealOrder(id: string): Promise<RequestDealOrder> {
+  return apiFetchWithRefresh<RequestDealOrder>(`/api/v1/request-orders/${encodeURIComponent(id)}`, {
     service: "deal",
   });
 }
 
-export async function fetchMyOrder(id: string): Promise<ShopOrder> {
-  return apiFetchWithRefresh<ShopOrder>(`/api/v1/request-orders/${encodeURIComponent(id)}`, { service: "deal" });
-}
-
-export async function fetchAdminCatalogOrders(
+export async function fetchAdminRequestDealOrders(
   page = 1,
   limit = 20,
   status?: string,
-): Promise<{ items: ShopOrder[]; meta: PageMeta }> {
+): Promise<{ items: RequestDealOrder[]; meta: PageMeta }> {
   const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (status) qs.set("status", status);
-  return apiFetchWithRefresh<{ items: ShopOrder[]; meta: PageMeta }>(
+  return apiFetchWithRefresh<{ items: RequestDealOrder[]; meta: PageMeta }>(
     `/api/v1/admin/request-orders?${qs.toString()}`,
     { service: "admin" },
   );
 }
 
-export async function patchAdminCatalogOrder(
+export async function patchAdminRequestDealOrder(
   id: string,
-  body: Partial<{ status: ShopOrder["status"]; trackingNumber: string | null; carrier: string | null }>,
-): Promise<ShopOrder> {
-  return apiFetchWithRefresh<ShopOrder>(`/api/v1/admin/request-orders/${encodeURIComponent(id)}`, {
+  body: Partial<{ status: RequestDealOrder["status"]; trackingNumber: string | null; carrier: string | null }>,
+): Promise<RequestDealOrder> {
+  return apiFetchWithRefresh<RequestDealOrder>(`/api/v1/admin/request-orders/${encodeURIComponent(id)}`, {
     method: "PATCH",
     service: "admin",
     body: JSON.stringify(body),
   });
 }
 
-export { deleteAdminRequestOrder, deleteAdminCatalogOrder, fetchAdminShopCatalogOrders } from "@/lib/admin";
+export { deleteAdminRequestOrder } from "@/lib/admin";
 
 export type DealProposal = {
   id: string;
@@ -136,7 +138,7 @@ export async function postPriceProposal(
   );
 }
 
-/** Propose line total from linked offer (unit price × request quantity). */
+/** Propose line total from linked offer (unit price x request quantity). */
 export async function postApplyOfferTotal(conversationId: string): Promise<DealState> {
   return apiFetchWithRefresh<DealState>(
     `/api/v1/conversations/${encodeURIComponent(conversationId)}/apply-offer-total`,
@@ -154,15 +156,12 @@ export async function acceptPriceProposal(proposalId: string): Promise<DealState
   });
 }
 
-export async function demoPayConversation(conversationId: string, cardLast4: string): Promise<ShopOrder> {
-  return apiFetchWithRefresh<ShopOrder>(
-    `/api/v1/conversations/${encodeURIComponent(conversationId)}/demo-pay`,
-    {
-      method: "POST",
-      service: "deal",
-      body: JSON.stringify({ cardLast4 }),
-    },
-  );
+export async function demoPayConversation(conversationId: string, cardLast4: string): Promise<RequestDealOrder> {
+  return apiFetchWithRefresh<RequestDealOrder>(`/api/v1/conversations/${encodeURIComponent(conversationId)}/demo-pay`, {
+    method: "POST",
+    service: "deal",
+    body: JSON.stringify({ cardLast4 }),
+  });
 }
 
 export async function fetchWalletMe(): Promise<{ balance: number }> {

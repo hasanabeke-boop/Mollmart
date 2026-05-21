@@ -215,7 +215,7 @@ export default function NewCatalogProductPage() {
         <h1 className="text-2xl font-bold text-[#0d1b12]">New showcase listing</h1>
         <p className="mt-1 text-sm text-slate-500">
           Show buyers what you can deliver — photos and story only. Buyers post requests with their own budget; this
-          page is for inspiration, not fixed prices. (Cart and orders stay available elsewhere for later use.)
+          page is for inspiration, not fixed prices. Buyers still create requests and agree on deals in chat.
         </p>
       </div>
 
