@@ -11,6 +11,7 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
 import { demoWithdrawWallet, fetchWalletMe } from "@/lib/requestDeals";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
+import { resolveAccountDisplayName } from "@/lib/profileDisplay";
 
 type ProfileStats = {
   primary: number;
@@ -66,7 +67,6 @@ export default function UserProfilePage() {
     );
 
   const [profileData, setProfileData] = useState<ProfileMeResponse | null>(null);
-  const [displayName, setDisplayName] = useState("");
   const [location, setLocation] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
   const [editOpen, setEditOpen] = useState(false);
@@ -113,20 +113,15 @@ export default function UserProfilePage() {
     }
   }, [user, authLoading, router]);
 
-  const applyProfileToDisplay = useCallback(
-    (data: ProfileMeResponse, u: typeof user) => {
-      const fromApi = (data.fullName ?? "").trim();
-      const looksLikePlaceholderId = u != null && fromApi === u.id;
-      let name = fromApi;
-      if (looksLikePlaceholderId || !name) {
-        name = u?.name?.trim() || u?.email?.split("@")[0] || "User";
-      }
-      setDisplayName(name);
-      setLocation((data.city ?? "").trim());
-      setPhoneDisplay((data.phone ?? "").trim());
-    },
-    [],
-  );
+  const applyProfileToDisplay = useCallback((data: ProfileMeResponse) => {
+    setLocation((data.city ?? "").trim());
+    setPhoneDisplay((data.phone ?? "").trim());
+  }, []);
+
+  const displayName = useMemo(() => {
+    if (!user) return "";
+    return resolveAccountDisplayName(profileData, user, activeRole);
+  }, [profileData, user, activeRole]);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -135,10 +130,9 @@ export default function UserProfilePage() {
         service: "profile",
       });
       setProfileData(data);
-      applyProfileToDisplay(data, user);
+      applyProfileToDisplay(data);
     } catch {
       setProfileData(null);
-      setDisplayName(user.name || user.email?.split("@")[0] || "User");
       setLocation("");
       setPhoneDisplay("");
       toastError("Could not load profile.");
@@ -463,7 +457,7 @@ export default function UserProfilePage() {
             <div className="flex items-center gap-5">
               <div className="relative">
                 <div className="size-24 md:size-28 rounded-full border-4 border-[#f5f6f8] shadow-sm flex items-center justify-center bg-[#e7f3eb] text-2xl font-bold text-[#4c9a66]">
-                  {(displayName.trim().charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || "U").toUpperCase()}
+                  {(displayName.charAt(0) || user?.email?.charAt(0) || "U").toUpperCase()}
                 </div>
                 <div
                   className="absolute bottom-1 right-1 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-blue-500 text-white shadow-sm"
@@ -483,7 +477,7 @@ export default function UserProfilePage() {
                       : "Overview"}
                 </p>
                 <h1 className="text-2xl md:text-3xl font-bold mb-1 text-[#0d1b12]">
-                  {displayName || "—"}
+                  {displayName}
                 </h1>
                 {user?.email && (
                   <p className="text-sm text-gray-500 mb-2">{user.email}</p>

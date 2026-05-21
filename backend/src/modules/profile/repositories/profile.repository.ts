@@ -58,13 +58,21 @@ export class ProfileRepository implements ProfileRepositoryLike {
       if (existing != null) {
         const data: Prisma.UserProfileUpdateInput = {};
 
-        if (existing.fullName === existing.userId) {
+        if (existing.fullName.trim().length === 0 || existing.fullName === existing.userId) {
           data.fullName = displayLabel;
         }
-        if (existing.sellerProfile != null && existing.sellerProfile.displayName === existing.userId) {
+        if (
+          existing.sellerProfile != null &&
+          (existing.sellerProfile.displayName.trim().length === 0 ||
+            existing.sellerProfile.displayName === existing.userId)
+        ) {
           data.sellerProfile = { update: { displayName: displayLabel } };
         }
-        if (existing.buyerProfile != null && existing.buyerProfile.displayName === existing.userId) {
+        if (
+          existing.buyerProfile != null &&
+          (existing.buyerProfile.displayName.trim().length === 0 ||
+            existing.buyerProfile.displayName === existing.userId)
+        ) {
           data.buyerProfile = { update: { displayName: displayLabel } };
         }
 
