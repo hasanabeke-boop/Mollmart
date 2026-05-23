@@ -71,8 +71,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
     const stored = readStoredActiveMode();
     const next =
-      stored && user.hasDualWorkspace
-        ? stored
+      user.activeWorkspaceMode && user.hasDualWorkspace
+        ? user.activeWorkspaceMode
+        : stored && user.hasDualWorkspace
+          ? stored
         : defaultActiveMode(Boolean(user.canBuy), Boolean(user.canSell));
     setActiveModeState(next);
     setVisualMode(next);
@@ -119,6 +121,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const setActiveMode = useCallback(
     (mode: WorkspaceMode) => {
       if (mode === activeMode) return;
+
+      if (hasDualWorkspace) {
+        void apiFetchWithRefresh<{ user: User }>("/api/v1/auth/me/active-mode", {
+          method: "PATCH",
+          service: "auth",
+          body: JSON.stringify({ mode }),
+        }).catch(() => {
+          // The header still carries the active mode for this session; refresh will resync persisted mode.
+        });
+      }
 
       if (!hasDualWorkspace) {
         setVisualMode(mode);

@@ -5,10 +5,12 @@ import authorizeAdmin from '../../middleware/authorizeAdmin';
 import authorizeAdminOrInternal from '../../middleware/authorizeAdminOrInternal';
 import {
   adminUpdateUserSchema,
+  activeModeSchema,
   adminUserListSchema,
   changePasswordSchema,
   deleteAccountSchema,
   enableMixedModeSchema,
+  languagePreferenceSchema,
   introspectTokenSchema,
   loginSchema,
   recommendationsOnboardingSchema,
@@ -26,6 +28,8 @@ authRouter.post('/login', validate(loginSchema), authController.handleLogin);
 authRouter.post('/logout', authController.handleLogout);
 
 authRouter.post('/refresh', authController.handleRefresh);
+
+authRouter.get('/languages', authController.handleGetLanguages);
 
 authRouter.post('/logout-all', isAuth, authController.handleLogoutAll);
 
@@ -50,6 +54,20 @@ authRouter.patch(
   isAuth,
   validate(enableMixedModeSchema),
   authController.handleEnableMixedMode
+);
+
+authRouter.patch(
+  '/me/active-mode',
+  isAuth,
+  validate(activeModeSchema),
+  authController.handleUpdateActiveMode
+);
+
+authRouter.patch(
+  '/me/language',
+  isAuth,
+  validate(languagePreferenceSchema),
+  authController.handleUpdateLanguage
 );
 
 authRouter.patch(

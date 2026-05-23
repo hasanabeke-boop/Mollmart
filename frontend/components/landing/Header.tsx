@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
+import LanguageSwitcher from "@/components/nav/LanguageSwitcher";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useState, useRef, useEffect, type ReactNode } from "react";
@@ -154,6 +155,7 @@ export function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
+          <LanguageSwitcher />
           {loading ? (
             <div className="h-8 w-14 animate-pulse rounded-lg bg-gray-100" />
           ) : user ? (

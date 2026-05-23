@@ -19,6 +19,11 @@ enum UserStatus {
   suspended
 }
 
+enum WorkspaceMode {
+  buyer
+  seller
+}
+
 enum VerificationStatus {
   unverified
   pending
@@ -179,6 +184,8 @@ model User {
   role                   UserRole                 @default(buyer)
   canBuy                 Boolean                  @default(true)
   canSell                Boolean                  @default(false)
+  activeWorkspaceMode    WorkspaceMode            @default(buyer)
+  languagePreference     String                   @default("en") @db.VarChar(8)
   recommendationsOnboardingCompletedAt DateTime?
   recommendationsOnboardingSkippedAt   DateTime?
   notificationPreferencesJson          Json?

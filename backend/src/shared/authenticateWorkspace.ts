@@ -35,7 +35,7 @@ async function resolveDevUser(req: Request): Promise<WorkspaceAuthUser | null> {
 
   const row = await prisma.user.findUnique({
     where: { id: idHeader },
-    select: { id: true, role: true, canBuy: true, canSell: true, status: true }
+    select: { id: true, role: true, canBuy: true, canSell: true, activeWorkspaceMode: true, status: true }
   });
 
   if (row == null || row.status !== 'active') {
@@ -84,7 +84,7 @@ export async function authenticateWorkspace(
 
     const row = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true, canBuy: true, canSell: true, status: true }
+      select: { id: true, role: true, canBuy: true, canSell: true, activeWorkspaceMode: true, status: true }
     });
 
     if (row == null) {

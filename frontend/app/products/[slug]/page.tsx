@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { normalizeCatalogCurrencyCode } from "@/lib/catalog";
+import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
+import { addCartItem } from "@/lib/shop";
 
 type ShowcaseDetail = {
   id: string;
@@ -35,6 +36,8 @@ export default function ShowcaseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
 
   useEffect(() => {
     if (!slug) return;
@@ -102,6 +105,24 @@ export default function ShowcaseDetailPage() {
   }
 
   const isOwnListing = user?.id === product.seller.id;
+  const inStock = product.quantity > 0;
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      router.push(`/login?returnUrl=${encodeURIComponent(`/products/${product.slug}`)}`);
+      return;
+    }
+    setAdding(true);
+    setCartMessage("");
+    try {
+      await addCartItem(product.id, 1);
+      setCartMessage("Added to cart.");
+    } catch (err: unknown) {
+      setCartMessage((err as Error).message || "Failed to add to cart.");
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 md:px-10 lg:px-20 py-6">
@@ -168,10 +189,22 @@ export default function ShowcaseDetailPage() {
           </div>
 
           <div className="p-5 rounded-xl bg-[#f6faf7] border border-[#e7f3eb]">
-            <p className="text-[#0d1b12] text-sm leading-relaxed">
-              This is a <span className="font-bold">seller showcase</span> — not a buy-now price. On Mollmart you set
-              your budget in a <span className="font-bold">buyer request</span>; sellers respond with offers.
-            </p>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Price</p>
+                <p className="text-3xl font-black text-[#0d1b12]">
+                  {formatCatalogMoney(product.price, product.currency, 2)}
+                </p>
+                {product.listedCurrency && product.listedPrice != null ? (
+                  <p className="text-xs text-slate-500">
+                    Listed as {formatCatalogMoney(product.listedPrice, product.listedCurrency, 2)}
+                  </p>
+                ) : null}
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                {inStock ? `${product.quantity} in stock` : "Out of stock"}
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl bg-white border border-[#e7f3eb]">
@@ -189,15 +222,27 @@ export default function ShowcaseDetailPage() {
                 <p className="text-sm text-slate-600">This is your listing.</p>
               ) : (
                 <>
+                  <button
+                    type="button"
+                    disabled={!inStock || adding}
+                    onClick={handleAddToCart}
+                    className="min-h-10 px-4 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-[#0fd650] disabled:opacity-60 flex items-center justify-center text-center"
+                  >
+                    {adding ? "Adding..." : inStock ? "Add to cart" : "Out of stock"}
+                  </button>
                   <Link
                     href={user ? requestHref : `/login?returnUrl=${encodeURIComponent(requestHref)}`}
-                    className="min-h-10 px-4 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-[#0fd650] flex items-center justify-center text-center"
+                    className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
                   >
                     Request something like this
                   </Link>
-                  <p className="text-xs text-[#4c9a66] text-center sm:text-right">
-                    You choose the price in the next step.
-                  </p>
+                  <Link
+                    href="/cart"
+                    className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
+                  >
+                    View cart
+                  </Link>
+                  {cartMessage ? <p className="text-xs text-[#4c9a66] text-center sm:text-right">{cartMessage}</p> : null}
                 </>
               )}
             </div>

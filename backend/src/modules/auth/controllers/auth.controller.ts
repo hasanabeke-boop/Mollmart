@@ -50,6 +50,8 @@ const serializeUser = (user: {
   role: 'buyer' | 'seller' | 'admin';
   canBuy: boolean;
   canSell: boolean;
+  activeWorkspaceMode: 'buyer' | 'seller';
+  languagePreference: string;
   status: 'active' | 'blocked' | 'suspended';
   emailVerified: Date | null;
   recommendationsOnboardingCompletedAt: Date | null;
@@ -64,6 +66,8 @@ const serializeUser = (user: {
   role: user.role,
   canBuy: user.canBuy,
   canSell: user.canSell,
+  activeWorkspaceMode: user.activeWorkspaceMode,
+  languagePreference: normalizeLanguage(user.languagePreference),
   hasDualWorkspace: user.canBuy && user.canSell,
   recommendationsOnboardingPending:
     user.recommendationsOnboardingCompletedAt == null &&
@@ -85,6 +89,8 @@ const activeUserSelect = {
   role: true,
   canBuy: true,
   canSell: true,
+  activeWorkspaceMode: true,
+  languagePreference: true,
   status: true,
   emailVerified: true,
   recommendationsOnboardingCompletedAt: true,
@@ -97,6 +103,20 @@ const activeUserSelect = {
 const adminUserOrderBy = {
   createdAt: 'desc'
 } as const;
+
+const supportedLanguages = [
+  { code: 'en', label: 'English', nativeLabel: 'English' },
+  { code: 'ru', label: 'Russian', nativeLabel: 'Русский' },
+  { code: 'kk', label: 'Kazakh', nativeLabel: 'Қазақша' }
+] as const;
+
+const supportedLanguageCodes = new Set(supportedLanguages.map((language) => language.code));
+
+function normalizeLanguage(language: string | null | undefined): 'en' | 'ru' | 'kk' {
+  return supportedLanguageCodes.has(language as 'en' | 'ru' | 'kk')
+    ? (language as 'en' | 'ru' | 'kk')
+    : 'en';
+}
 
 const sendAccountStatusError = (res: Response, status: string) => {
   if (status === 'blocked') {
@@ -253,6 +273,7 @@ export const handleSignUp = async (
           role: caps.role,
           canBuy: caps.canBuy,
           canSell: caps.canSell,
+          activeWorkspaceMode: caps.canSell && !caps.canBuy ? 'seller' : 'buyer',
           ...(!config.auth.requireEmailVerification
             ? { emailVerified: new Date() }
             : {})
@@ -302,6 +323,7 @@ export const handleSignUp = async (
         role: caps.role,
         canBuy: caps.canBuy,
         canSell: caps.canSell,
+        activeWorkspaceMode: caps.canSell && !caps.canBuy ? 'seller' : 'buyer',
         ...(!config.auth.requireEmailVerification
           ? { emailVerified: new Date() }
           : {})
@@ -781,6 +803,80 @@ export const handleChangePassword = async (
 
   return res.status(httpStatus.OK).json({
     message: 'Password updated successfully'
+  });
+};
+
+export const handleGetLanguages = async (_req: TypedRequest, res: Response) => {
+  return res.status(httpStatus.OK).json({ languages: supportedLanguages });
+};
+
+export const handleUpdateActiveMode = async (
+  req: TypedRequest<{ mode: 'buyer' | 'seller' }>,
+  res: Response
+) => {
+  const userId = resolvePayloadUserId(req.payload);
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: activeUserSelect
+  });
+
+  if (user == null) {
+    return res.sendStatus(httpStatus.NOT_FOUND);
+  }
+
+  if (user.role === 'admin') {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Admin accounts do not need an active buyer or seller mode'
+    });
+  }
+
+  const mode = req.body.mode;
+  if (mode === 'buyer' && !user.canBuy) {
+    return res.status(httpStatus.FORBIDDEN).json({
+      message: 'Buyer mode is not enabled for this account'
+    });
+  }
+  if (mode === 'seller' && !user.canSell) {
+    return res.status(httpStatus.FORBIDDEN).json({
+      message: 'Seller mode is not enabled for this account'
+    });
+  }
+
+  const updated = await prismaClient.user.update({
+    where: { id: userId },
+    data: { activeWorkspaceMode: mode },
+    select: activeUserSelect
+  });
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(updated)
+  });
+};
+
+export const handleUpdateLanguage = async (
+  req: TypedRequest<{ language: 'en' | 'ru' | 'kk' }>,
+  res: Response
+) => {
+  const userId = resolvePayloadUserId(req.payload);
+
+  if (userId == null) {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  const language = normalizeLanguage(req.body.language);
+  const updated = await prismaClient.user.update({
+    where: { id: userId },
+    data: { languagePreference: language },
+    select: activeUserSelect
+  });
+
+  return res.status(httpStatus.OK).json({
+    user: serializeUser(updated)
   });
 };
 

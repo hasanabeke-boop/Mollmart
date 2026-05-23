@@ -61,6 +61,18 @@ export const enableMixedModeSchema = {
   body: Joi.object().max(0)
 };
 
+export const activeModeSchema = {
+  body: Joi.object({
+    mode: Joi.string().valid('buyer', 'seller').required()
+  })
+};
+
+export const languagePreferenceSchema = {
+  body: Joi.object({
+    language: Joi.string().valid('en', 'ru', 'kk').required()
+  })
+};
+
 export const recommendationsOnboardingSchema = {
   body: Joi.object({
     action: Joi.string().valid('complete', 'skip').required(),

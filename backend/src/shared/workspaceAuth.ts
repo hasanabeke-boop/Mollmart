@@ -7,6 +7,7 @@ export type UserCapabilities = {
   role: UserRole;
   canBuy: boolean;
   canSell: boolean;
+  activeWorkspaceMode?: WorkspaceMode;
 };
 
 export function hasDualWorkspace(cap: Pick<UserCapabilities, 'canBuy' | 'canSell'>): boolean {
@@ -29,7 +30,8 @@ export function resolveEffectiveRole(
   }
 
   if (user.canBuy && user.canSell) {
-    return requestedMode === 'seller' ? 'seller' : 'buyer';
+    const mode = requestedMode ?? user.activeWorkspaceMode ?? 'buyer';
+    return mode === 'seller' ? 'seller' : 'buyer';
   }
 
   if (user.canSell) {

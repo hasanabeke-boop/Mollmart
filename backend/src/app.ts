@@ -13,6 +13,7 @@ import chatbotRoutes from './modules/chatbot/routes/v1';
 import chatRoutes from './modules/chat/routes/v1';
 import notificationRoutes from './modules/notification/routes/v1';
 import catalogRoutes from './modules/catalog/routes/v1';
+import shopRoutes from './modules/shop/routes/v1';
 import dealRoutes from './modules/deal/routes/v1';
 import currencyRoutes from './modules/currency/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
@@ -75,7 +76,7 @@ app.get('/', (_req, res) => {
     service: 'mollmart-backend',
     architecture: 'modular-monolith',
     apiBasePath: '/api/v1',
-    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'deal']
+    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'shop', 'deal']
   });
 });
 
@@ -94,6 +95,7 @@ app.use('/api/v1', chatRoutes);
 app.use('/api/v1', chatbotRoutes);
 app.use('/api/v1', notificationRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
+app.use('/api/v1/shop', shopRoutes);
 app.use('/api/v1/currency', currencyRoutes);
 app.use('/api/v1', dealRoutes);
 

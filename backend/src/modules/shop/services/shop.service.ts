@@ -27,11 +27,13 @@ export class ShopService {
   ) {}
 
   async getCart(user: AuthUser) {
+    this.assertBuyerCapability(user, 'view cart');
     const rows = await this.repo.findCartRows(user.id);
     return { items: rows.map((r: CartRow) => this.serializeCartRow(r)) };
   }
 
   async addToCart(user: AuthUser, input: AddCartItemInput) {
+    this.assertBuyerCapability(user, 'add products to cart');
     const qty = input.quantity != null && input.quantity > 0 ? Math.floor(input.quantity) : 1;
     const product = await this.repo.findPublishedProduct(input.productId);
     if (product == null) {
@@ -55,6 +57,7 @@ export class ShopService {
   }
 
   async setCartQuantity(user: AuthUser, productId: string, quantity: number) {
+    this.assertBuyerCapability(user, 'update cart');
     const q = Math.floor(quantity);
     if (q <= 0) {
       await this.repo.deleteCartItem(user.id, productId);
@@ -80,11 +83,13 @@ export class ShopService {
   }
 
   async removeFromCart(user: AuthUser, productId: string) {
+    this.assertBuyerCapability(user, 'update cart');
     await this.repo.deleteCartItem(user.id, productId);
     return { ok: true as const };
   }
 
   async checkout(user: AuthUser, input: CheckoutInput) {
+    this.assertBuyerCapability(user, 'checkout');
     const checkoutCurrency = input.checkoutCurrency.trim().toUpperCase();
     if (!CHECKOUT_CURRENCIES.has(checkoutCurrency)) {
       throw badRequest('Invalid checkout currency');
@@ -295,6 +300,12 @@ export class ShopService {
       return undefined;
     }
     return s;
+  }
+
+  private assertBuyerCapability(user: AuthUser, action: string): void {
+    if (user.role !== 'buyer' || user.canBuy === false) {
+      throw forbidden(`Buyer mode is required to ${action}`);
+    }
   }
 
   private serializeCartRow(row: CartRow) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { formatCatalogMoney } from "@/lib/catalog";
 
 type Category = {
   id: string;
@@ -200,9 +201,7 @@ export default function ShowcaseBrowsePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{pageTitle}</h1>
         <p className="mt-2 text-base text-slate-500 max-w-3xl">
-          {showRecommendations
-            ? "Examples from sellers in categories that match your profile — use them as inspiration, then post your own request with the price you want."
-            : "A reverse marketplace: sellers show what they can deliver. Nothing here is a fixed offer to buy — open a buyer request and let sellers compete with offers."}
+          Browse seller listings, add available products to cart, or create a buyer request when you want sellers to compete.
         </p>
       </div>
 
@@ -396,7 +395,14 @@ export default function ShowcaseBrowsePage() {
                   <h3 className="text-base font-bold text-slate-900 line-clamp-2">{product.title}</h3>
                   <p className="text-sm text-slate-500 line-clamp-3 mt-1">{product.description}</p>
                   <div className="mt-4 flex items-end justify-between gap-2">
-                    <span className="text-xs font-medium text-slate-500">Inspiration only</span>
+                    <div>
+                      <span className="block text-base font-black text-[#0d1b12]">
+                        {formatCatalogMoney(product.price, product.currency, 2)}
+                      </span>
+                      <span className="text-xs font-medium text-slate-500">
+                        {product.quantity > 0 ? `${product.quantity} in stock` : "Out of stock"}
+                      </span>
+                    </div>
                     <span className="text-sm font-semibold text-primary">View</span>
                   </div>
                 </div>

@@ -27,6 +27,8 @@ export type User = {
   role: "buyer" | "seller" | "admin";
   canBuy?: boolean;
   canSell?: boolean;
+  activeWorkspaceMode?: "buyer" | "seller";
+  languagePreference?: "en" | "ru" | "kk";
   hasDualWorkspace?: boolean;
   recommendationsOnboardingPending?: boolean;
   status: "active" | "blocked" | "suspended";
@@ -71,6 +73,8 @@ function mapMeToUser(me: User): User {
     role: (me.role as User["role"]) || "buyer",
     canBuy: me.canBuy ?? true,
     canSell: me.canSell ?? false,
+    activeWorkspaceMode: me.activeWorkspaceMode,
+    languagePreference: me.languagePreference ?? "en",
     hasDualWorkspace: me.hasDualWorkspace ?? Boolean(me.canBuy && me.canSell),
     recommendationsOnboardingPending: me.recommendationsOnboardingPending ?? false,
     status: (me.status as User["status"]) || "active",
