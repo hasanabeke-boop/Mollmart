@@ -12,6 +12,8 @@ import {
   adminRequestOrderPatchSchema
 } from '../../../deal/validators/deal.validation';
 import {
+  adminIdParamSchema,
+  adminRequestListSchema,
   blockUserSchema,
   categoryCreateSchema,
   categoryUpdateSchema,
@@ -61,6 +63,11 @@ export function createAdminRouter(controller: AdminController): Router {
     validate(adminCatalogOrderPatchSchema),
     asyncHandler(controller.patchCatalogOrder)
   );
+  router.delete(
+    '/admin/catalog-orders/:id',
+    validate(adminIdParamSchema),
+    asyncHandler(controller.deleteCatalogOrder)
+  );
 
   router.get(
     '/admin/request-orders',
@@ -72,6 +79,14 @@ export function createAdminRouter(controller: AdminController): Router {
     validate(adminRequestOrderPatchSchema),
     asyncHandler(controller.patchRequestOrder)
   );
+  router.delete(
+    '/admin/request-orders/:id',
+    validate(adminIdParamSchema),
+    asyncHandler(controller.deleteRequestOrder)
+  );
+
+  router.get('/admin/requests', validate(adminRequestListSchema), asyncHandler(controller.listRequests));
+  router.delete('/admin/requests/:id', validate(adminIdParamSchema), asyncHandler(controller.deleteRequest));
 
   return router;
 }

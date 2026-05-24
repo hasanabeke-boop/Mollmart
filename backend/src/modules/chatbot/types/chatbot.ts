@@ -1,6 +1,8 @@
 export interface ChatbotHistoryItem {
   role: 'user' | 'assistant';
   content: string;
+  intent?: string;
+  suggestedRoute?: string;
 }
 
 export interface ChatbotMessageInput {
@@ -8,6 +10,7 @@ export interface ChatbotMessageInput {
   history?: ChatbotHistoryItem[];
   currentPath?: string;
   userRole?: 'buyer' | 'seller' | 'admin';
+  language?: 'en' | 'ru' | 'kk';
 }
 
 export interface ChatbotReply {

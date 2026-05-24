@@ -1,8 +1,8 @@
 # Mollmart
 
-Mollmart is a web-based request-and-offer platform where buyers publish product requests and sellers respond with offers.
+Mollmart is a web-based request-and-offer platform where buyers publish product requests, sellers respond with offers, and accepted offers continue into chat-based negotiation.
 
-It is not an in-app commerce or fulfillment system. Mollmart does not handle checkout, payments, delivery, shipment tracking, or cart flows. Its core purpose is lead generation, matching, negotiation, and communication between buyers and sellers.
+The current diploma scope is **Option B**: request creation, seller offers, buyer-seller chat, demo payment after an agreed price, request-deal orders, tracking status, and admin management. Payments and withdrawals are simulated for demonstration only; Mollmart does not provide real card charging, escrow, shipping labels, or carrier integrations. A request/offer/chat-only version can be kept as a later simplified scope.
 
 The project uses a web frontend and a modular monolith backend. Backend domains are separated as internal modules, not independent deployable apps.
 
@@ -12,7 +12,9 @@ The project uses a web frontend and a modular monolith backend. Backend domains 
 2. Sellers browse published requests and submit offers.
 3. Buyers compare offers and accept the best one.
 4. After acceptance, buyers and sellers continue negotiation in chat.
-5. Admins manage categories, moderation cases, and user blocking.
+5. When both sides agree on a final price, the buyer can complete a demo payment.
+6. A request-deal order is created for tracking, and admins can update order status, carrier, and tracking number.
+7. Admins manage categories, moderation cases, user blocking, and request-deal orders.
 
 ## Architecture
 
@@ -31,8 +33,11 @@ The backend runs as one application from `backend/src/index.ts`.
 - `request`: buyer requests and request discovery board.
 - `offer`: seller offers and offer acceptance.
 - `chat`: buyer-seller conversations and messages.
+- `deal`: price proposals, demo payment, request-deal orders, and wallet demo balance.
 - `admin`: categories, moderation, user blocking, dashboard summary.
 - `notification`: notification API and Redis event worker.
+- `catalog`: seller showcase listings used as inspiration for buyer requests.
+- `currency`: supported currency metadata and exchange-rate helpers.
 
 ## Project Structure
 

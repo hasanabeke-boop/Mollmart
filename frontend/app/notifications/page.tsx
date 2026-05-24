@@ -110,6 +110,15 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
+function normalizeNotificationText(value: string): string {
+  return value
+    .replace(/\bshop order\b/gi, "request-deal order")
+    .replace(/\bshop orders\b/gi, "request-deal orders")
+    .replace(/\bcatalog order\b/gi, "request-deal order")
+    .replace(/\bcatalog orders\b/gi, "request-deal orders")
+    .replace(/\bcheckout\b/gi, "demo payment");
+}
+
 function mapApiToItems(rows: ApiNotification[]): NotificationItem[] {
   return rows.map((n) => {
     const backendType = n.type || "";
@@ -117,8 +126,8 @@ function mapApiToItems(rows: ApiNotification[]): NotificationItem[] {
     return {
       id: n.id,
       category: cat,
-      title: n.title || "Notification",
-      body: n.body || n.message || "",
+      title: normalizeNotificationText(n.title || "Notification"),
+      body: normalizeNotificationText(n.body || n.message || ""),
       time: n.createdAt ? timeAgo(n.createdAt) : "",
       unread: !n.isRead,
       iconType: iconFromType(backendType),

@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { Search } from 'lucide-react';
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
-import LanguageSwitcher from "@/components/nav/LanguageSwitcher";
+import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useState, useRef, useEffect, type ReactNode } from "react";

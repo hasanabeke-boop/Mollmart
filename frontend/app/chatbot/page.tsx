@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ChatbotReply = {
   reply: string;
@@ -28,6 +29,13 @@ type Message = {
   confidence?: number;
 };
 
+type ChatbotHistoryItem = {
+  role: Message["role"];
+  content: string;
+  intent?: string;
+  suggestedRoute?: string;
+};
+
 const baseStarterPrompts = [
   "How do I create a request?",
   "How do sellers send offers?",
@@ -48,8 +56,18 @@ function timeLabel(value: string) {
   });
 }
 
+function toHistoryItem(item: Message): ChatbotHistoryItem {
+  return {
+    role: item.role,
+    content: item.content,
+    ...(item.intent ? { intent: item.intent } : {}),
+    ...(item.suggestedRoute ? { suggestedRoute: item.suggestedRoute } : {}),
+  };
+}
+
 export default function ChatbotPage() {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const pathname = usePathname();
   const starterPrompts = user?.role ? [...promptsByRole[user.role], "What do we need to deploy?"] : baseStarterPrompts;
   const [messages, setMessages] = useState<Message[]>([
@@ -57,20 +75,19 @@ export default function ChatbotPage() {
       id: "welcome",
       role: "assistant",
       content:
-        "Hi, I am Mollmart Assistant. Ask me about requests, offers, chat, profiles, notifications, login, or deployment.",
+        "Ask about requests, offers, chat, profiles, notifications, admin tools, or deployment. I will keep the thread context as we go.",
       createdAt: new Date().toISOString(),
+      intent: "greeting",
     },
   ]);
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState(starterPrompts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const listRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
+    endRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, loading]);
 
   const sendMessage = async (text: string) => {
@@ -99,11 +116,11 @@ export default function ChatbotPage() {
         body: JSON.stringify({
           message,
           history: nextMessages.slice(-12).map((item) => ({
-            role: item.role,
-            content: item.content,
+            ...toHistoryItem(item),
           })),
           currentPath: pathname,
           userRole: user?.role,
+          language,
         }),
       });
 
@@ -144,23 +161,23 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-[#f5f6f8]">
-      <main className="flex min-w-0 flex-1 flex-col">
+    <div className="app-page-min-height bg-[#f5f6f8]">
+      <main className="min-w-0">
         <header className="border-b border-[#e7f3eb] bg-white px-4 py-4 lg:px-8">
           <div className="mx-auto flex max-w-5xl items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-full bg-primary text-white">
-              <span className="material-symbols-outlined">smart_toy</span>
+            <div className="flex size-10 items-center justify-center rounded-xl border border-[#d9eadf] bg-[#f6fbf8] text-sm font-black tracking-tight text-[#0d1b12]">
+              M
             </div>
             <div className="min-w-0">
               <h1 className="text-lg font-bold text-[#0d1b12]">Mollmart Assistant</h1>
               <p className="truncate text-sm text-[#4c9a66]">
-                Smart API assistant for {user?.role ? `${user.role} ` : ""}product flow and deployment
+                Context-aware help for {user?.role ? `${user.role} ` : ""}workflows and deployment
               </p>
             </div>
           </div>
         </header>
 
-        <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+        <div className="px-4 py-6 lg:px-8">
           <div className="mx-auto flex max-w-5xl flex-col gap-4">
             {messages.map((message) => {
               const mine = message.role === "user";
@@ -195,11 +212,7 @@ export default function ChatbotPage() {
                         </Link>
                       )}
                     </div>
-                    <span className="text-[11px] text-[#4c9a66]">
-                      {timeLabel(message.createdAt)}
-                      {!mine && message.source ? ` - ${message.source === "openai" ? "AI" : "Local"}` : ""}
-                      {!mine && message.intent ? ` - ${message.intent}` : ""}
-                    </span>
+                    <span className="text-[11px] text-[#4c9a66]">{timeLabel(message.createdAt)}</span>
                   </div>
                 </div>
               );
@@ -212,6 +225,7 @@ export default function ChatbotPage() {
                 </div>
               </div>
             )}
+            <div ref={endRef} aria-hidden />
           </div>
         </div>
 

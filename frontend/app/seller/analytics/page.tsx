@@ -5,7 +5,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import KpiCard from "../../../components/KpiCard";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { canUseSellerWorkspace } from "@/lib/workspace";
 
 type OfferItem = {
   id: string;
@@ -39,6 +41,8 @@ function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
 
 export default function SellerAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
+  const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -47,7 +51,7 @@ export default function SellerAnalyticsPage() {
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
-    if (!user || (user.role !== "seller" && user.role !== "admin")) return;
+    if (!sellerWorkspace) return;
     setLoading(true);
     setError("");
     try {
@@ -80,15 +84,15 @@ export default function SellerAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [sellerWorkspace]);
 
   useEffect(() => {
-    if (authLoading || !user || (user.role !== "seller" && user.role !== "admin")) {
+    if (authLoading || !sellerWorkspace) {
       setLoading(false);
       return;
     }
     loadData();
-  }, [loadData, authLoading, user]);
+  }, [loadData, authLoading, sellerWorkspace]);
 
   const acceptedOffers = offers.filter((offer) => offer.status === "accepted").length;
   const activeConversations = conversations.filter((conversation) => conversation.status !== "closed").length;
@@ -160,8 +164,8 @@ export default function SellerAnalyticsPage() {
       ctaLabel="Open my requests"
       unauthenticatedDescription="Log in as a seller to view analytics."
     >
-    <div className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f6f8]">
-      <main className="mx-auto flex h-full min-h-[calc(100vh-4rem)] max-w-7xl flex-1 flex-col space-y-8 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="app-page-min-height relative w-full bg-[#f5f6f8]">
+      <main className="app-page-min-height mx-auto flex max-w-7xl flex-col space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#0d1b12]">

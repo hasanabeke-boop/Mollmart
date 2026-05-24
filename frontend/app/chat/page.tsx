@@ -11,7 +11,7 @@ import {
   postApplyOfferTotal,
   postPriceProposal,
   type DealState,
-} from "@/lib/shop";
+} from "@/lib/requestDeals";
 import { computeOfferLineTotal, normalizeRequestQuantity } from "@/lib/offerPricing";
 import { useAuth } from "@/context/AuthContext";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
@@ -974,7 +974,7 @@ function ChatPageContent() {
               </p>
             )}
             <p className="mb-4 text-sm text-[#4c9a66]">
-              No real charge. Fill the fields below to simulate checkout for the agreed order total.
+              No real charge. Fill the fields below to simulate payment for the agreed request-deal total.
             </p>
             <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
             <input

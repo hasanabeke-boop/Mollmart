@@ -11,8 +11,13 @@ One Express application runs all domain modules:
 - request
 - offer
 - chat
+- deal
 - admin
 - notification
+- catalog
+- currency
+
+Current diploma scope is Option B: buyer requests, seller offers, accepted-offer chat, demo payment after an agreed price, request-deal orders, tracking status, and admin management. Real payment processing, escrow, shipping labels, and carrier integrations are outside the current implementation.
 
 The former service source now lives in `src/modules/*` and is wired through a single `src/app.ts` entry point. Cross-module calls happen in-process instead of through service-to-service HTTP clients.
 
@@ -31,8 +36,11 @@ backend/
       request/
       offer/
       chat/
+      deal/
       admin/
       notification/
+      catalog/
+      currency/
   prisma/
     schema.prisma
     seed.ts
@@ -50,6 +58,18 @@ npm run prisma:migrate
 npm run prisma:seed
 npm run dev
 ```
+
+## Smoke Tests
+
+Smoke tests exercise the main API flow against a local PostgreSQL database: health, signup/login, categories, request creation, offer creation, and accepting an offer into chat.
+
+Set `DATABASE_URL` to a local database before running:
+
+```bash
+DATABASE_URL="postgresql://postgres:<password>@localhost:54320/mollmart?schema=public" npm run test:smoke
+```
+
+The test suite refuses non-local database URLs.
 
 API base URL:
 

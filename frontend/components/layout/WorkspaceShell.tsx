@@ -7,12 +7,20 @@ import SellerSidebar, { getSellerActiveNav } from "@/components/seller/SellerSid
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
-function isChatPath(pathname: string) {
-  return pathname === "/chat" || pathname.startsWith("/chat/");
+function isAuthOnlyPath(pathname: string) {
+  return (
+    pathname === "/login" ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/verify-email") ||
+    pathname.startsWith("/auth/")
+  );
 }
 
-function isChatbotPath(pathname: string) {
-  return pathname === "/chatbot" || pathname.startsWith("/chatbot/");
+/** Marketing home — full-width layout even when logged in. */
+function isLandingPath(pathname: string) {
+  return pathname === "/";
 }
 
 export default function WorkspaceShell({ children }: { children: ReactNode }) {
@@ -24,49 +32,35 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   const activeRole =
     user?.role === "admin" ? "admin" : (workspace?.activeRole ?? user?.role);
 
-  const isBuyerWorkspace =
-    pathname.startsWith("/my-requests") ||
-    pathname.startsWith("/create-product-request") ||
-    pathname.startsWith("/orders") ||
-    pathname.startsWith("/products") ||
-    isChatPath(pathname) ||
-    isChatbotPath(pathname);
-
-  const isSellerWorkspace =
-    pathname.startsWith("/seller") ||
-    pathname.startsWith("/browse-buyer-requests") ||
-    isChatPath(pathname) ||
-    isChatbotPath(pathname);
-
-  const isAdminSellerArea = user?.role === "admin" && pathname.startsWith("/seller");
-  const showBuyerChrome = activeRole === "buyer" && isBuyerWorkspace;
-  const showSellerChrome =
-    (activeRole === "seller" || isAdminSellerArea) && isSellerWorkspace;
-
-  if (loading || !user || (!showBuyerChrome && !showSellerChrome)) {
+  if (loading || !user || isAuthOnlyPath(pathname) || isLandingPath(pathname)) {
     return <>{children}</>;
   }
 
-  const modeLabel = showBuyerChrome ? "Buyer" : "Seller";
+  /** Admin panel has its own sidebar layout. */
+  if (pathname.startsWith("/admin")) {
+    return <>{children}</>;
+  }
 
+  const showSellerSidebar = activeRole === "seller" || user.role === "admin";
+  const modeLabel = showSellerSidebar ? "Seller" : "Buyer";
   return (
     <div className="app-layout-with-sidebar relative w-full flex-1">
-      {showBuyerChrome ? (
-        <BuyerSidebar
-          active={getBuyerActiveNav(pathname)}
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
-      ) : (
+      {showSellerSidebar ? (
         <SellerSidebar
           active={getSellerActiveNav(pathname)}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
+      ) : (
+        <BuyerSidebar
+          active={getBuyerActiveNav(pathname)}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
       )}
 
-      <div className="flex min-h-0 w-full min-h-full flex-1 flex-col">
-        <div className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-3 border-b border-[#e7f3eb] bg-white/95 px-4 backdrop-blur lg:hidden">
+      <div className="w-full">
+        <div className="sticky top-[var(--app-header-height)] z-20 flex h-12 shrink-0 items-center gap-3 border-b border-[#e7f3eb] bg-white/95 px-4 backdrop-blur lg:hidden">
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -82,4 +76,3 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
-

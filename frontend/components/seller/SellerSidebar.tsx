@@ -12,7 +12,8 @@ export type SellerNavId =
   | "messages"
   | "assistant"
   | "analytics"
-  | "orders";
+  | "orders"
+  | "admin";
 
 export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/orders")) return "orders";
@@ -21,7 +22,10 @@ export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/seller/products/new")) return "new_showcase";
   if (pathname.startsWith("/seller/dashboard")) return "dashboard";
   if (pathname.startsWith("/seller")) return "dashboard";
+  if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/browse-buyer-requests")) return "requests";
+  if (pathname.startsWith("/profile")) return "dashboard";
+  if (pathname.startsWith("/notifications")) return "dashboard";
   if (pathname === "/chatbot" || pathname.startsWith("/chatbot/")) return "assistant";
   if (pathname === "/chat" || pathname.startsWith("/chat/")) return "messages";
   return "dashboard";
@@ -40,7 +44,7 @@ const NAV_ITEMS: {
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
-  { id: "assistant", icon: "smart_toy", label: "Assistant", href: "/chatbot" },
+  { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
   { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];
 
@@ -106,6 +110,32 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
                 </Link>
               );
             })}
+            {user?.role === "admin" && (
+              <Link
+                href="/admin"
+                onClick={onClose}
+                className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                  active === "admin"
+                    ? "bg-red-50 text-red-800"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <span
+                  className={`material-symbols-outlined ${
+                    active === "admin" ? "text-red-600" : ""
+                  }`}
+                >
+                  admin_panel_settings
+                </span>
+                <span
+                  className={`text-sm ${
+                    active === "admin" ? "font-semibold" : "font-medium"
+                  }`}
+                >
+                  Admin
+                </span>
+              </Link>
+            )}
           </nav>
           {/* Bottom user card */}
           <div className="flex flex-col gap-2">

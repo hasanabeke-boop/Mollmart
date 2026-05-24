@@ -198,6 +198,18 @@ export class ShopRepository {
     });
   }
 
+  async deleteOrderById(orderId: string): Promise<boolean> {
+    try {
+      await this.client.catalogOrder.delete({ where: { id: orderId } });
+      return true;
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+        return false;
+      }
+      throw e;
+    }
+  }
+
   async updateOrder(
     orderId: string,
     data: Prisma.CatalogOrderUpdateInput

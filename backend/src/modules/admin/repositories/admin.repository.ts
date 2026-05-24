@@ -12,6 +12,7 @@ import {
   PrismaClient
 } from '@prisma/client';
 import prisma from '../../../config/prisma';
+import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import { AdminDashboardSummary, ContentFlagUpsertInput, ModerationCaseListQuery } from '../types/admin';
 
 const moderationCaseInclude = {
@@ -57,6 +58,28 @@ export interface AdminRepositoryLike {
   blockUser(userId: string, reason: string, blockedBy: string): Promise<BlockedUser>;
   unblockUser(userId: string): Promise<BlockedUser | null>;
   getDashboardSummary(): Promise<AdminDashboardSummary>;
+  listRequestsForAdmin(page: number, limit: number, q?: string): Promise<{
+    items: Array<{
+      id: string;
+      title: string;
+      status: string;
+      currency: string;
+      quantity: number;
+      offerCount: number;
+      offersCount: number;
+      dealOrdersCount: number;
+      createdAt: string;
+      publishedAt: string | null;
+      categoryId: string;
+      buyer: {
+        id: string;
+        name: string;
+        email: string | null;
+      };
+    }>;
+    meta: ReturnType<typeof buildPageMeta>;
+  }>;
+  deleteRequestById(requestId: string): Promise<boolean>;
 }
 
 export class AdminRepository implements AdminRepositoryLike {
@@ -361,6 +384,86 @@ export class AdminRepository implements AdminRepositoryLike {
         active: activeCategories
       }
     };
+  }
+
+  async listRequestsForAdmin(page: number, limit: number, q?: string) {
+    const p = normalizePage(page);
+    const l = normalizeLimit(limit);
+    const where: Prisma.RequestWhereInput = {};
+    const trimmed = q?.trim();
+    if (trimmed != null && trimmed.length > 0) {
+      where.OR = [
+        { title: { contains: trimmed, mode: 'insensitive' } },
+        { id: trimmed },
+        { buyer: { email: { contains: trimmed, mode: 'insensitive' } } },
+        { buyer: { name: { contains: trimmed, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.client.request.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (p - 1) * l,
+        take: l,
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          _count: { select: { offers: true, dealOrders: true } }
+        }
+      }),
+      this.client.request.count({ where })
+    ]);
+
+    return {
+      items: items.map((row) => ({
+        id: row.id,
+        title: row.title,
+        status: row.status,
+        currency: row.currency,
+        quantity: row.quantity,
+        offerCount: row.offerCount,
+        offersCount: row._count.offers,
+        dealOrdersCount: row._count.dealOrders,
+        createdAt: row.createdAt.toISOString(),
+        publishedAt: row.publishedAt?.toISOString() ?? null,
+        categoryId: row.categoryId,
+        buyer: row.buyer
+      })),
+      meta: buildPageMeta(p, l, total)
+    };
+  }
+
+  async deleteRequestById(requestId: string): Promise<boolean> {
+    const existing = await this.client.request.findUnique({
+      where: { id: requestId },
+      select: { id: true }
+    });
+    if (existing == null) {
+      return false;
+    }
+
+    const offerIds = (
+      await this.client.offer.findMany({
+        where: { requestId },
+        select: { id: true }
+      })
+    ).map((o) => o.id);
+
+    await this.client.$transaction(async (tx) => {
+      await tx.contentFlag.deleteMany({
+        where: {
+          OR: [
+            { targetType: 'request', targetId: requestId },
+            ...(offerIds.length > 0
+              ? [{ targetType: 'offer' as const, targetId: { in: offerIds } }]
+              : [])
+          ]
+        }
+      });
+      await tx.request.delete({ where: { id: requestId } });
+    });
+
+    return true;
   }
 }
 

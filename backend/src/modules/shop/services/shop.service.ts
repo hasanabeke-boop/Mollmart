@@ -291,6 +291,13 @@ export class ShopService {
     return this.serializeOrder(updated);
   }
 
+  async deleteOrderAdmin(_admin: AuthUser, orderId: string): Promise<void> {
+    const deleted = await this.repo.deleteOrderById(orderId);
+    if (!deleted) {
+      throw notFound('Order not found');
+    }
+  }
+
   private parseOrderStatus(status?: string): CatalogOrderStatus | undefined {
     if (status == null || status.trim().length === 0) {
       return undefined;

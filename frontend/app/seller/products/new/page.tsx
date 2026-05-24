@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import RoleGate from "@/components/auth/RoleGate";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { canUseSellerWorkspace } from "@/lib/workspace";
 import { uploadCatalogImage } from "@/lib/catalog";
 
 type Category = {
@@ -29,6 +32,8 @@ function looksLikeImageSrc(s: string): boolean {
 
 export default function NewCatalogProductPage() {
   const { user, loading: authLoading } = useAuth();
+  const { activeRole } = useWorkspace();
+  const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -49,10 +54,8 @@ export default function NewCatalogProductPage() {
   const mainInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const canUse = user?.role === "seller" || user?.role === "admin";
-
   useEffect(() => {
-    if (authLoading || !canUse) return;
+    if (authLoading || !sellerWorkspace) return;
     let cancelled = false;
     (async () => {
       try {
@@ -67,7 +70,7 @@ export default function NewCatalogProductPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, canUse]);
+  }, [authLoading, sellerWorkspace]);
 
   const revokeMainBlob = useCallback(() => {
     if (mainPreviewRef.current != null) {
@@ -147,7 +150,7 @@ export default function NewCatalogProductPage() {
   const onSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!canUse) return;
+      if (!sellerWorkspace) return;
       setError("");
       setSubmitting(true);
       try {
@@ -186,7 +189,7 @@ export default function NewCatalogProductPage() {
       }
     },
     [
-      canUse,
+      sellerWorkspace,
       title,
       description,
       categoryId,
@@ -198,28 +201,21 @@ export default function NewCatalogProductPage() {
     ],
   );
 
-  if (authLoading) {
-    return <div className="mx-auto max-w-2xl px-4 py-12 text-slate-500">Loading…</div>;
-  }
-
-  if (!canUse) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-slate-700 mb-4">Only seller or admin accounts can add showcase listings.</p>
-        <Link href="/login" className="text-primary font-semibold hover:underline">
-          Log in
-        </Link>
-      </div>
-    );
-  }
-
   return (
+    <RoleGate
+      allowedRoles={["seller", "admin"]}
+      title="Seller workspace"
+      description="Showcase listings are created in seller mode. Switch to seller using the toggle in the navbar."
+      ctaHref="/seller/showcase"
+      ctaLabel="My showcase"
+      unauthenticatedDescription="Log in to add showcase listings."
+    >
     <div className="mx-auto max-w-2xl px-4 py-8 pb-16">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#0d1b12]">New showcase listing</h1>
         <p className="mt-1 text-sm text-slate-500">
           Show buyers what you can deliver — photos and story only. Buyers post requests with their own budget; this
-          page is for inspiration, not fixed prices. (Cart and orders stay available elsewhere for later use.)
+          page is for inspiration, not fixed prices. Buyers still create requests and agree on deals in chat.
         </p>
       </div>
 
@@ -504,5 +500,6 @@ export default function NewCatalogProductPage() {
         </div>
       </form>
     </div>
+    </RoleGate>
   );
 }

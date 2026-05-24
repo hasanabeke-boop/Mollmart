@@ -105,6 +105,31 @@ export class AdminController {
     });
     res.status(httpStatus.OK).json(data);
   };
+
+  deleteRequestOrder = async (req: Request, res: Response): Promise<void> => {
+    await this.dealService.deleteRequestOrderAdmin(req.params.id);
+    res.status(httpStatus.NO_CONTENT).send();
+  };
+
+  deleteCatalogOrder = async (req: Request, res: Response): Promise<void> => {
+    await this.shopService.deleteOrderAdmin(req.user!, req.params.id);
+    res.status(httpStatus.NO_CONTENT).send();
+  };
+
+  listRequests = async (req: Request, res: Response): Promise<void> => {
+    const { page, limit, q } = req.query as unknown as {
+      page: number;
+      limit: number;
+      q?: string;
+    };
+    const data = await this.adminService.listRequests(page, limit, q);
+    res.status(httpStatus.OK).json(data);
+  };
+
+  deleteRequest = async (req: Request, res: Response): Promise<void> => {
+    await this.adminService.deleteRequest(req.user!, req.params.id);
+    res.status(httpStatus.NO_CONTENT).send();
+  };
 }
 
 export default AdminController;
