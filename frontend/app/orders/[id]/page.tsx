@@ -7,9 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
-import { fetchMyRequestDealOrder, type RequestDealOrder } from "@/lib/requestDeals";
+import { fetchMyOrder, type ShopOrder } from "@/lib/shop";
 
-function statusLabel(s: RequestDealOrder["status"]) {
+function statusLabel(s: ShopOrder["status"]) {
   switch (s) {
     case "processing":
       return "Processing";
@@ -28,7 +28,7 @@ export default function OrderDetailsPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useWorkspace();
   const router = useRouter();
-  const [order, setOrder] = useState<RequestDealOrder | null>(null);
+  const [order, setOrder] = useState<ShopOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -44,7 +44,7 @@ export default function OrderDetailsPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchMyRequestDealOrder(id);
+        const data = await fetchMyOrder(id);
         if (!cancelled) setOrder(data);
       } catch (e: unknown) {
         const err = e as Error & { status?: number };
