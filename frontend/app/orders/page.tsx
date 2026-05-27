@@ -95,16 +95,9 @@ export default function OrdersPage() {
     setPage(1);
   };
 
-<<<<<<< HEAD
-  const isSellerView = activeRole === "seller";
-
-  const totalPages = Math.max(1, meta.totalPages);
-
-=======
   const isSellerView = activeRole === "seller" || user?.role === "admin";
 
   const totalPages = Math.max(1, meta.totalPages);
->>>>>>> 8d3d4366dc2b936f4e5602747de427bdcf1b9a6f
   const rows = useMemo(() => {
     return items.map((order) => {
       const rawThumb = order.lines[0]?.imageUrl ?? "";
