@@ -124,7 +124,10 @@ enum ContentFlagStatus {
 enum NotificationType {
   request_published
   offer_created
+  offer_updated
+  offer_withdrawn
   offer_accepted
+  offer_rejected
   chat_message_created
   user_blocked
   moderation_case_created

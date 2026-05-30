@@ -14,7 +14,10 @@ import { NotificationEventMapperLike } from './notification-event-mapper.service
 const baseChannels = [
   'request.published',
   'offer.created',
+  'offer.updated',
+  'offer.withdrawn',
   'offer.accepted',
+  'offer.rejected',
   'chat.message.created',
   'user.blocked',
   'shop.order.placed',
@@ -86,9 +89,9 @@ export class NotificationWorker {
 
             const recipient = await prisma.user.findUnique({
               where: { id: notification.userId },
-              select: { email: true }
+              select: { email: true, emailVerified: true }
             });
-            if (recipient?.email != null && recipient.email.length > 0) {
+            if (recipient?.email != null && recipient.email.length > 0 && recipient.emailVerified != null) {
               await sendNotificationEmail(recipient.email, notification.title, notification.body);
             }
           } catch (emailError) {

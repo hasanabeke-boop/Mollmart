@@ -43,7 +43,7 @@ type NotificationPreferences = {
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   requestUpdates: true,
   offerReplies: true,
-  newsletter: false,
+  newsletter: true,
 };
 
 function navButtonClass(active: boolean) {

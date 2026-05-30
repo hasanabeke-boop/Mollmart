@@ -4,8 +4,8 @@ import logger from '../../../middleware/logger';
 
 export interface OfferEventPublisherLike {
   publishOfferCreated(offer: OfferWithRelations, buyerId: string): Promise<void>;
-  publishOfferUpdated(offer: OfferWithRelations): Promise<void>;
-  publishOfferWithdrawn(offer: OfferWithRelations): Promise<void>;
+  publishOfferUpdated(offer: OfferWithRelations, buyerId: string): Promise<void>;
+  publishOfferWithdrawn(offer: OfferWithRelations, buyerId: string): Promise<void>;
   publishOfferAccepted(offer: OfferWithRelations): Promise<void>;
   publishOfferRejected(offer: OfferWithRelations): Promise<void>;
 }
@@ -15,12 +15,12 @@ export class OfferEventPublisher implements OfferEventPublisherLike {
     await this.publish('offer.created', offer, { buyerId });
   }
 
-  async publishOfferUpdated(offer: OfferWithRelations): Promise<void> {
-    await this.publish('offer.updated', offer);
+  async publishOfferUpdated(offer: OfferWithRelations, buyerId: string): Promise<void> {
+    await this.publish('offer.updated', offer, { buyerId });
   }
 
-  async publishOfferWithdrawn(offer: OfferWithRelations): Promise<void> {
-    await this.publish('offer.withdrawn', offer);
+  async publishOfferWithdrawn(offer: OfferWithRelations, buyerId: string): Promise<void> {
+    await this.publish('offer.withdrawn', offer, { buyerId });
   }
 
   async publishOfferAccepted(offer: OfferWithRelations): Promise<void> {

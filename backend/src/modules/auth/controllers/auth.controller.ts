@@ -159,8 +159,11 @@ const createEmailVerificationResponse = (
 ) => ({
   message,
   requiresEmailVerification: true,
-  ...(verificationToken ? { verificationToken } : {})
+  ...(config.nodeEnv !== 'production' && verificationToken ? { verificationToken } : {})
 });
+
+const verificationEmailStatus = (emailSent: boolean, successStatus: number): number =>
+  emailSent || config.nodeEnv !== 'production' ? successStatus : httpStatus.SERVICE_UNAVAILABLE;
 
 async function deleteUserAccount(userId: string): Promise<void> {
   await prismaClient.$transaction(async (tx) => {
@@ -273,34 +276,20 @@ export const handleSignUp = async (
           role: caps.role,
           canBuy: caps.canBuy,
           canSell: caps.canSell,
-          activeWorkspaceMode: caps.canSell && !caps.canBuy ? 'seller' : 'buyer',
-          ...(!config.auth.requireEmailVerification
-            ? { emailVerified: new Date() }
-            : {})
+          activeWorkspaceMode: caps.canSell && !caps.canBuy ? 'seller' : 'buyer'
         }
       });
-
-      if (!config.auth.requireEmailVerification) {
-        await prismaClient.emailVerificationToken.deleteMany({
-          where: { userId: checkUserEmail.id }
-        });
-
-        return res.status(httpStatus.OK).json({
-          message: 'Account updated. You can now log in.',
-          requiresEmailVerification: false
-        });
-      }
 
       const token = await createVerificationToken(checkUserEmail.id);
       const emailSent = await sendVerifyEmail(email, token);
 
-      return res.status(httpStatus.OK).json(
+      return res.status(verificationEmailStatus(emailSent, httpStatus.OK)).json(
         emailSent
           ? createEmailVerificationResponse(
               'User already exists but is not verified. A new verification email was sent.'
             )
           : createEmailVerificationResponse(
-              'User already exists but is not verified. Verification email is disabled.',
+              'User already exists but is not verified. Verification email could not be sent.',
               token
             )
       );
@@ -323,32 +312,22 @@ export const handleSignUp = async (
         role: caps.role,
         canBuy: caps.canBuy,
         canSell: caps.canSell,
-        activeWorkspaceMode: caps.canSell && !caps.canBuy ? 'seller' : 'buyer',
-        ...(!config.auth.requireEmailVerification
-          ? { emailVerified: new Date() }
-          : {})
+        activeWorkspaceMode: caps.canSell && !caps.canBuy ? 'seller' : 'buyer'
       }
     });
-
-    if (!config.auth.requireEmailVerification) {
-      return res.status(httpStatus.CREATED).json({
-        message: 'New user created',
-        requiresEmailVerification: false
-      });
-    }
 
     const token = await createVerificationToken(newUser.id);
 
     // Send an email with the verification link
     const emailSent = await sendVerifyEmail(email, token);
 
-    return res.status(httpStatus.CREATED).json(
+    return res.status(verificationEmailStatus(emailSent, httpStatus.CREATED)).json(
       emailSent
         ? createEmailVerificationResponse(
             'New user created. Please verify your email before logging in.'
           )
         : createEmailVerificationResponse(
-            'New user created. Verification email is disabled.',
+            'New user created, but the verification email could not be sent.',
             token
           )
     );
@@ -410,7 +389,7 @@ export const handleLogin = async (
 
     // Check if email is verified
     // Check for verified email after verifying the password to prevent user enumeration attacks
-    if (config.auth.requireEmailVerification && !user.emailVerified) {
+    if (!user.emailVerified) {
       return res.status(httpStatus.UNAUTHORIZED).json({
         message: 'Your email is not verified! Please confirm your email!'
       });

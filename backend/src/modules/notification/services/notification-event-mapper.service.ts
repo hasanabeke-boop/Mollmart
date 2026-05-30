@@ -32,8 +32,14 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         return this.mapRequestPublished(event.payload);
       case 'offer.created':
         return this.mapOfferCreated(event.payload);
+      case 'offer.updated':
+        return this.mapOfferUpdated(event.payload);
+      case 'offer.withdrawn':
+        return this.mapOfferWithdrawn(event.payload);
       case 'offer.accepted':
         return this.mapOfferAccepted(event.payload);
+      case 'offer.rejected':
+        return this.mapOfferRejected(event.payload);
       case 'chat.message.created':
         return this.mapChatMessageCreated(event.payload);
       case 'user.blocked':
@@ -115,6 +121,72 @@ export class NotificationEventMapper implements NotificationEventMapperLike {
         referenceType: 'offer',
         referenceId: offerId,
         dedupeKey: `offer-accepted-${offerId}-${sellerId}`
+      }
+    ];
+  }
+
+  private mapOfferUpdated(payload: PlainObject): MappedNotification[] {
+    const buyerId = asString(payload.buyerId);
+    const offerId = asString(payload.offerId);
+
+    if (buyerId == null || offerId == null) {
+      logger.warn('Skipping offer.updated event due to missing buyerId or offerId');
+      return [];
+    }
+
+    return [
+      {
+        userId: buyerId,
+        type: 'offer_updated',
+        title: 'Offer updated',
+        body: 'A seller updated an offer for one of your requests.',
+        referenceType: 'offer',
+        referenceId: offerId,
+        dedupeKey: `offer-updated-${offerId}-${asString(payload.updatedAt) ?? 'latest'}-${buyerId}`
+      }
+    ];
+  }
+
+  private mapOfferWithdrawn(payload: PlainObject): MappedNotification[] {
+    const buyerId = asString(payload.buyerId);
+    const offerId = asString(payload.offerId);
+
+    if (buyerId == null || offerId == null) {
+      logger.warn('Skipping offer.withdrawn event due to missing buyerId or offerId');
+      return [];
+    }
+
+    return [
+      {
+        userId: buyerId,
+        type: 'offer_withdrawn',
+        title: 'Offer withdrawn',
+        body: 'A seller withdrew an offer from one of your requests.',
+        referenceType: 'offer',
+        referenceId: offerId,
+        dedupeKey: `offer-withdrawn-${offerId}-${buyerId}`
+      }
+    ];
+  }
+
+  private mapOfferRejected(payload: PlainObject): MappedNotification[] {
+    const sellerId = asString(payload.sellerId);
+    const offerId = asString(payload.offerId);
+
+    if (sellerId == null || offerId == null) {
+      logger.warn('Skipping offer.rejected event due to missing sellerId or offerId');
+      return [];
+    }
+
+    return [
+      {
+        userId: sellerId,
+        type: 'offer_rejected',
+        title: 'Offer not selected',
+        body: 'The buyer selected another offer for this request.',
+        referenceType: 'offer',
+        referenceId: offerId,
+        dedupeKey: `offer-rejected-${offerId}-${sellerId}`
       }
     ];
   }

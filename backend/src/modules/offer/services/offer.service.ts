@@ -91,7 +91,7 @@ export class OfferService {
     }
 
     const updated = await this.offerRepository.update(offerId, updatePayload, user.id, 'Updated by seller');
-    await this.offerEventPublisher.publishOfferUpdated(updated);
+    await this.offerEventPublisher.publishOfferUpdated(updated, request.buyerId);
     return updated;
   }
 
@@ -102,6 +102,7 @@ export class OfferService {
 
     const current = await this.getOwnedOffer(user.id, offerId);
     assertOfferWithdrawable(current.status);
+    const request = await this.requestModuleAdapter.getRequestById(current.requestId, user);
 
     const withdrawn = await this.offerRepository.transitionStatus(
       offerId,
@@ -110,7 +111,7 @@ export class OfferService {
       'Withdrawn by seller'
     );
 
-    await this.offerEventPublisher.publishOfferWithdrawn(withdrawn);
+    await this.offerEventPublisher.publishOfferWithdrawn(withdrawn, request.buyerId);
     return withdrawn;
   }
 

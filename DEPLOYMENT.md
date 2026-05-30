@@ -30,18 +30,20 @@ The root `render.yaml` Blueprint can create:
 - `mollmart` Docker web service
 - `mollmart-postgres` PostgreSQL database
 - `mollmart-redis` Redis-compatible Key Value service
-- persistent `/app/uploads` disk for local uploaded images
+- Cloudflare R2 configuration for uploaded images
 
-Also provide these optional/supporting production variables as needed:
+Render Free web services cannot connect to SMTP ports `25`, `465`, or `587`. For Gmail delivery on Render Free, enable the Gmail API in Google Cloud, create OAuth credentials, authorize the sender mailbox with the `https://www.googleapis.com/auth/gmail.send` scope, and provide the resulting refresh token:
 
 ```env
-SMTP_HOST=your-smtp-host
-SMTP_PORT=587
-SMTP_USERNAME=your-smtp-user
-SMTP_PASSWORD=your-smtp-password
-EMAIL_FROM=no-reply@your-domain.com
+GMAIL_API_CLIENT_ID=your-google-oauth-client-id
+GMAIL_API_CLIENT_SECRET=your-google-oauth-client-secret
+GMAIL_API_REFRESH_TOKEN=your-google-oauth-refresh-token
+GMAIL_API_USER_ID=me
+EMAIL_FROM=your-sender@gmail.com
 OPENAI_API_KEY=your-openai-key
 ```
+
+The backend exchanges the refresh token and sends MIME messages with Gmail API HTTPS calls. Gmail API is the only production email transport. Email verification is mandatory for every new account.
 
 If Render or Vercel gives you different public URLs, update these:
 

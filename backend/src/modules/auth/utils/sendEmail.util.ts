@@ -1,6 +1,5 @@
-import nodemailer from 'nodemailer';
 import logger from '../../../middleware/logger';
-import { getTransporter } from '../config/nodemailer';
+import { sendEmail } from '../config/emailSender';
 import config from '../../../config/config';
 
 /**
@@ -34,9 +33,8 @@ export const sendResetEmail = async (
     `
   };
 
-  const transporter = await getTransporter();
-  if (!transporter) return false;
-  const info = await transporter.sendMail(mailOptions);
+  const info = await sendEmail(mailOptions);
+  if (!info) return false;
   logger.info('Reset password email sent: ' + info.response);
   return true;
 };
@@ -73,14 +71,9 @@ export const sendVerifyEmail = async (
   };
 
   try {
-    const transporter = await getTransporter();
-    if (!transporter) return false;
-    const info = await transporter.sendMail(mailOptions);
+    const info = await sendEmail(mailOptions);
+    if (!info) return false;
     logger.info('Verify email sent: ' + info.response);
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      logger.info(`Open this URL to see the message in Ethereal (fake inbox): ${previewUrl}`);
-    }
     return true;
   } catch (err) {
     logger.error('sendVerifyEmail failed', err);
@@ -120,9 +113,8 @@ export const sendNotificationEmail = async (
     `
   };
 
-  const transporter = await getTransporter();
-  if (!transporter) return false;
-  const info = await transporter.sendMail(mailOptions);
+  const info = await sendEmail(mailOptions);
+  if (!info) return false;
   logger.info('Notification email sent: ' + info.response);
   return true;
 };

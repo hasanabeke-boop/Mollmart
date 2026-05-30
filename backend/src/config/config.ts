@@ -37,15 +37,11 @@ const envSchema = Joi.object({
     .falsy('0')
     .default(false),
   SUBSCRIBE_MODERATION_EVENTS: Joi.boolean().truthy('true').truthy('1').falsy('false').falsy('0').default(true),
-  REQUIRE_EMAIL_VERIFICATION: Joi.string()
-    .lowercase()
-    .valid('auto', 'true', 'false', '1', '0')
-    .default('auto'),
-  SMTP_HOST: Joi.string().default('smtp.example.com'),
-  SMTP_PORT: Joi.string().default('587'),
-  SMTP_USERNAME: Joi.string().default('user@example.com'),
-  SMTP_PASSWORD: Joi.string().default('password'),
   EMAIL_FROM: Joi.string().email().default('no-reply@example.com'),
+  GMAIL_API_CLIENT_ID: Joi.string().allow('').default(''),
+  GMAIL_API_CLIENT_SECRET: Joi.string().allow('').default(''),
+  GMAIL_API_REFRESH_TOKEN: Joi.string().allow('').default(''),
+  GMAIL_API_USER_ID: Joi.string().trim().default('me'),
   INTERNAL_API_TOKEN: Joi.string().allow('').default(''),
   OPENAI_API_KEY: Joi.string().allow('').default(''),
   OPENAI_MODEL: Joi.string().default('gpt-5-mini'),
@@ -114,6 +110,30 @@ const envSchema = Joi.object({
     return value;
   })
   .custom((value, helpers) => {
+    const gmailApiParts = [
+      value.GMAIL_API_CLIENT_ID,
+      value.GMAIL_API_CLIENT_SECRET,
+      value.GMAIL_API_REFRESH_TOKEN
+    ].map((v: string | undefined) => (typeof v === 'string' ? v.trim() : ''));
+    const gmailApiSet = gmailApiParts.filter((part) => part.length > 0).length;
+    if (gmailApiSet !== 0 && gmailApiSet !== gmailApiParts.length) {
+      return helpers.error('any.custom', {
+        message: 'Gmail API: set all of GMAIL_API_CLIENT_ID, GMAIL_API_CLIENT_SECRET, GMAIL_API_REFRESH_TOKEN, or leave all empty'
+      });
+    }
+    if (value.NODE_ENV === 'production' && gmailApiSet !== gmailApiParts.length) {
+      return helpers.error('any.custom', {
+        message: 'Production email delivery requires Gmail API OAuth credentials'
+      });
+    }
+    if (value.NODE_ENV === 'production' && value.EMAIL_FROM === 'no-reply@example.com') {
+      return helpers.error('any.custom', {
+        message: 'Production EMAIL_FROM must be the Gmail account authorized by GMAIL_API_REFRESH_TOKEN'
+      });
+    }
+    return value;
+  })
+  .custom((value, helpers) => {
     const parts = [
       value.R2_ENDPOINT,
       value.R2_BUCKET,
@@ -146,17 +166,10 @@ if (error != null) {
 const accessSecret = (value.JWT_ACCESS_SECRET ?? value.ACCESS_TOKEN_SECRET) as string;
 const refreshSecret = (value.JWT_REFRESH_SECRET ?? value.REFRESH_TOKEN_SECRET) as string;
 const nodeEnv = value.NODE_ENV as 'development' | 'production' | 'test';
-const emailEnabled =
-  value.SMTP_HOST !== 'smtp.example.com' &&
-  value.SMTP_USERNAME !== 'user@example.com' &&
-  value.SMTP_PASSWORD !== 'password';
-const requireEmailVerificationSetting = value.REQUIRE_EMAIL_VERIFICATION as string;
-/** `auto`: always require email verification; use `false` or `0` only to disable (e.g. tests). */
-const requireEmailVerification =
-  requireEmailVerificationSetting === 'auto'
-    ? true
-    : requireEmailVerificationSetting === 'true' ||
-      requireEmailVerificationSetting === '1';
+const gmailApiEmailEnabled =
+  String(value.GMAIL_API_CLIENT_ID).trim().length > 0 &&
+  String(value.GMAIL_API_CLIENT_SECRET).trim().length > 0 &&
+  String(value.GMAIL_API_REFRESH_TOKEN).trim().length > 0;
 
 function normalizeR2Endpoint(raw: string): string {
   try {
@@ -235,18 +248,14 @@ const config = {
   subscriptions: {
     moderationEvents: Boolean(value.SUBSCRIBE_MODERATION_EVENTS)
   },
-  auth: {
-    requireEmailVerification
-  },
   email: {
-    enabled: emailEnabled,
-    smtp: {
-      host: value.SMTP_HOST as string,
-      port: value.SMTP_PORT as string,
-      auth: {
-        username: value.SMTP_USERNAME as string,
-        password: value.SMTP_PASSWORD as string
-      }
+    enabled: gmailApiEmailEnabled,
+    gmailApi: {
+      enabled: gmailApiEmailEnabled,
+      clientId: value.GMAIL_API_CLIENT_ID as string,
+      clientSecret: value.GMAIL_API_CLIENT_SECRET as string,
+      refreshToken: value.GMAIL_API_REFRESH_TOKEN as string,
+      userId: value.GMAIL_API_USER_ID as string
     },
     from: value.EMAIL_FROM as string
   },

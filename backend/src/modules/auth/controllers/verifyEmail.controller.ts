@@ -7,6 +7,13 @@ import { sendVerifyEmail } from '../utils/sendEmail.util';
 import logger from '../../../middleware/logger';
 import config from '../../../config/config';
 
+function emailDeliveryFailed(res: Response, verificationToken: string) {
+  return res.status(config.nodeEnv === 'production' ? httpStatus.SERVICE_UNAVAILABLE : httpStatus.OK).json({
+    message: 'Verification email could not be sent.',
+    ...(config.nodeEnv !== 'production' ? { verificationToken } : {})
+  });
+}
+
 /**
  * Sends Verification email
  * @param req
@@ -44,21 +51,6 @@ export const sendVerificationEmail = async (
       .json({ error: 'Email already verified' });
   }
 
-  if (!config.auth.requireEmailVerification) {
-    await prismaClient.user.update({
-      where: { id: user.id },
-      data: { emailVerified: new Date() }
-    });
-
-    await prismaClient.emailVerificationToken.deleteMany({
-      where: { userId: user.id }
-    });
-
-    return res.status(httpStatus.OK).json({
-      message: 'Email verification is disabled. Account is ready to use.'
-    });
-  }
-
   // Check if there is an existing verification token that has not expired
   const existingToken = await prismaClient.emailVerificationToken.findFirst({
     where: {
@@ -68,14 +60,10 @@ export const sendVerificationEmail = async (
   });
 
   if (existingToken) {
-    return res.status(httpStatus.OK).json(
-      config.email.enabled
-        ? { message: 'Verification email already sent' }
-        : {
-            message: 'Verification email is disabled.',
-            verificationToken: existingToken.token
-          }
-    );
+    const emailSent = await sendVerifyEmail(email, existingToken.token);
+    return emailSent
+      ? res.status(httpStatus.OK).json({ message: 'Verification email sent' })
+      : emailDeliveryFailed(res, existingToken.token);
   }
 
   try {
@@ -94,14 +82,9 @@ export const sendVerificationEmail = async (
     const emailSent = await sendVerifyEmail(email, token);
 
     // Return a success message
-    return res.status(httpStatus.OK).json(
-      emailSent
-        ? { message: 'Verification email sent' }
-        : {
-            message: 'Verification email is disabled.',
-            verificationToken: token
-          }
-    );
+    return emailSent
+      ? res.status(httpStatus.OK).json({ message: 'Verification email sent' })
+      : emailDeliveryFailed(res, token);
   } catch (error) {
     logger.error(error);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

@@ -69,7 +69,13 @@ async function signupAndLogin(role: 'buyer' | 'seller', email: string): Promise<
     });
 
   expect([200, 201]).toContain(signupRes.status);
-  expect(signupRes.body).toMatchObject({ requiresEmailVerification: false });
+  expect(signupRes.body).toMatchObject({ requiresEmailVerification: true });
+  expect(typeof signupRes.body.verificationToken).toBe('string');
+
+  const verifyRes = await request(app)
+    .post(`/api/v1/verify-email/${encodeURIComponent(signupRes.body.verificationToken as string)}`);
+
+  expect(verifyRes.status).toBe(200);
 
   const loginRes = await request(app)
     .post('/api/v1/auth/login')

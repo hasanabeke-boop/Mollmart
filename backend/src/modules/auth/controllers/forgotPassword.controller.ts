@@ -40,7 +40,7 @@ export const handleForgotPassword = async (
     });
   }
 
-  if (config.auth.requireEmailVerification && !user.emailVerified) {
+  if (!user.emailVerified) {
     return res.status(httpStatus.UNAUTHORIZED).json({
       message: 'Your email is not verified! Please confirm your email!'
     });
@@ -67,14 +67,14 @@ export const handleForgotPassword = async (
     const emailSent = await sendResetEmail(email, resetToken);
 
     // Return a success message
-    return res.status(httpStatus.OK).json(
-      emailSent
-        ? { message: 'Password reset email sent' }
-        : {
-            message: 'Password reset email is disabled.',
-            resetToken
-          }
-    );
+    if (!emailSent) {
+      return res.status(config.nodeEnv === 'production' ? httpStatus.SERVICE_UNAVAILABLE : httpStatus.OK).json({
+        message: 'Password reset email could not be sent.',
+        ...(config.nodeEnv !== 'production' ? { resetToken } : {})
+      });
+    }
+
+    return res.status(httpStatus.OK).json({ message: 'Password reset email sent' });
   } catch (error) {
     logger.error(error);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

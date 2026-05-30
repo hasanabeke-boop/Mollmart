@@ -9,7 +9,7 @@ export type NotificationPreferences = {
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   requestUpdates: true,
   offerReplies: true,
-  newsletter: false
+  newsletter: true
 };
 
 const REQUEST_UPDATE_TYPES = new Set<NotificationType>([
@@ -22,7 +22,10 @@ const REQUEST_UPDATE_TYPES = new Set<NotificationType>([
 
 const OFFER_REPLY_TYPES = new Set<NotificationType>([
   'offer_created',
+  'offer_updated',
+  'offer_withdrawn',
   'offer_accepted',
+  'offer_rejected',
   'chat_message_created'
 ]);
 
@@ -37,7 +40,7 @@ export function parseNotificationPreferences(raw: unknown): NotificationPreferen
   return {
     requestUpdates: record.requestUpdates !== false,
     offerReplies: record.offerReplies !== false,
-    newsletter: record.newsletter === true
+    newsletter: record.newsletter !== false
   };
 }
 

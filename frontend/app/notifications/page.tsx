@@ -38,7 +38,10 @@ function tabCategoryFromType(type: string): NotificationCategory | "system" {
     case "request_published":
       return "requests";
     case "offer_created":
+    case "offer_updated":
+    case "offer_withdrawn":
     case "offer_accepted":
+    case "offer_rejected":
       return "offers";
     case "chat_message_created":
       return "messages";
@@ -59,7 +62,10 @@ function iconFromType(type: string): NotificationItem["iconType"] {
     case "chat_message_created":
       return "message";
     case "offer_created":
+    case "offer_updated":
+    case "offer_withdrawn":
     case "offer_accepted":
+    case "offer_rejected":
       return "offer";
     case "shop_order_placed":
     case "shop_order_status_changed":

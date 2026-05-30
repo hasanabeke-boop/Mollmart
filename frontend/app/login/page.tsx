@@ -149,7 +149,7 @@ export default function LoginPage() {
       });
       if (result.resetToken) {
         setForgotResetToken(result.resetToken);
-        toastSuccess(result.message || "Password reset email is disabled. Use the local reset link.");
+        toastSuccess(result.message || "Check your email for the password reset link.");
         return;
       }
       toastSuccess("If this email is registered, we sent reset instructions.");

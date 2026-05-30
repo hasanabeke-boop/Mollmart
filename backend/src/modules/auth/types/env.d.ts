@@ -14,10 +14,10 @@ declare namespace NodeJS {
     readonly POSTGRES_USER: string;
     readonly POSTGRES_PASSWORD: string;
     readonly DATABASE_URL: string;
-    readonly SMTP_HOST: string;
-    readonly SMTP_PORT: string;
-    readonly SMTP_USERNAME: string;
-    readonly SMTP_PASSWORD: string;
     readonly EMAIL_FROM: string;
+    readonly GMAIL_API_CLIENT_ID: string;
+    readonly GMAIL_API_CLIENT_SECRET: string;
+    readonly GMAIL_API_REFRESH_TOKEN: string;
+    readonly GMAIL_API_USER_ID: string;
   }
 }
