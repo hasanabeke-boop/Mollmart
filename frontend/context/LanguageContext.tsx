@@ -38,14 +38,13 @@ function getInitialLanguage(): Language {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { user, refreshUser } = useAuth();
-  const [language, setLanguageState] = useState<Language>(() => getInitialLanguage());
-
-  useEffect(() => {
-    const preferred = normalizeLanguage(user?.languagePreference);
-    if (user?.languagePreference && preferred !== language) {
-      setLanguageState(preferred);
-    }
-  }, [user?.languagePreference, language]);
+  const currentUserId = user?.id ?? null;
+  const serverLanguage = user?.languagePreference ? normalizeLanguage(user.languagePreference) : null;
+  const [selection, setSelection] = useState<{ language: Language; userId: string | null }>(() => ({
+    language: getInitialLanguage(),
+    userId: null,
+  }));
+  const language = selection.userId === currentUserId ? selection.language : serverLanguage ?? selection.language;
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -53,7 +52,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback(
     (next: Language) => {
-      setLanguageState(next);
+      setSelection({ language: next, userId: currentUserId });
       try {
         window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
       } catch {
@@ -70,7 +69,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           .catch(() => {});
       }
     },
-    [refreshUser, user],
+    [currentUserId, refreshUser, user],
   );
 
   const t = useCallback((text: string) => translateUiText(text, language), [language]);

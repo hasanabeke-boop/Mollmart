@@ -81,7 +81,8 @@ export type ApiFetchOptions = RequestInit & {
 };
 
 export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
-  const { activeMode: activeModeOverride, service: _service, ...fetchOptions } = options;
+  const { activeMode: activeModeOverride, service, ...fetchOptions } = options;
+  void service;
 
   const isFormData =
     typeof FormData !== "undefined" && fetchOptions.body != null && fetchOptions.body instanceof FormData;

@@ -272,7 +272,9 @@ export class DealService {
     return this.getDealState(user, proposal.conversationId);
   }
 
-  async demoPay(user: AuthUser, conversationId: string, _cardLast4: string) {
+  async demoPay(user: AuthUser, conversationId: string, _cardLast4: string, _cardHolderName?: string) {
+    void _cardLast4;
+    void _cardHolderName;
     const conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { request: { select: { id: true, title: true, quantity: true } } }

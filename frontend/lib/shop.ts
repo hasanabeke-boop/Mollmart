@@ -86,6 +86,8 @@ export async function checkoutCart(body: {
   shippingName?: string;
   shippingPhone?: string;
   shippingAddress?: string;
+  cardLast4?: string;
+  cardHolderName?: string;
 }): Promise<{ orders: ShopOrder[] }> {
   return apiFetchWithRefresh<{ orders: ShopOrder[] }>("/api/v1/shop/checkout", {
     method: "POST",

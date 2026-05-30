@@ -156,11 +156,17 @@ export async function acceptPriceProposal(proposalId: string): Promise<DealState
   });
 }
 
-export async function demoPayConversation(conversationId: string, cardLast4: string): Promise<RequestDealOrder> {
+export async function demoPayConversation(
+  conversationId: string,
+  card: { cardLast4: string; cardHolderName?: string },
+): Promise<RequestDealOrder> {
   return apiFetchWithRefresh<RequestDealOrder>(`/api/v1/conversations/${encodeURIComponent(conversationId)}/demo-pay`, {
     method: "POST",
     service: "deal",
-    body: JSON.stringify({ cardLast4 }),
+    body: JSON.stringify({
+      cardLast4: card.cardLast4.trim(),
+      cardHolderName: card.cardHolderName?.trim(),
+    }),
   });
 }
 

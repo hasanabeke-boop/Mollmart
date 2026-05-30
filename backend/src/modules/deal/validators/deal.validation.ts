@@ -55,7 +55,8 @@ export const adminRequestOrderPatchSchema = {
 
 export const demoPaySchema = {
   body: Joi.object({
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required()
+    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required(),
+    cardHolderName: Joi.string().trim().min(2).max(120).optional()
   })
 };
 

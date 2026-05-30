@@ -49,6 +49,10 @@ const envSchema = Joi.object({
   INTERNAL_API_TOKEN: Joi.string().allow('').default(''),
   OPENAI_API_KEY: Joi.string().allow('').default(''),
   OPENAI_MODEL: Joi.string().default('gpt-5-mini'),
+  FRONTEND_URL: Joi.string().uri().default('http://localhost:3000'),
+  STRIPE_SECRET_KEY: Joi.string().allow('').default(''),
+  STRIPE_WEBHOOK_SECRET: Joi.string().allow('').default(''),
+  STRIPE_ALLOWED_CURRENCIES: Joi.string().allow('').default('USD,EUR,KZT'),
   R2_ENDPOINT: Joi.string().uri().optional().allow(''),
   R2_BUCKET: Joi.string().trim().optional().allow(''),
   R2_ACCESS_KEY_ID: Joi.string().optional().allow(''),
@@ -252,6 +256,18 @@ const config = {
   openai: {
     apiKey: value.OPENAI_API_KEY as string,
     model: value.OPENAI_MODEL as string
+  },
+  frontend: {
+    url: (value.FRONTEND_URL as string).replace(/\/$/, '')
+  },
+  stripe: {
+    secretKey: value.STRIPE_SECRET_KEY as string,
+    webhookSecret: value.STRIPE_WEBHOOK_SECRET as string,
+    allowedCurrencies: String(value.STRIPE_ALLOWED_CURRENCIES)
+      .split(',')
+      .map((currency) => currency.trim().toUpperCase())
+      .filter((currency) => currency.length === 3),
+    enabled: String(value.STRIPE_SECRET_KEY).trim().length > 0
   },
   requestService: {
     url: `${value.SERVER_URL}/api/v1`,

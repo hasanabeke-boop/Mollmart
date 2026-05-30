@@ -33,8 +33,13 @@ export class DealController {
   };
 
   demoPay = async (req: Request, res: Response): Promise<void> => {
-    const body = req.body as { cardLast4: string };
-    const data = await this.dealService.demoPay(req.user as AuthUser, req.params.conversationId, body.cardLast4);
+    const body = req.body as { cardLast4: string; cardHolderName?: string };
+    const data = await this.dealService.demoPay(
+      req.user as AuthUser,
+      req.params.conversationId,
+      body.cardLast4,
+      body.cardHolderName
+    );
     res.status(httpStatus.CREATED).json(data);
   };
 

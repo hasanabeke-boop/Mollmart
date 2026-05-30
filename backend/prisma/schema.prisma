@@ -496,6 +496,10 @@ model CatalogOrder {
   buyerId         String
   sellerId        String
   status          CatalogOrderStatus @default(processing)
+  paymentProvider String             @default("demo")
+  paymentStatus   String             @default("paid")
+  stripeSessionId String?            @unique
+  stripePaymentIntentId String?      @unique
   currency        String             @db.VarChar(3)
   subtotal        Decimal            @db.Decimal(14, 2)
   shippingAmount  Decimal            @default(0) @db.Decimal(14, 2)
@@ -557,6 +561,10 @@ model RequestDealOrder {
   amount          Decimal            @db.Decimal(14, 2)
   currency        String             @db.VarChar(3)
   status          CatalogOrderStatus @default(processing)
+  paymentProvider String             @default("demo")
+  paymentStatus   String             @default("paid")
+  stripeSessionId String?            @unique
+  stripePaymentIntentId String?      @unique
   trackingNumber  String?
   carrier         String?
   paidAt          DateTime           @default(now())
@@ -570,6 +578,28 @@ model RequestDealOrder {
   @@index([buyerId, createdAt(sort: Desc)])
   @@index([sellerId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+}
+
+model PaymentSession {
+  id                    String   @id @default(cuid())
+  userId                String
+  kind                  String
+  status                String   @default("pending")
+  stripeSessionId       String   @unique
+  stripePaymentIntentId String?
+  conversationId        String?
+  checkoutCurrency      String?  @db.VarChar(3)
+  shippingName          String?
+  shippingPhone         String?
+  shippingAddress       String?  @db.Text
+  cartSnapshot          Json?
+  lastError             String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([kind, status])
+  @@index([conversationId])
 }
 
 model ModerationCase {

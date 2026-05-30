@@ -30,7 +30,9 @@ export const shopCheckoutSchema = {
     checkoutCurrency: currency.required(),
     shippingName: Joi.string().trim().max(200).allow('', null).optional(),
     shippingPhone: Joi.string().trim().max(40).allow('', null).optional(),
-    shippingAddress: Joi.string().trim().max(2000).allow('', null).optional()
+    shippingAddress: Joi.string().trim().max(2000).allow('', null).optional(),
+    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).optional(),
+    cardHolderName: Joi.string().trim().min(2).max(120).optional()
   })
 };
 

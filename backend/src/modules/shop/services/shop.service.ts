@@ -13,6 +13,8 @@ export type CheckoutInput = {
   shippingName?: string | null;
   shippingPhone?: string | null;
   shippingAddress?: string | null;
+  cardLast4?: string | null;
+  cardHolderName?: string | null;
 };
 export type AdminPatchOrderInput = {
   status?: CatalogOrderStatus;
@@ -90,6 +92,8 @@ export class ShopService {
 
   async checkout(user: AuthUser, input: CheckoutInput) {
     this.assertBuyerCapability(user, 'checkout');
+    void input.cardLast4;
+    void input.cardHolderName;
     const checkoutCurrency = input.checkoutCurrency.trim().toUpperCase();
     if (!CHECKOUT_CURRENCIES.has(checkoutCurrency)) {
       throw badRequest('Invalid checkout currency');

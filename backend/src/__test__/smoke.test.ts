@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import request from 'supertest';
 import type { Express } from 'express';
 import type { PrismaClient } from '@prisma/client';
@@ -12,6 +13,7 @@ const runSmoke = process.env.RUN_SMOKE_TESTS === 'true';
 const describeSmoke = runSmoke ? describe : describe.skip;
 let app: Express;
 let prisma: PrismaClient;
+let prismaConnected = false;
 
 const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const password = 'SmokePass123!';
@@ -94,13 +96,19 @@ describeSmoke('backend smoke flow', () => {
     assertSafeSmokeDatabase();
     app = require('../app').default as Express;
     prisma = require('../config/prisma').default as PrismaClient;
+    await prisma.$connect();
+    prismaConnected = true;
     await cleanupSmokeData();
     categoryId = await createCategory();
   });
 
   afterAll(async () => {
-    await cleanupSmokeData();
-    await prisma.$disconnect();
+    if (prisma) {
+      if (prismaConnected) {
+        await cleanupSmokeData();
+      }
+      await prisma.$disconnect();
+    }
   });
 
   it('serves the health endpoint', async () => {
