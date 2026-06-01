@@ -217,7 +217,7 @@ function parseOptionalMoney(v: unknown): number | undefined {
 type FilterTab = "recommendations" | "all" | "published" | "has_offers";
 
 const SELLER_REC_HINT =
-  "To see recommended buyer requests, publish showcase listings in your categories or choose selling preferences in your profile settings.";
+  "To see recommended buyer requests, publish catalog products in your categories or choose selling preferences in your profile settings.";
 
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "recommendations", label: "Recommendations" },
@@ -678,11 +678,11 @@ export default function BrowseBuyerRequestsPage() {
       ctaLabel="Open my requests"
       unauthenticatedDescription="Log in as a seller to browse buyer requests and submit offers."
     >
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="app-page app-page-wide">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-2">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="mb-2 text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">
             Buyer Requests
           </h1>
           <p className="text-slate-500">
@@ -724,14 +724,15 @@ export default function BrowseBuyerRequestsPage() {
       </div>
 
       {/* Filter Tabs + Filters */}
-      <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2 scrollbar-hide gap-4">
-        <div className="flex p-1 bg-slate-200/50 rounded-xl backdrop-blur-sm">
+      <div className="mb-6 flex flex-col gap-3 sm:mb-8 md:flex-row md:items-center md:justify-between md:gap-4">
+        <div className="min-w-0 overflow-x-auto pb-1">
+        <div className="inline-flex min-w-min p-1 rounded-xl bg-[var(--surface-muted)]">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+              className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:px-5 sm:text-sm ${
                 activeTab === tab.id
                   ? "bg-white text-blue-600 shadow-sm font-bold"
                   : "text-slate-600 hover:text-slate-900"
@@ -741,7 +742,8 @@ export default function BrowseBuyerRequestsPage() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+        </div>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setShowFilters(!showFilters)}
@@ -833,7 +835,7 @@ export default function BrowseBuyerRequestsPage() {
           <p className="text-slate-600 text-sm mb-4">{SELLER_REC_HINT}</p>
           <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
             <Link href="/seller/products/new" className="text-blue-600 hover:underline">
-              Add a showcase listing
+              Add a product listing
             </Link>
             <Link href="/profile" className="text-blue-600 hover:underline">
               Profile settings

@@ -163,7 +163,7 @@ export default function ChatbotPage() {
   return (
     <div className="app-page-min-height bg-[#f5f6f8]">
       <main className="min-w-0">
-        <header className="border-b border-[#e7f3eb] bg-white px-4 py-4 lg:px-8">
+        <header className="border-b border-[var(--border)] bg-[var(--surface)] px-3 py-3 sm:px-4 sm:py-4 md:px-6">
           <div className="mx-auto flex max-w-5xl items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl border border-[#d9eadf] bg-[#f6fbf8] text-sm font-black tracking-tight text-[#0d1b12]">
               M
@@ -177,7 +177,7 @@ export default function ChatbotPage() {
           </div>
         </header>
 
-        <div className="px-4 py-6 lg:px-8">
+        <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6">
           <div className="mx-auto flex max-w-5xl flex-col gap-4">
             {messages.map((message) => {
               const mine = message.role === "user";
@@ -229,7 +229,7 @@ export default function ChatbotPage() {
           </div>
         </div>
 
-        <section className="border-t border-[#e7f3eb] bg-white px-4 py-4 lg:px-8">
+        <section className="border-t border-[var(--border)] bg-[var(--surface)] px-3 py-3 sm:px-4 sm:py-4 md:px-6">
           <div className="mx-auto max-w-5xl">
             {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
             <div className="mb-3 flex gap-2 overflow-x-auto pb-1">

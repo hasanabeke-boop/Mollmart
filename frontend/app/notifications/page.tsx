@@ -252,8 +252,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="flex flex-1 justify-center py-8 px-4 md:px-6">
-      <div className="flex flex-col max-w-[960px] w-full gap-6">
+    <main className="app-page app-page-narrow flex flex-col gap-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">
@@ -413,7 +412,6 @@ export default function NotificationsPage() {
             </p>
           )}
         </div>
-      </div>
     </main>
   );
 }

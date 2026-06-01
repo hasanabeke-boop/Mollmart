@@ -485,7 +485,7 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-[#f5f6f8]">
+    <div className="app-fill-below-header -mx-3 flex overflow-hidden bg-[var(--background)] sm:-mx-4 md:mx-0">
       <aside
         className={`${
           mobileListOpen ? "fixed inset-0 z-50 flex w-full" : "hidden lg:flex"

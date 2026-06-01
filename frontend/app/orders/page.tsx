@@ -111,13 +111,13 @@ export default function OrdersPage() {
   }, [items]);
 
   if (authLoading || (!user && !error)) {
-    return <div className="mx-auto max-w-[1280px] px-6 py-16 text-center text-slate-500">Loading…</div>;
+    return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading…</div>;
   }
 
   if (!user) return null;
 
   return (
-    <div className="flex-1 w-full max-w-[1280px] mx-auto px-6 py-8">
+    <div className="app-page app-page-wide">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-[#0d1b12] mb-2 tracking-tight">
           {isSellerView ? "Order history" : "My orders"}
@@ -153,8 +153,8 @@ export default function OrdersPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-[#cfe7d7] overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+        <div className="app-table-wrap border border-[var(--border-muted)] bg-[var(--surface)]">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="text-xs text-[#4c9a66] uppercase bg-[#f8fcf9] border-b border-[#cfe7d7]">
               <tr>
                 <th className="px-6 py-4 font-semibold w-16" scope="col">
@@ -243,7 +243,7 @@ export default function OrdersPage() {
                       </Link>
                     ) : (
                       <Link href="/products" className="text-primary font-semibold underline">
-                        Browse showcase
+                        Browse catalog
                       </Link>
                     )}
                   </td>

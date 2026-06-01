@@ -8,6 +8,8 @@ export interface AuthUser {
   canBuy?: boolean;
   canSell?: boolean;
   activeMode?: 'buyer' | 'seller';
+  /** Set by workspace auth middleware when both capabilities exist */
+  activeWorkspaceMode?: 'buyer' | 'seller';
 }
 
 declare module 'express-serve-static-core' {

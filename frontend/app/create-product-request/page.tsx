@@ -507,12 +507,12 @@ function CreateProductRequestContent() {
       ctaLabel="Browse buyer requests"
       unauthenticatedDescription="Log in as a buyer to create and publish requests."
     >
-    <div className="max-w-5xl mx-auto px-4 py-8 md:py-12 mb-24">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="app-page app-page-narrow pb-20 sm:pb-24">
+      <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-12">
         {/* Left Column: Branding & Instructions */}
         <div className="lg:col-span-4 space-y-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-4">
+            <h1 className="mb-4 text-2xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-3xl">
               Post a Request
             </h1>
             <p className="text-slate-600 leading-relaxed">

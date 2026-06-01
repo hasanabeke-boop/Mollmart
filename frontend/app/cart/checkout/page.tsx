@@ -160,7 +160,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
+    <main className="app-page app-page-narrow">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-[#0d1b12]">Checkout</h1>
         <p className="mt-1 text-sm text-[#4c9a66]">
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
 
       {error ? <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p> : null}
 
-      <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <form onSubmit={submit} className="grid gap-6 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <section className="rounded-xl border border-[#cfe7d7] bg-white p-5">
             <h2 className="text-lg font-black text-[#0d1b12]">Shipping details</h2>

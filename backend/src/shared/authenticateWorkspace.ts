@@ -54,65 +54,112 @@ async function resolveDevUser(req: Request): Promise<WorkspaceAuthUser | null> {
   };
 }
 
+async function resolveUserFromBearer(req: Request): Promise<WorkspaceAuthUser | null> {
+  const devUser = await resolveDevUser(req);
+  if (devUser != null) {
+    return devUser;
+  }
+
+  const header = req.header('authorization');
+  if (header == null || !header.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = header.slice('Bearer '.length);
+  const payload = verify(token, config.jwt.accessSecret) as TokenPayload;
+  const userId = payload.sub ?? payload.userId;
+
+  if (userId == null) {
+    return null;
+  }
+
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, canBuy: true, canSell: true, activeWorkspaceMode: true, status: true }
+  });
+
+  if (row == null) {
+    return null;
+  }
+
+  if (row.status === 'blocked' || row.status === 'suspended') {
+    return null;
+  }
+
+  const requested = parseActiveModeHeader(req.header('x-active-mode'));
+  const effectiveRole = resolveEffectiveRole(row, requested);
+
+  return {
+    id: userId,
+    role: effectiveRole,
+    canBuy: row.canBuy,
+    canSell: row.canSell,
+    activeMode: effectiveRole === 'seller' ? 'seller' : 'buyer'
+  };
+}
+
+/** Sets req.user when a valid token is present; continues as guest otherwise. */
+export async function optionalAuthenticateWorkspace(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const user = await resolveUserFromBearer(req);
+    if (user != null) {
+      req.user = {
+        id: user.id,
+        role: user.role,
+        canBuy: user.canBuy,
+        canSell: user.canSell,
+        activeMode: user.activeMode,
+      };
+    }
+    next();
+  } catch {
+    next();
+  }
+}
+
 export async function authenticateWorkspace(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const devUser = await resolveDevUser(req);
-    if (devUser != null) {
-      req.user = devUser;
-      next();
-      return;
-    }
-
-    const header = req.header('authorization');
-    if (header == null || !header.startsWith('Bearer ')) {
-      res.status(httpStatus.UNAUTHORIZED).json({ message: 'Authentication required' });
-      return;
-    }
-
-    const token = header.slice('Bearer '.length);
-    const payload = verify(token, config.jwt.accessSecret) as TokenPayload;
-    const userId = payload.sub ?? payload.userId;
-
-    if (userId == null) {
-      res.status(httpStatus.UNAUTHORIZED).json({ message: 'Invalid token payload' });
+    const user = await resolveUserFromBearer(req);
+    if (user == null) {
+      const header = req.header('authorization');
+      if (header == null || !header.startsWith('Bearer ')) {
+        res.status(httpStatus.UNAUTHORIZED).json({ message: 'Authentication required' });
+        return;
+      }
+      res.status(httpStatus.UNAUTHORIZED).json({ message: 'Invalid or expired token' });
       return;
     }
 
     const row = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, role: true, canBuy: true, canSell: true, activeWorkspaceMode: true, status: true }
+      where: { id: user.id },
+      select: { status: true }
     });
 
-    if (row == null) {
-      res.status(httpStatus.UNAUTHORIZED).json({ message: 'User not found' });
-      return;
-    }
-
-    if (row.status === 'blocked') {
+    if (row?.status === 'blocked') {
       res.status(httpStatus.FORBIDDEN).json({ message: 'Your account is blocked' });
       return;
     }
 
-    if (row.status === 'suspended') {
+    if (row?.status === 'suspended') {
       res.status(httpStatus.FORBIDDEN).json({ message: 'Your account is suspended' });
       return;
     }
 
-    const requested = parseActiveModeHeader(req.header('x-active-mode'));
-    const effectiveRole = resolveEffectiveRole(row, requested);
-
     req.user = {
-      id: userId,
-      role: effectiveRole,
-      canBuy: row.canBuy,
-      canSell: row.canSell,
-      activeMode: effectiveRole === 'seller' ? 'seller' : 'buyer'
+      id: user.id,
+      role: user.role,
+      canBuy: user.canBuy,
+      canSell: user.canSell,
+      activeMode: user.activeMode,
     };
-
     next();
   } catch {
     res.status(httpStatus.UNAUTHORIZED).json({ message: 'Invalid or expired token' });

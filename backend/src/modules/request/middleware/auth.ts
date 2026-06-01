@@ -1,1 +1,5 @@
-export { authenticateWorkspace as authenticate, requireRoles } from '../../../shared/authenticateWorkspace';
+export {
+  authenticateWorkspace as authenticate,
+  optionalAuthenticateWorkspace as optionalAuthenticate,
+  requireRoles
+} from '../../../shared/authenticateWorkspace';

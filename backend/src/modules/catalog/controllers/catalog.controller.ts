@@ -19,7 +19,10 @@ export class CatalogController {
   };
 
   listPublished = async (req: Request, res: Response): Promise<void> => {
-    const result = await this.catalogService.listPublished(req.query as unknown as CatalogListQuery);
+    const result = await this.catalogService.listPublished(
+      req.query as unknown as CatalogListQuery,
+      req.user
+    );
     res.status(httpStatus.OK).json(result);
   };
 

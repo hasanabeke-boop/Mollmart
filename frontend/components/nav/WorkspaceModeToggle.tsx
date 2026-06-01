@@ -2,7 +2,12 @@
 
 import { useWorkspace } from "@/context/WorkspaceContext";
 
-export default function WorkspaceModeToggle() {
+type Props = {
+  /** Smaller toggle for the mobile workspace bar */
+  compact?: boolean;
+};
+
+export default function WorkspaceModeToggle({ compact = false }: Props) {
   const { hasDualWorkspace, visualMode, setActiveMode, isModeTransitioning } = useWorkspace();
 
   if (!hasDualWorkspace) return null;
@@ -11,7 +16,11 @@ export default function WorkspaceModeToggle() {
 
   return (
     <div
-      className="workspace-toggle relative grid min-w-[7.25rem] shrink-0 grid-cols-2 rounded-md border border-gray-200 bg-gray-50 p-0.5 text-[10px] font-bold sm:min-w-[8rem] sm:text-xs"
+      className={`workspace-toggle relative grid shrink-0 grid-cols-2 rounded-md border border-[var(--border)] bg-[var(--surface-muted)] p-0.5 font-bold ${
+        compact
+          ? "min-w-[6.25rem] text-[9px]"
+          : "min-w-[7.25rem] text-[10px] sm:min-w-[8rem] sm:text-xs"
+      }`}
       role="group"
       aria-label="Workspace mode"
     >
