@@ -48,12 +48,10 @@ function applyThemeClass(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => readInitialTheme());
+  const [theme, setThemeState] = useState<Theme>("light");
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    applyThemeClass(theme);
-  }, [theme]);
-
+  // Initialize theme from storage/system preference on client mount
   useEffect(() => {
     const stored = readStoredTheme();
     const prefersDark =
@@ -61,29 +59,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const initial: Theme = stored ?? (prefersDark ? "dark" : "light");
     setThemeState(initial);
     applyThemeClass(initial);
+    setMounted(true);
   }, []);
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    applyThemeClass(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setThemeState((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      applyThemeClass(next);
+  // Apply theme class and save to localStorage whenever theme changes
+  useEffect(() => {
+    if (mounted) {
+      applyThemeClass(theme);
       try {
-        localStorage.setItem(STORAGE_KEY, next);
+        localStorage.setItem(STORAGE_KEY, theme);
       } catch {
         // ignore
       }
-      return next;
-    });
+    }
+  }, [theme, mounted]);
+
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
   }, []);
 
   const value = useMemo(

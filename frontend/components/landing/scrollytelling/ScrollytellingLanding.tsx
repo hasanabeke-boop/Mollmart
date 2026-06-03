@@ -5,6 +5,7 @@ import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+import LandingNavigation from "@/components/landing/scrollytelling/LandingNavigation";
 import ProgressNav from "@/components/landing/scrollytelling/ProgressNav";
 import { LANDING_SECTION_IDS } from "@/components/landing/scrollytelling/constants";
 import HeroSection from "@/components/landing/scrollytelling/sections/HeroSection";
@@ -14,7 +15,6 @@ import GallerySection from "@/components/landing/scrollytelling/sections/Gallery
 import BuyerSection from "@/components/landing/scrollytelling/sections/BuyerSection";
 import SellerSection from "@/components/landing/scrollytelling/sections/SellerSection";
 import DualAccountSection from "@/components/landing/scrollytelling/sections/DualAccountSection";
-import MetricsSection from "@/components/landing/scrollytelling/sections/MetricsSection";
 import TestimonialsSection from "@/components/landing/scrollytelling/sections/TestimonialsSection";
 import FaqSection from "@/components/landing/scrollytelling/sections/FaqSection";
 import CtaSection from "@/components/landing/scrollytelling/sections/CtaSection";
@@ -23,6 +23,13 @@ import LandingFooter from "@/components/landing/scrollytelling/sections/LandingF
 gsap.registerPlugin(ScrollTrigger);
 
 export default function ScrollytellingLanding() {
+  useEffect(() => {
+    document.documentElement.dataset.landing = "true";
+    return () => {
+      delete document.documentElement.dataset.landing;
+    };
+  }, []);
+
   useEffect(() => {
     const lenis = new Lenis({
       lerp: 0.1,
@@ -53,10 +60,17 @@ export default function ScrollytellingLanding() {
       }, 400);
     };
     scheduleRefresh();
+    
+    // Additional refresh after Hero animations initialize (fixes delayed card animations)
+    const heroRefreshTimer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 600);
+    
     window.addEventListener("load", scheduleRefresh, { once: true });
 
     return () => {
       if (refreshTimer) clearTimeout(refreshTimer);
+      clearTimeout(heroRefreshTimer);
       window.removeEventListener("load", scheduleRefresh);
       document.documentElement.classList.remove("lenis", "lenis-smooth");
       lenis.destroy();
@@ -67,8 +81,9 @@ export default function ScrollytellingLanding() {
 
   return (
     <div className="relative w-full">
+      <LandingNavigation />
       <ProgressNav sections={LANDING_SECTION_IDS} />
-      <div>
+      <div className="relative">
         <HeroSection />
         <ProblemSection />
         <FeaturesSection />
@@ -76,7 +91,6 @@ export default function ScrollytellingLanding() {
         <BuyerSection />
         <SellerSection />
         <DualAccountSection />
-        <MetricsSection />
         <TestimonialsSection />
         <FaqSection />
         <CtaSection />

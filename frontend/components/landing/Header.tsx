@@ -13,7 +13,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const iconBtnClass =
-  "flex size-9 shrink-0 items-center justify-center rounded-full text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]";
+  "flex size-9 shrink-0 items-center justify-center rounded-full transition-colors";
 
 export function Header() {
   const { user, loading, logout } = useAuth();
@@ -83,8 +83,10 @@ export function Header() {
     router.push(q ? `/browse-buyer-requests?q=${encodeURIComponent(q)}` : "/browse-buyer-requests");
   };
 
+  const iconBtn = `${iconBtnClass} text-[var(--foreground)] hover:bg-[var(--surface-hover)]`;
+
   return (
-    <header className="sticky top-0 z-50 box-border flex h-14 w-full shrink-0 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md supports-[backdrop-filter]:bg-[var(--surface)]/80 xl:h-16">
+    <header className="sticky top-0 z-50 box-border flex h-14 w-full shrink-0 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md transition-colors duration-300 supports-[backdrop-filter]:bg-[var(--surface)]/80 xl:h-16">
       <div
         className={`mx-auto flex h-full w-full min-w-0 max-w-[1600px] items-center gap-2 px-3 transition-opacity duration-300 sm:gap-3 sm:px-4 md:px-5 lg:px-6 ${
           navFaded ? "pointer-events-none opacity-0" : "opacity-100"
@@ -123,13 +125,13 @@ export function Header() {
               <div className="hidden md:block">
                 <WorkspaceModeToggle />
               </div>
-              <Link href="/chat" className={iconBtnClass} aria-label="Messages">
+              <Link href="/chat" className={iconBtn} aria-label="Messages">
                 <span className="material-symbols-outlined text-[20px]">chat</span>
               </Link>
-              <Link href="/chatbot" className={`${iconBtnClass} hidden sm:flex`} aria-label="Assistant">
+              <Link href="/chatbot" className={`${iconBtn} hidden sm:flex`} aria-label="Assistant">
                 <span className="material-symbols-outlined text-[20px]">smart_toy</span>
               </Link>
-              <Link href="/notifications" className={`${iconBtnClass} relative`} aria-label="Notifications">
+              <Link href="/notifications" className={`${iconBtn} relative`} aria-label="Notifications">
                 <span className="material-symbols-outlined text-[20px]">notifications</span>
                 {notifCount != null && notifCount > 0 ? (
                   <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--surface)] bg-primary px-1 text-[10px] font-bold text-[#0d1b12]">
@@ -182,7 +184,7 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link href="/chatbot" className={`${iconBtnClass} sm:flex`} aria-label="Assistant">
+              <Link href="/chatbot" className={`${iconBtn} sm:flex`} aria-label="Assistant">
                 <span className="material-symbols-outlined text-[20px]">smart_toy</span>
               </Link>
               <Link

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Header } from "@/components/landing/Header";
+import AppHeader from "@/components/layout/AppHeader";
 import WorkspaceShell from "@/components/layout/WorkspaceShell";
 import WorkspaceModeTransition from "@/components/nav/WorkspaceModeTransition";
 import AutoTranslator from "@/components/i18n/AutoTranslator";
@@ -44,8 +44,8 @@ export default function RootLayout({
             <WorkspaceProvider>
               <ToastProvider>
                 <AutoTranslator />
-                <div className="relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[var(--background)] text-[var(--foreground)] transition-colors duration-200">
-                  <Header />
+                <div className="app-shell-bg relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[var(--background)] text-[var(--foreground)] transition-colors duration-200">
+                  <AppHeader />
                   <main className="flex-1 self-stretch">
                     <WorkspaceShell>
                       <WorkspaceModeTransition>{children}</WorkspaceModeTransition>

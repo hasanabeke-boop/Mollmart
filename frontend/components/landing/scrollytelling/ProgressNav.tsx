@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLandingCopy } from "@/hooks/useLandingCopy";
 
 interface ProgressNavProps {
   sections: readonly string[];
 }
 
 export default function ProgressNav({ sections }: ProgressNavProps) {
+  const copy = useLandingCopy();
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const sectionLabel = (id: string) => {
+    const key = id.replace("#", "") as keyof typeof copy.nav.progress;
+    return copy.nav.progress[key] ?? id.replace("#", "");
+  };
 
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -44,13 +51,13 @@ export default function ProgressNav({ sections }: ProgressNavProps) {
           key={id}
           type="button"
           onClick={() => scrollTo(id)}
-          aria-label={`Go to ${id.replace("#", "")}`}
+          aria-label={sectionLabel(id)}
           className={`group relative flex items-center justify-end transition-all duration-300 ${
             activeIndex === index ? "opacity-100" : "opacity-40 hover:opacity-70"
           }`}
         >
           <span className="absolute right-6 whitespace-nowrap text-xs font-medium text-mm-text opacity-0 transition-opacity group-hover:opacity-100 dark:text-white">
-            {id.replace("#", "").replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+            {sectionLabel(id)}
           </span>
           <span
             className={`block rounded-full transition-all duration-300 ${

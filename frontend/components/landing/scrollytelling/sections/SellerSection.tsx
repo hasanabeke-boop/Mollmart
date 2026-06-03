@@ -5,40 +5,14 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Eye, Zap, MessageSquare, ShoppingBag } from "lucide-react";
+import { useLandingCopy } from "@/hooks/useLandingCopy";
+
 gsap.registerPlugin(ScrollTrigger);
 
-const steps = [
-  {
-    icon: Eye,
-    step: "01",
-    title: "View Live Requests",
-    description:
-      "Browse buyer requests filtered by your category, location, and expertise. See demand as it happens.",
-  },
-  {
-    icon: Zap,
-    step: "02",
-    title: "Send Competitive Offers",
-    description:
-      "Respond to requests with your best price, delivery terms, and any value-adds that set you apart.",
-  },
-  {
-    icon: MessageSquare,
-    step: "03",
-    title: "Negotiate in Chat",
-    description:
-      "When a buyer shows interest, chat opens for real-time negotiation — clarify specs, adjust pricing, close the deal.",
-  },
-  {
-    icon: ShoppingBag,
-    step: "04",
-    title: "List Products in Catalog",
-    description:
-      'Add ready-made products with price and stock to your storefront for instant "buy now" purchases.',
-  },
-];
+const stepIcons = [Eye, Zap, MessageSquare, ShoppingBag] as const;
 
 export default function SellerSection() {
+  const copy = useLandingCopy();
   const sectionRef = useRef<HTMLElement>(null);
   const stepsRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +33,7 @@ export default function SellerSection() {
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [copy]);
 
   return (
     <section ref={sectionRef} id="sellers" className="w-full bg-mm-bg py-[120px] dark:bg-mm-dark-bg">
@@ -67,23 +41,20 @@ export default function SellerSection() {
         <div className="flex flex-col items-start gap-12 lg:flex-row-reverse lg:gap-20">
           <div className="lg:sticky lg:top-32 lg:w-[40%]">
             <span className="mb-4 block text-xs font-semibold uppercase tracking-[1.5px] text-mm-text-muted">
-              For Sellers
+              {copy.seller.eyebrow}
             </span>
             <h2 className="mb-6 text-3xl leading-tight font-bold tracking-[-1px] text-mm-text sm:text-4xl lg:text-[48px] lg:leading-[56px] dark:text-white">
-              How It Works
-              <br />
-              For Sellers
+              {copy.seller.title}
             </h2>
             <p className="mb-8 text-base leading-[26px] text-mm-text-secondary dark:text-gray-400">
-              Sell what people already want, not what sits in your warehouse. See live demand and
-              respond with your best offers.
+              {copy.seller.body}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/browse-buyer-requests"
                 className="rounded-[10px] bg-mm-primary px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-mm-primary-hover"
               >
-                Open Request Board
+                {copy.seller.cta}
               </Link>
               <Link
                 href="/seller/products/new"
@@ -95,18 +66,21 @@ export default function SellerSection() {
           </div>
 
           <div ref={stepsRef} className="space-y-6 lg:w-[60%]">
-            {steps.map((s) => (
+            {copy.seller.steps.map((s, i) => {
+              const Icon = stepIcons[i] ?? Eye;
+              const stepNum = String(i + 1).padStart(2, "0");
+              return (
               <div
-                key={s.step}
+                key={stepNum}
                 className="step-card flex items-start gap-5 rounded-2xl border border-transparent bg-white p-6 shadow-card transition-shadow hover:border-mm-accent-green/20 hover:shadow-card-hover sm:gap-6 sm:p-8 dark:bg-mm-dark-elevated"
               >
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-mm-accent-green/10 dark:bg-mm-accent-green/20">
-                  <s.icon size={26} className="text-mm-accent-green" />
+                  <Icon size={26} className="text-mm-accent-green" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-3">
                     <span className="rounded bg-mm-accent-green/10 px-2 py-0.5 text-xs font-bold text-mm-accent-green dark:bg-mm-accent-green/20">
-                      {s.step}
+                      {stepNum}
                     </span>
                   </div>
                   <h3 className="mb-2 text-lg font-semibold text-mm-text sm:text-xl dark:text-white">
@@ -117,7 +91,8 @@ export default function SellerSection() {
                   </p>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>

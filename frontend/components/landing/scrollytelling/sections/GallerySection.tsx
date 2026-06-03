@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useLandingCopy } from "@/hooks/useLandingCopy";
 import {
   Laptop,
   Home,
@@ -42,6 +43,7 @@ const requests = [
 const productMocks = [1, 2, 3, 4, 1, 2] as const;
 
 export default function GallerySection() {
+  const copy = useLandingCopy();
   const sectionRef = useRef<HTMLElement>(null);
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
@@ -84,10 +86,10 @@ export default function GallerySection() {
       <div className="mx-auto mb-16 max-w-[1280px] px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <span className="mb-4 block text-xs font-semibold uppercase tracking-[1.5px] text-mm-text-muted">
-            Live Categories
+            {copy.gallery.eyebrow}
           </span>
           <h2 className="text-3xl leading-tight font-bold tracking-[-1px] text-mm-text sm:text-4xl lg:text-[48px] lg:leading-[56px] dark:text-white">
-            From Electronics to Services
+            {copy.gallery.title}
           </h2>
         </div>
       </div>

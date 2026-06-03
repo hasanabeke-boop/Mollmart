@@ -55,7 +55,7 @@ export default function LanguageSwitcher() {
                   setOpen(false);
                 }}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
-                  active ? "bg-primary/10 font-bold text-[#0d1b12]" : "font-medium text-gray-700 hover:bg-gray-50"
+                  active ? "bg-primary/10 font-bold text-[#0d1b12]" : "font-medium text-white-700 hover:bg-gray-50"
                 }`}
               >
                 <span>{languageNames[item]}</span>

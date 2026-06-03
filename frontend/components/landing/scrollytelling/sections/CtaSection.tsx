@@ -5,10 +5,12 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import WaveField from "@/components/landing/scrollytelling/WaveField";
+import { useLandingCopy } from "@/hooks/useLandingCopy";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function CtaSection() {
+  const copy = useLandingCopy();
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -41,10 +43,9 @@ export default function CtaSection() {
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [copy]);
 
-  const headingText = "Start With One Request or One Product";
-  const words = headingText.split(" ");
+  const words = copy.cta.title.split(" ");
 
   return (
     <section ref={sectionRef} id="cta" className="relative w-full overflow-hidden py-[160px]">
@@ -68,7 +69,7 @@ export default function CtaSection() {
 
         <div ref={contentRef}>
           <p className="mx-auto mb-10 max-w-[480px] text-lg text-white/60">
-            Join 4,000+ sellers and buyers already trading smarter.
+            {copy.cta.subtitle}
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -76,7 +77,7 @@ export default function CtaSection() {
               href="/register"
               className="rounded-[10px] bg-mm-primary px-10 py-4 text-lg font-semibold text-white shadow-lg shadow-mm-primary/25 transition-all hover:scale-105 hover:bg-mm-primary-hover active:scale-95"
             >
-              Get Started Free
+              {copy.cta.primary}
             </Link>
           </div>
 
@@ -84,7 +85,7 @@ export default function CtaSection() {
             href="/products"
             className="mt-4 inline-block text-base font-medium text-white/50 transition-colors hover:text-white/80"
           >
-            Browse Catalog
+            {copy.cta.secondary}
           </Link>
         </div>
       </div>

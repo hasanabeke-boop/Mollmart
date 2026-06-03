@@ -157,10 +157,43 @@
 
 .perspective-1000 {
   perspective: 1000px;
+  transform-style: preserve-3d;
 }
 
 .preserve-3d {
   transform-style: preserve-3d;
+}
+
+.landing-hero-display {
+  font-size: clamp(2rem, 6vw, 5.25rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Hero: static colors + halo so text stays readable on shifting gradient */
+.landing-hero-text {
+  color: #16171a;
+  /* Центрированное объемное свечение во все стороны без контура */
+  text-shadow:
+    0 0 40px rgba(255, 255, 255, 0.95),
+    0 0 16px rgba(255, 255, 255, 0.85);
+}
+
+.landing-hero-text-accent {
+  color: #4b63e8;
+  font-weight: 800;
+}
+
+.landing-hero-desc-text {
+  color: #16171a;
+  text-shadow:
+    0 0 30px rgba(255, 255, 255, 0.9),
+    0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+.landing-hero-desc-text-accent {
+  color: #4b63e8;
+  font-weight: 600;
 }
 
 .shadow-card {
@@ -173,6 +206,11 @@
 
 .shadow-mockup {
   box-shadow: var(--shadow-mockup);
+}
+
+/* Landing: full-bleed hero (own fixed nav, no app header) */
+html[data-landing="true"] .app-shell-bg {
+  background: #f6f6f6;
 }
 
 /* Lenis smooth scroll (landing) */

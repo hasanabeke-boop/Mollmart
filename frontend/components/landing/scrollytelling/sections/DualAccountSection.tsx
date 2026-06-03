@@ -4,9 +4,12 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useLandingCopy } from "@/hooks/useLandingCopy";
+
 gsap.registerPlugin(ScrollTrigger);
 
 export default function DualAccountSection() {
+  const copy = useLandingCopy();
   const sectionRef = useRef<HTMLElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -45,7 +48,7 @@ export default function DualAccountSection() {
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [copy]);
 
   const browserChrome = (
     <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
@@ -60,12 +63,12 @@ export default function DualAccountSection() {
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <span className="mb-4 block text-xs font-semibold uppercase tracking-[1.5px] text-mm-text-muted">
-            Dual Account
+            {copy.dual.eyebrow}
           </span>
           <h2 className="text-3xl leading-tight font-bold tracking-[-1px] text-white sm:text-4xl lg:text-[48px] lg:leading-[56px]">
-            One Account.
+            {copy.dual.title}
             <br />
-            Two Modes.
+            {copy.dual.titleLine2}
           </h2>
         </div>
 
@@ -87,7 +90,7 @@ export default function DualAccountSection() {
               </div>
             </div>
             <p className="mt-4 text-center text-sm font-medium text-gray-400">
-              Buyer Mode — Requests, Catalog, Cart, Orders, Chat
+              {copy.dual.buyerCaption}
             </p>
           </div>
 
@@ -115,7 +118,7 @@ export default function DualAccountSection() {
               </div>
             </div>
             <p className="mt-4 text-center text-sm font-medium text-gray-400">
-              Seller Mode — Listings, Request Board, Offers, Analytics
+              {copy.dual.sellerCaption}
             </p>
           </div>
         </div>
