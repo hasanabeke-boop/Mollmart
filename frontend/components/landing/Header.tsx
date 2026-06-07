@@ -8,19 +8,8 @@ import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-const navLinkClass =
-  "whitespace-nowrap text-xs font-medium text-[#0d1b12] transition-colors hover:text-primary xl:text-sm";
-
-function NavLink({ href, children, title }: { href: string; children: ReactNode; title?: string }) {
-  return (
-    <Link href={href} title={title ?? (typeof children === "string" ? children : undefined)} className={navLinkClass}>
-      {children}
-    </Link>
-  );
-}
 
 export function Header() {
   const { user, loading, logout } = useAuth();
@@ -28,7 +17,6 @@ export function Header() {
   const router = useRouter();
   const navRole =
     user?.role === "admin" ? "admin" : (workspace?.activeRole ?? user?.role);
-  const navFaded = workspace?.modeScreenVisible === false;
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [notifState, setNotifState] = useState<{ userId: string; count: number | null } | null>(null);
@@ -114,47 +102,7 @@ export function Header() {
           </form>
         </div>
 
-        <nav
-          className={`hidden min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto px-1 transition-opacity duration-300 ease-in-out [scrollbar-width:none] lg:flex xl:gap-3 [&::-webkit-scrollbar]:hidden ${
-            navFaded ? "pointer-events-none opacity-0" : "opacity-100"
-          }`}
-          aria-label="Main"
-        >
-          {navRole === "buyer" ? (
-            <NavLink href="/my-requests" title="My requests">
-              Requests
-            </NavLink>
-          ) : (
-            <NavLink href="/browse-buyer-requests">Browse</NavLink>
-          )}
-          {navRole !== "seller" && navRole !== "admin" && <NavLink href="/products">Showcase</NavLink>}
-          {user && navRole !== "seller" && navRole !== "admin" && (
-            <NavLink href="/orders" title="Order history">
-              Orders
-            </NavLink>
-          )}
-          {(!user || navRole === "seller" || navRole === "admin" || Boolean(user?.canSell)) && (
-            <NavLink href="/seller/dashboard">Sell</NavLink>
-          )}
-          {(navRole === "seller" || navRole === "admin") && (
-            <NavLink href="/seller/showcase" title="My showcase">
-              Showcase
-            </NavLink>
-          )}
-          {(navRole === "seller" || navRole === "admin") && (
-            <NavLink href="/seller/products/new" title="New showcase listing">
-              <span className="2xl:hidden">+ Listing</span>
-              <span className="hidden 2xl:inline">New listing</span>
-            </NavLink>
-          )}
-          {(!user || navRole === "buyer" || navRole === "admin") && (
-            <NavLink href="/create-product-request" title="Post a product request">
-              Post
-            </NavLink>
-          )}
-        </nav>
-
-        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
           <LanguageSwitcher />
           {loading ? (
             <div className="h-8 w-14 animate-pulse rounded-lg bg-gray-100" />
