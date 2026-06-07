@@ -67,7 +67,7 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex h-full min-h-0 flex-col justify-between p-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
           <nav className="flex flex-col gap-2 pt-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.id;

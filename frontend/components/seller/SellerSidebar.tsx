@@ -8,6 +8,7 @@ export type SellerNavId =
   | "my_listings"
   | "new_listing"
   | "requests"
+  | "auctions"
   | "offers"
   | "messages"
   | "assistant"
@@ -17,6 +18,7 @@ export type SellerNavId =
 
 export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/orders")) return "orders";
+  if (pathname.startsWith("/seller/auctions")) return "auctions";
   if (pathname.startsWith("/seller/analytics")) return "analytics";
   if (pathname.startsWith("/seller/listings") || pathname.startsWith("/seller/showcase")) return "my_listings";
   if (pathname.startsWith("/seller/products/new")) return "new_listing";
@@ -42,6 +44,7 @@ const NAV_ITEMS: {
   { id: "my_listings", icon: "grid_view", label: "My listings", href: "/seller/listings" },
   { id: "new_listing", icon: "add_box", label: "New product", href: "/seller/products/new" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
+  { id: "auctions", icon: "gavel", label: "Active auctions", href: "/seller/auctions" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
@@ -73,7 +76,7 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex h-full flex-col justify-between p-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
           <nav className="flex flex-col gap-2 pt-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.id;

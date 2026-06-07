@@ -25,7 +25,8 @@ import { buildPageMeta } from '../utils/pagination';
 export class RequestService {
   constructor(
     private readonly requestRepository: RequestRepositoryLike,
-    private readonly requestEventPublisher: RequestEventPublisherLike
+    private readonly requestEventPublisher: RequestEventPublisherLike,
+    private readonly onPublished?: (requestId: string) => Promise<void>
   ) {}
 
   async createRequest(user: AuthUser, input: CreateRequestInput): Promise<RequestWithRelations> {
@@ -62,6 +63,9 @@ export class RequestService {
 
     const publishedRequest = await this.requestRepository.publish(requestId, user.id, 'Published by buyer');
     await this.requestEventPublisher.publishRequestPublished(publishedRequest);
+    if (this.onPublished != null) {
+      await this.onPublished(publishedRequest.id);
+    }
     return publishedRequest;
   }
 

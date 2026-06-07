@@ -579,7 +579,17 @@ export default function MyRequestsPage() {
                   </div>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {request.status !== "draft" &&
+                    !["accepted", "closed", "cancelled"].includes(request.status) && (
+                      <Link
+                        href={`/auctions/${request.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-[#0d1b12] hover:opacity-90"
+                      >
+                        <span className="material-symbols-outlined text-lg">gavel</span>
+                        Watch auction
+                      </Link>
+                    )}
                   <button
                     type="button"
                     onClick={() => loadOffers(request.id)}

@@ -81,7 +81,7 @@ export default function DualAccountSection() {
               </div>
               <div className="relative aspect-[16/10] p-4">
                 <Image
-                  src="/landing/img-buyer-dashboard.jpg"
+                  src="/landing/buyer.png"
                   alt="Buyer Dashboard"
                   fill
                   className="rounded-lg object-cover object-top"
@@ -109,7 +109,7 @@ export default function DualAccountSection() {
               </div>
               <div className="relative aspect-[16/10] p-4">
                 <Image
-                  src="/landing/img-seller-dashboard.jpg"
+                  src="/landing/seller.png"
                   alt="Seller Dashboard"
                   fill
                   className="rounded-lg object-cover object-top"

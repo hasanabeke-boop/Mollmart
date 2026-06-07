@@ -39,6 +39,7 @@ const SELLER_PAGE_TITLES: Partial<Record<SellerNavId, string>> = {
   my_listings: "My listings",
   new_listing: "New product",
   requests: "Buyer requests",
+  auctions: "Active auctions",
   orders: "Orders",
   messages: "Messages",
   assistant: "Assistant",

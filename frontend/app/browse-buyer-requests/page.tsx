@@ -10,6 +10,7 @@ import { canUseSellerWorkspace } from "@/lib/workspace";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
+import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -498,6 +499,7 @@ export default function BrowseBuyerRequestsPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
+  const [auctionTarget, setAuctionTarget] = useState<BuyerRequest | null>(null);
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
@@ -955,13 +957,22 @@ export default function BrowseBuyerRequestsPage() {
                       {featuredRequest.offerCount} Offers
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setOfferTarget(featuredRequest)}
-                    className="bg-[#607afb] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
-                  >
-                    Make an Offer
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOfferTarget(featuredRequest)}
+                      className="bg-[#607afb] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                      Make an Offer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuctionTarget(featuredRequest)}
+                      className="border-2 border-[#607afb] text-[#607afb] px-8 py-3 rounded-xl font-bold hover:bg-[#607afb]/5 transition-all"
+                    >
+                      Join auction
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1046,13 +1057,22 @@ export default function BrowseBuyerRequestsPage() {
                     {req.offerCount} Offers
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setOfferTarget(req)}
-                  className="w-full bg-[#607afb] text-white py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all"
-                >
-                  Make an Offer
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setOfferTarget(req)}
+                    className="w-full flex-1 bg-[#607afb] text-white py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Make an Offer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuctionTarget(req)}
+                    className="w-full flex-1 border-2 border-[#607afb] text-[#607afb] py-3 rounded-xl font-bold hover:bg-[#607afb]/5 active:scale-[0.98] transition-all"
+                  >
+                    Join auction
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1101,6 +1121,12 @@ export default function BrowseBuyerRequestsPage() {
         <OfferModal
           request={offerTarget}
           onClose={() => setOfferTarget(null)}
+        />
+      )}
+      {auctionTarget && (
+        <AuctionJoinModal
+          request={auctionTarget}
+          onClose={() => setAuctionTarget(null)}
         />
       )}
     </div>
