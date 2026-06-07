@@ -13,6 +13,21 @@ import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/util
 
 const DISPLAY_CURRENCIES = ['USD', 'EUR', 'RUB', 'KZT'] as const;
 
+/** Hide own listings when browsing catalog as a buyer (incl. dual-workspace seller → buyer). */
+function catalogExcludeSellerId(user?: AuthUser): string | undefined {
+  if (user == null || user.role === 'admin') {
+    return undefined;
+  }
+  const buyerView =
+    user.role === 'buyer' ||
+    user.activeMode === 'buyer' ||
+    (user.canBuy === true && user.canSell === true && user.activeMode !== 'seller');
+  if (buyerView) {
+    return user.id;
+  }
+  return undefined;
+}
+
 function buildNativePriceOrFilter(
   minD: number | undefined,
   maxD: number | undefined,
@@ -72,7 +87,7 @@ export class CatalogService {
     return this.repo.listActiveCategories();
   }
 
-  async listPublished(query: CatalogListQuery) {
+  async listPublished(query: CatalogListQuery, user?: AuthUser) {
     const q = query.q != null && query.q.trim().length > 0 ? query.q.trim() : undefined;
     const categoryId =
       query.categoryId != null && query.categoryId.trim().length > 0 ? query.categoryId.trim() : undefined;
@@ -90,7 +105,8 @@ export class CatalogService {
       sort: query.sort,
       q,
       categoryId,
-      andPriceFilter
+      andPriceFilter,
+      excludeSellerId: catalogExcludeSellerId(user)
     });
 
     return {
@@ -127,7 +143,8 @@ export class CatalogService {
       sort: query.sort,
       q,
       categoryIds,
-      andPriceFilter
+      andPriceFilter,
+      excludeSellerId: catalogExcludeSellerId(user)
     });
 
     return {

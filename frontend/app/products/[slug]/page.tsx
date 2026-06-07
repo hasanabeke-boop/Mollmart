@@ -98,7 +98,7 @@ export default function ShowcaseDetailPage() {
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <p className="text-slate-700 mb-4">{error || "Listing unavailable."}</p>
         <Link href="/products" className="text-primary font-semibold hover:underline">
-          Back to showcase
+          Back to catalog
         </Link>
       </div>
     );
@@ -125,14 +125,14 @@ export default function ShowcaseDetailPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-10 lg:px-20 py-6">
+    <div className="app-page app-page-wide max-w-[90rem]">
       <div className="flex flex-wrap gap-2 pb-6 px-4">
         <Link href="/" className="text-[#4c9a66] text-sm font-medium hover:underline">
           Home
         </Link>
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
         <Link href="/products" className="text-[#4c9a66] text-sm font-medium hover:underline">
-          Showcase
+          Catalog
         </Link>
         {product.category && (
           <>
@@ -144,9 +144,9 @@ export default function ShowcaseDetailPage() {
         <span className="text-[#0d1b12] text-sm font-medium line-clamp-1">{product.title}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 px-4">
+      <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7 flex flex-col gap-4">
-          <div className="w-full aspect-square md:aspect-[4/3] bg-white rounded-xl border border-[#e7f3eb] overflow-hidden relative group">
+          <div className="app-card relative aspect-square w-full overflow-hidden rounded-xl md:aspect-[4/3]">
             {mainImage ? (
               <div
                 className="w-full h-full bg-center bg-contain bg-no-repeat p-8 transition-transform duration-500 group-hover:scale-105"
@@ -188,7 +188,7 @@ export default function ShowcaseDetailPage() {
             <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">{product.title}</h1>
           </div>
 
-          <div className="p-5 rounded-xl bg-[#f6faf7] border border-[#e7f3eb]">
+          <div className="app-card rounded-xl p-4 sm:p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Price</p>
@@ -207,7 +207,7 @@ export default function ShowcaseDetailPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl bg-white border border-[#e7f3eb]">
+          <div className="app-card flex flex-col gap-3 rounded-xl p-4 sm:flex-row">
             <div className="flex items-center gap-3 flex-1">
               <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-[#0d1b12]">
                 {product.seller.name.charAt(0).toUpperCase()}
@@ -258,7 +258,7 @@ export default function ShowcaseDetailPage() {
               onClick={() => router.push("/products")}
               className="text-primary font-semibold hover:underline"
             >
-              ← More showcase
+              ← More products
             </button>
           </div>
         </div>

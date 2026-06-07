@@ -166,7 +166,7 @@ export default function SellerDashboardPage() {
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col gap-8 p-6 lg:p-10 max-w-7xl mx-auto w-full">
+        <div className="app-page app-page-wide flex w-full flex-1 flex-col gap-6 sm:gap-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <h2 className="text-3xl font-black tracking-tight text-[#0d1b12]">Seller Dashboard</h2>
@@ -242,8 +242,8 @@ export default function SellerDashboardPage() {
                   View All
                 </Link>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px] text-left text-sm">
+              <div className="app-table-wrap">
+                <table className="w-full min-w-[560px] text-left text-sm">
                   <thead className="bg-gray-50 text-gray-500">
                     <tr>
                       <th className="px-6 py-4 font-medium">Request</th>

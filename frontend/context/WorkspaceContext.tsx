@@ -90,7 +90,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setActiveModeHeaderProvider(null);
       return;
     }
-    setActiveModeHeaderProvider(() => (user.hasDualWorkspace ? activeMode : null));
+    setActiveModeHeaderProvider(() =>
+      user.canBuy && user.canSell ? activeMode : null,
+    );
     return () => setActiveModeHeaderProvider(null);
   }, [user, activeMode]);
 

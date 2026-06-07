@@ -66,18 +66,18 @@ export default function OrderTrackingPage() {
   const steps = useMemo(() => (order ? stepsForStatus(order.status) : []), [order]);
 
   if (authLoading || (!user && !error)) {
-    return <div className="mx-auto max-w-[1200px] px-4 py-16 text-center text-slate-500">Loading…</div>;
+    return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading…</div>;
   }
 
   if (!user) return null;
 
   if (loading) {
-    return <div className="mx-auto max-w-[1200px] px-4 py-16 text-center text-slate-500">Loading…</div>;
+    return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading…</div>;
   }
 
   if (error || order == null) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 md:px-10 py-12">
+      <div className="app-page py-12">
         <h1 className="text-2xl font-bold text-[#0d1b12] mb-2">Tracking not found</h1>
         <p className="text-sm text-[#4c9a66] mb-4">{error || "Unable to load this order."}</p>
         <Link href="/orders" className="inline-flex items-center gap-1 text-primary font-medium hover:underline">
@@ -98,8 +98,8 @@ export default function OrderTrackingPage() {
   };
 
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] w-full flex-col bg-[#f5f6f8] text-[#0d1b12]">
-      <div className="flex h-full grow flex-col max-w-[1200px] mx-auto w-full px-4 md:px-10 py-8">
+    <div className="relative flex w-full flex-col bg-[var(--background)] text-[var(--foreground)]">
+      <div className="app-page app-page-wide flex grow flex-col">
         <nav className="flex items-center gap-2 text-sm text-[#4c9a66] mb-6">
           <Link href="/" className="hover:underline">
             Home
@@ -112,7 +112,7 @@ export default function OrderTrackingPage() {
           <span className="font-medium text-[#0d1b12]">Tracking</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-2xl bg-white border border-[#e7f3eb] p-6 shadow-sm">
               <h1 className="text-2xl font-black text-[#0d1b12] mb-1">Tracking status</h1>

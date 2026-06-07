@@ -8,7 +8,8 @@ export type ServiceName =
   | "notification"
   | "catalog"
   | "shop"
-  | "deal";
+  | "deal"
+  | "auction";
 
 const configuredApiBase = process.env.NEXT_PUBLIC_API_URL;
 

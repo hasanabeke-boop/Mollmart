@@ -62,7 +62,7 @@ export default function OrderDetailsPage() {
   }, [authLoading, user, router, id]);
 
   if (authLoading || (!user && !error)) {
-    return <div className="mx-auto max-w-[1280px] px-6 py-16 text-center text-slate-500">Loading…</div>;
+    return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading…</div>;
   }
 
   if (!user) return null;
@@ -70,12 +70,12 @@ export default function OrderDetailsPage() {
   const isSellerView = activeRole === "seller" || user.role === "admin";
 
   if (loading) {
-    return <div className="mx-auto max-w-[1280px] px-6 py-16 text-center text-slate-500">Loading order…</div>;
+    return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading order…</div>;
   }
 
   if (error || order == null) {
     return (
-      <div className="w-full max-w-[1280px] mx-auto px-6 py-12">
+      <div className="app-page py-12">
         <h1 className="text-2xl font-bold text-[#0d1b12] mb-2">Order not found</h1>
         <p className="text-sm text-[#4c9a66] mb-4">{error || "Unable to load this order."}</p>
         <Link href="/orders" className="inline-flex items-center gap-1 text-primary font-medium hover:underline">
@@ -93,7 +93,7 @@ export default function OrderDetailsPage() {
   });
 
   return (
-    <div className="flex-1 w-full max-w-[1280px] mx-auto px-6 py-8">
+    <div className="app-page app-page-wide">
       <nav className="flex items-center text-sm font-medium text-[#4c9a66] mb-6">
         <Link href="/" className="hover:text-primary transition-colors">
           Home
@@ -124,7 +124,7 @@ export default function OrderDetailsPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 flex flex-col gap-6">
           <div className="bg-white rounded-xl border border-[#e7f3eb] p-6 shadow-sm">
             <h3 className="text-lg font-bold text-[#0d1b12] mb-2">Status</h3>

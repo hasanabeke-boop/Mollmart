@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRoles } from '../../../request/middleware/auth';
+import { authenticate, optionalAuthenticate, requireRoles } from '../../../request/middleware/auth';
 import validate from '../../../request/middleware/validate';
 import asyncHandler from '../../../request/utils/asyncHandler';
 import { catalogUploadSingle } from '../../middleware/catalogImageUpload';
@@ -25,7 +25,12 @@ export function createCatalogRouter(controller: CatalogController): Router {
     asyncHandler(controller.uploadImage)
   );
   router.get('/products/recommended', authenticate, validate(catalogListQuerySchema), asyncHandler(controller.listRecommended));
-  router.get('/products', validate(catalogListQuerySchema), asyncHandler(controller.listPublished));
+  router.get(
+    '/products',
+    optionalAuthenticate,
+    validate(catalogListQuerySchema),
+    asyncHandler(controller.listPublished)
+  );
   router.get(
     '/products/slug/:slug',
     validate(catalogSlugParamsSchema),

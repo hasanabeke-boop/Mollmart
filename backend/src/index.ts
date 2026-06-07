@@ -6,6 +6,7 @@ import logger from './middleware/logger';
 import NotificationRepository from './modules/notification/repositories/notification.repository';
 import NotificationEventMapper from './modules/notification/services/notification-event-mapper.service';
 import NotificationWorker from './modules/notification/services/notification-worker.service';
+import { auctionService } from './modules/auction/bootstrap';
 
 const notificationWorker = new NotificationWorker(
   new NotificationRepository(),
@@ -29,6 +30,12 @@ const server = app.listen(config.server.port, async () => {
   } catch (error) {
     logger.warn(`Notification worker startup failed: ${(error as Error).message}`);
   }
+
+  setInterval(() => {
+    void auctionService.processTicks().catch((error: unknown) => {
+      logger.warn(`Auction tick failed: ${(error as Error).message}`);
+    });
+  }, 1000);
 });
 
 async function shutdown(signal: string): Promise<void> {

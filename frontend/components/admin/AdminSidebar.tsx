@@ -32,7 +32,7 @@ export default function AdminSidebar({ active, open, onClose }: Props) {
     <>
       {open && (
         <div
-          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/30 lg:hidden"
+          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/40 md:hidden"
           style={{ top: "var(--app-header-height)" }}
           onClick={onClose}
           aria-hidden
@@ -40,11 +40,11 @@ export default function AdminSidebar({ active, open, onClose }: Props) {
       )}
 
       <aside
-        className={`app-sidebar flex w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`app-sidebar app-sidebar-panel flex w-64 flex-col border-r shadow-xl transition-transform duration-300 ${
+          open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex h-full flex-col justify-between p-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3 px-2 py-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white">

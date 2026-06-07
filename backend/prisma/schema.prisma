@@ -70,6 +70,23 @@ enum OfferStatusHistoryAction {
   expired
 }
 
+enum AuctionSessionStatus {
+  gathering
+  scheduled
+  live
+  ended
+  cancelled
+  no_winner
+}
+
+enum AuctionParticipantStatus {
+  registered
+  active
+  withdrawn
+  winner
+  eliminated
+}
+
 enum ConversationStatus {
   active
   closed
@@ -217,6 +234,7 @@ model User {
   priceProposals         PriceProposal[]  @relation("PriceProposalProposer")
   requestDealsAsBuyer    RequestDealOrder[] @relation("RequestDealBuyer")
   requestDealsAsSeller   RequestDealOrder[] @relation("RequestDealSeller")
+  auctionParticipants  AuctionParticipant[] @relation("SellerAuctionParticipants")
 }
 
 model RefreshToken {
@@ -313,6 +331,7 @@ model Request {
   offers        Offer[]
   conversations Conversation[]
   dealOrders    RequestDealOrder[]
+  auctionSession AuctionSession?
 
   @@index([buyerId, createdAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -382,6 +401,69 @@ model OfferStatusHistory {
   offer      Offer                    @relation(fields: [offerId], references: [id], onDelete: Cascade)
 
   @@index([offerId, createdAt(sort: Desc)])
+}
+
+model AuctionSession {
+  id               String               @id @default(cuid())
+  requestId        String               @unique
+  status           AuctionSessionStatus @default(gathering)
+  participantCount Int                  @default(0)
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  endedAt          DateTime?
+  currentRound     Int                  @default(0)
+  roundEndsAt      DateTime?
+  roundPausedUntil DateTime?
+  leaderSellerId   String?
+  leaderPrice      Decimal?             @db.Decimal(12, 2)
+  winnerSellerId   String?
+  winningPrice     Decimal?             @db.Decimal(12, 2)
+  consecutiveNoBidRounds Int            @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  request          Request              @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  participants     AuctionParticipant[]
+  bidEvents        AuctionBidEvent[]
+
+  @@index([status, scheduledAt])
+  @@index([status, roundEndsAt])
+}
+
+model AuctionParticipant {
+  id             String                   @id @default(cuid())
+  sessionId      String
+  sellerId       String
+  startPrice     Decimal                  @db.Decimal(12, 2)
+  floorPrice     Decimal                  @db.Decimal(12, 2)
+  currentPrice   Decimal                  @db.Decimal(12, 2)
+  currency       String                   @db.VarChar(3)
+  deliveryDays   Int?
+  message        String?                  @db.Text
+  status         AuctionParticipantStatus @default(registered)
+  inactiveRounds Int                      @default(0)
+  actedThisRound Boolean                  @default(false)
+  registeredAt   DateTime                 @default(now())
+  withdrawnAt    DateTime?
+  session        AuctionSession           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  seller         User                     @relation("SellerAuctionParticipants", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sellerId])
+  @@index([sellerId, status])
+  @@index([sessionId, status])
+}
+
+model AuctionBidEvent {
+  id          String         @id @default(cuid())
+  sessionId   String
+  sellerId    String
+  roundNumber Int
+  priceBefore Decimal        @db.Decimal(12, 2)
+  priceAfter  Decimal        @db.Decimal(12, 2)
+  eventType   String
+  createdAt   DateTime       @default(now())
+  session     AuctionSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt(sort: Desc)])
 }
 
 model Conversation {

@@ -165,7 +165,7 @@ export default function SellerAnalyticsPage() {
       unauthenticatedDescription="Log in as a seller to view analytics."
     >
     <div className="app-page-min-height relative w-full bg-[#f5f6f8]">
-      <main className="app-page-min-height mx-auto flex max-w-7xl flex-col space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="app-page app-page-wide flex flex-col gap-6 sm:gap-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#0d1b12]">
@@ -266,8 +266,8 @@ export default function SellerAnalyticsPage() {
                 View All
               </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="app-table-wrap">
+              <table className="w-full min-w-[480px] border-collapse text-left">
                 <thead className="bg-[#f5f6f8]">
                   <tr>
                     <th className="py-3 px-6 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Category</th>

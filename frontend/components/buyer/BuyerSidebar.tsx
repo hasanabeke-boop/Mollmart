@@ -6,7 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 export type BuyerNavId =
   | "my_requests"
   | "post_request"
-  | "showcase"
+  | "catalog"
+  | "cart"
   | "orders"
   | "messages"
   | "assistant"
@@ -18,7 +19,8 @@ export function getBuyerActiveNav(pathname: string): BuyerNavId {
   if (pathname.startsWith("/profile")) return "my_requests";
   if (pathname.startsWith("/notifications")) return "my_requests";
   if (pathname.startsWith("/my-requests")) return "my_requests";
-  if (pathname.startsWith("/products")) return "showcase";
+  if (pathname.startsWith("/products")) return "catalog";
+  if (pathname.startsWith("/cart")) return "cart";
   if (pathname.startsWith("/orders")) return "orders";
   if (pathname === "/chatbot" || pathname.startsWith("/chatbot/")) return "assistant";
   if (pathname === "/chat" || pathname.startsWith("/chat/")) return "messages";
@@ -33,7 +35,8 @@ const NAV_ITEMS: {
 }[] = [
   { id: "my_requests", icon: "playlist_add", label: "My requests", href: "/my-requests" },
   { id: "post_request", icon: "add_circle", label: "Post request", href: "/create-product-request" },
-  { id: "showcase", icon: "storefront", label: "Showcase", href: "/products" },
+  { id: "catalog", icon: "storefront", label: "Catalog", href: "/products" },
+  { id: "cart", icon: "shopping_cart", label: "Cart", href: "/cart" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
@@ -52,7 +55,7 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
     <>
       {open && (
         <div
-          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/30 lg:hidden"
+          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/40 md:hidden"
           style={{ top: "var(--app-header-height)" }}
           onClick={onClose}
           aria-hidden
@@ -60,11 +63,11 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
       )}
 
       <aside
-        className={`app-sidebar flex w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`app-sidebar app-sidebar-panel flex w-64 flex-col border-r shadow-xl transition-transform duration-300 ${
+          open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex h-full min-h-0 flex-col justify-between p-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
           <nav className="flex flex-col gap-2 pt-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.id;
@@ -74,7 +77,7 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
                   href={item.href}
                   onClick={onClose}
                   className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                    isActive ? "bg-primary/10 text-black" : "text-gray-600 hover:bg-gray-50"
+                    isActive ? "bg-primary/10 text-[var(--foreground)]" : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
                   }`}
                 >
                   <span className={`material-symbols-outlined ${isActive ? "text-green-700" : ""}`}>
@@ -114,20 +117,20 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
             <Link
               href="/profile"
               onClick={onClose}
-              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-600 transition-all hover:bg-gray-50"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[var(--text-muted)] transition-all hover:bg-[var(--surface-hover)]"
             >
               <span className="material-symbols-outlined">settings</span>
               <span className="text-sm font-medium">Settings</span>
             </Link>
-            <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
                 {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-1 flex-col overflow-hidden">
-                <p className="truncate text-sm font-bold text-[#0d1b12]">
+                <p className="truncate text-sm font-bold text-[var(--foreground)]">
                   {user?.name || user?.email || "Buyer"}
                 </p>
-                <p className="truncate text-xs text-gray-500">Buyer account</p>
+                <p className="truncate text-xs text-[var(--text-muted)]">Buyer account</p>
               </div>
             </div>
           </div>

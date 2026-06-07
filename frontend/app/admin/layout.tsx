@@ -37,10 +37,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="app-page-min-height flex items-center justify-center bg-[#f5f6f8]">
+      <div className="app-page-min-height flex items-center justify-center bg-[var(--background)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-          <p className="text-sm text-gray-500">Loading admin panel...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--border)] border-t-red-600" />
+          <p className="text-sm text-[var(--text-muted)]">Loading admin panel...</p>
         </div>
       </div>
     );
@@ -51,31 +51,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="app-page-min-height relative bg-[#f5f6f8] lg:pl-64">
+    <div className="app-page-min-height relative bg-[var(--background)] md:pl-64">
       <AdminSidebar
         active={getActiveNav(pathname)}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="min-w-0">
-        <header className="sticky top-[var(--app-header-height)] z-20 flex h-14 items-center gap-4 border-b border-[#e7f3eb] bg-white/90 backdrop-blur px-4 lg:px-6">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-[var(--app-header-height)] z-30 flex h-12 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)]/95 px-3 backdrop-blur md:hidden sm:px-4">
           <button
             type="button"
-            className="lg:hidden text-gray-600 hover:text-gray-900"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
             onClick={() => setSidebarOpen(true)}
+            aria-label="Open admin menu"
           >
-            <span className="material-symbols-outlined">menu</span>
+            <span className="material-symbols-outlined text-[22px]">menu</span>
           </button>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-            <span className="font-medium text-[#0d1b12]">Admin Panel</span>
-          </div>
+          <span className="truncate text-sm font-semibold text-[var(--foreground)]">Admin</span>
         </header>
 
-        <main className="p-4 lg:p-6">
-          {children}
-        </main>
+        <main className="app-page app-page-wide min-w-0">{children}</main>
       </div>
     </div>
   );
