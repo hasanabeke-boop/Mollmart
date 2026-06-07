@@ -6,15 +6,34 @@ export type FxRatesResponse = {
   fetchedAt: string;
 };
 
+const FX_CACHE_TTL_MS = 60 * 60 * 1000;
+const fxCache = new Map<string, { expiresAt: number; promise: Promise<FxRatesResponse> }>();
+
 /** Cached ~1h on server; safe to call from UI for hints. */
 export async function fetchLatestRates(base = "KZT"): Promise<FxRatesResponse> {
-  const u = `${API_BASE}/api/v1/currency/rates?base=${encodeURIComponent(base)}`;
-  const res = await fetch(u);
-  const data = (await res.json().catch(() => ({}))) as FxRatesResponse & { error?: string };
-  if (!res.ok) {
-    throw new Error(data.error || `FX rates failed (${res.status})`);
+  const normalizedBase = base.toUpperCase().slice(0, 3) || "KZT";
+  const cached = fxCache.get(normalizedBase);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.promise;
   }
-  return data;
+
+  const promise = (async () => {
+    const u = `${API_BASE}/api/v1/currency/rates?base=${encodeURIComponent(normalizedBase)}`;
+    const res = await fetch(u);
+    const data = (await res.json().catch(() => ({}))) as FxRatesResponse & { error?: string };
+    if (!res.ok) {
+      throw new Error(data.error || `FX rates failed (${res.status})`);
+    }
+    return data;
+  })();
+
+  fxCache.set(normalizedBase, { expiresAt: Date.now() + FX_CACHE_TTL_MS, promise });
+  promise.catch(() => {
+    if (fxCache.get(normalizedBase)?.promise === promise) {
+      fxCache.delete(normalizedBase);
+    }
+  });
+  return promise;
 }
 
 /**

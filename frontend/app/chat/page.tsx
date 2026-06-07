@@ -12,7 +12,6 @@ import {
   postPriceProposal,
   type DealState,
 } from "@/lib/requestDeals";
-import { createRequestDealStripeCheckoutSession, fetchPaymentConfig } from "@/lib/payments";
 import { computeOfferLineTotal, normalizeRequestQuantity } from "@/lib/offerPricing";
 import { useAuth } from "@/context/AuthContext";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
@@ -229,7 +228,6 @@ function ChatPageContent() {
   const [dealPanelOpen, setDealPanelOpen] = useState(false);
   const [cardLast4, setCardLast4] = useState("");
   const [cardName, setCardName] = useState("");
-  const [stripeEnabled, setStripeEnabled] = useState(false);
 
   const active = conversations.find((conversation) => conversation.id === activeId);
   const isBuyerOnThread = Boolean(user?.id && active && active.buyerId === user.id);
@@ -237,12 +235,6 @@ function ChatPageContent() {
   const canPayAsBuyer = isBuyerOnThread && user?.canBuy !== false;
   const showPayCta =
     Boolean(dealState?.agreedPrice != null && dealState?.agreedCurrency && !dealState?.orderId && canPayAsBuyer);
-
-  useEffect(() => {
-    fetchPaymentConfig()
-      .then((config) => setStripeEnabled(config.stripeEnabled))
-      .catch(() => setStripeEnabled(false));
-  }, []);
 
   const loadConversations = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!user?.id) return;
@@ -982,29 +974,8 @@ function ChatPageContent() {
               </p>
             )}
             <p className="mb-4 text-sm text-[#4c9a66]">
-              {stripeEnabled
-                ? "Stripe will collect the real payment securely. Demo payment remains available for local testing."
-                : "No real charge. Fill the fields below to simulate payment for the agreed request-deal total."}
+              No real charge. Fill the fields below to simulate payment for the agreed request-deal total.
             </p>
-            {stripeEnabled ? (
-              <button
-                type="button"
-                disabled={dealBusy}
-                className="mb-4 w-full rounded-lg bg-[#635bff] py-2.5 text-sm font-bold text-white hover:bg-[#524bd6] disabled:opacity-50"
-                onClick={async () => {
-                  setDealBusy(true);
-                  try {
-                    const session = await createRequestDealStripeCheckoutSession(active.id);
-                    window.location.href = session.url;
-                  } catch (e) {
-                    setError((e as Error).message || "Could not open Stripe checkout.");
-                    setDealBusy(false);
-                  }
-                }}
-              >
-                {dealBusy ? "Opening Stripe…" : "Pay with Stripe"}
-              </button>
-            ) : null}
             <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
             <input
               value={cardName}

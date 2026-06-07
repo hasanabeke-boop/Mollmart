@@ -14,7 +14,7 @@ type ChatbotReply = {
   suggestedRoute?: string;
   actions?: string[];
   confidence?: number;
-  source?: "openai" | "local";
+  source?: "gemini" | "openai" | "local";
 };
 
 type Message = {
@@ -24,7 +24,7 @@ type Message = {
   createdAt: string;
   suggestedRoute?: string;
   actions?: string[];
-  source?: "openai" | "local";
+  source?: "gemini" | "openai" | "local";
   intent?: string;
   confidence?: number;
 };

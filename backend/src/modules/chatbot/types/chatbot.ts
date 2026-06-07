@@ -17,7 +17,7 @@ export interface ChatbotReply {
   reply: string;
   intent: string;
   suggestions: string[];
-  source?: 'openai' | 'local';
+  source?: 'gemini' | 'openai' | 'local';
   suggestedRoute?: string;
   actions?: string[];
   confidence?: number;

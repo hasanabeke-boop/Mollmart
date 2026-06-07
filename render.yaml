@@ -57,6 +57,10 @@ services:
         value: "me"
       - key: EMAIL_FROM
         value: "nurikesenbaj26@gmail.com"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: "gemini-2.0-flash"
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL

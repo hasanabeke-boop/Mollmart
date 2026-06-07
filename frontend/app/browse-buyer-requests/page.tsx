@@ -226,6 +226,17 @@ const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "has_offers", label: "Has Offers" },
 ];
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(timeout);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
 function OfferModal({
   request,
   onClose,
@@ -312,7 +323,7 @@ function OfferModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
       onClick={onClose}
     >
       <div
@@ -483,6 +494,7 @@ export default function BrowseBuyerRequestsPage() {
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [activeTab, setActiveTab] = useState<FilterTab>("published");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
@@ -490,9 +502,10 @@ export default function BrowseBuyerRequestsPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
+  const userId = user?.id ?? null;
 
   const loadRequests = useCallback(async () => {
-    if (!user || !sellerWorkspace) return;
+    if (!userId || !sellerWorkspace) return;
     setLoadingData(true);
     setRequests([]);
     try {
@@ -502,7 +515,7 @@ export default function BrowseBuyerRequestsPage() {
       } else {
         setHasRecommendationSignals(null);
       }
-      if (search.trim().length >= 2) params.set("q", search.trim());
+      if (debouncedSearch.trim().length >= 2) params.set("q", debouncedSearch.trim());
       if (selectedCategory) params.set("categoryId", selectedCategory);
 
       const data = await apiFetchWithRefresh<{
@@ -586,7 +599,7 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab, search, selectedCategory, user, sellerWorkspace, catalogCategories]);
+  }, [activeTab, debouncedSearch, selectedCategory, userId, sellerWorkspace, catalogCategories]);
 
   useEffect(() => {
     let cancelled = false;
@@ -617,12 +630,12 @@ export default function BrowseBuyerRequestsPage() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user || !sellerWorkspace) {
+    if (authLoading || !userId || !sellerWorkspace) {
       setLoadingData(false);
       return;
     }
     loadRequests();
-  }, [loadRequests, authLoading, user, sellerWorkspace]);
+  }, [loadRequests, authLoading, userId, sellerWorkspace]);
 
   const filteredRequests = useMemo(() => {
     let data = requests;

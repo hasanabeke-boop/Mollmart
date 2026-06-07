@@ -15,7 +15,6 @@ import notificationRoutes from './modules/notification/routes/v1';
 import catalogRoutes from './modules/catalog/routes/v1';
 import shopRoutes from './modules/shop/routes/v1';
 import dealRoutes from './modules/deal/routes/v1';
-import paymentRoutes, { webhookRouter as paymentWebhookRoutes } from './modules/payment/routes/v1';
 import currencyRoutes from './modules/currency/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
 import profileRoutes from './modules/profile/routes/v1';
@@ -58,7 +57,6 @@ const corsOptions: CorsOptions = {
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors(corsOptions));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-app.use('/api/v1/payments/stripe/webhook', express.raw({ type: 'application/json' }), paymentWebhookRoutes);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(xssMiddleware());
@@ -78,7 +76,7 @@ app.get('/', (_req, res) => {
     service: 'mollmart-backend',
     architecture: 'modular-monolith',
     apiBasePath: '/api/v1',
-    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'shop', 'deal', 'payment']
+    modules: ['auth', 'profile', 'request', 'offer', 'chat', 'chatbot', 'admin', 'notification', 'catalog', 'shop', 'deal']
   });
 });
 
@@ -98,7 +96,6 @@ app.use('/api/v1', chatbotRoutes);
 app.use('/api/v1', notificationRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
 app.use('/api/v1/shop', shopRoutes);
-app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/currency', currencyRoutes);
 app.use('/api/v1', dealRoutes);
 
