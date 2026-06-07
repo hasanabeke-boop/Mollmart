@@ -45,6 +45,8 @@ const envSchema = Joi.object({
   INTERNAL_API_TOKEN: Joi.string().allow('').default(''),
   OPENAI_API_KEY: Joi.string().allow('').default(''),
   OPENAI_MODEL: Joi.string().default('gpt-5-mini'),
+  GEMINI_API_KEY: Joi.string().allow('').default(''),
+  GEMINI_MODEL: Joi.string().default('gemini-2.0-flash'),
   FRONTEND_URL: Joi.string().uri().default('http://localhost:3000'),
   STRIPE_SECRET_KEY: Joi.string().allow('').default(''),
   STRIPE_WEBHOOK_SECRET: Joi.string().allow('').default(''),
@@ -265,6 +267,10 @@ const config = {
   openai: {
     apiKey: value.OPENAI_API_KEY as string,
     model: value.OPENAI_MODEL as string
+  },
+  gemini: {
+    apiKey: value.GEMINI_API_KEY as string,
+    model: value.GEMINI_MODEL as string
   },
   frontend: {
     url: (value.FRONTEND_URL as string).replace(/\/$/, '')

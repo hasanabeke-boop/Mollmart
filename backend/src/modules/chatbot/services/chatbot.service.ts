@@ -95,7 +95,7 @@ const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
   account: ['Check email and password', 'Confirm account status', 'Check email verification setting'],
   admin: ['Open Admin', 'Review users/categories/moderation/orders', 'Apply changes carefully'],
   platform_limits: ['Use chat for final price', 'Demo payment creates a request order', 'Real payment, escrow, and shipping labels are outside scope'],
-  assistant_setup: ['Set OPENAI_API_KEY', 'Choose OPENAI_MODEL', 'Restart/rebuild backend']
+  assistant_setup: ['Set GEMINI_API_KEY', 'Choose GEMINI_MODEL', 'Restart/rebuild backend']
 };
 
 const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 'suggestedRoute' | 'actions' | 'confidence'>> = {
@@ -148,7 +148,7 @@ const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 
     suggestions: ['What happens after accepting an offer?', 'How does demo payment work?', 'Where are orders?']
   },
   assistant_setup: {
-    reply: 'The assistant uses OPENAI_API_KEY and OPENAI_MODEL on the backend. If the key is missing or the API fails, it falls back to local Mollmart guidance.',
+    reply: 'The assistant uses GEMINI_API_KEY and GEMINI_MODEL on the backend. OpenAI is an optional fallback. If no AI key is set or the API fails, it falls back to local Mollmart guidance.',
     suggestions: ['Where do I put the API key?', 'Which model should I use?', 'How do I rebuild Docker?']
   },
   fallback: {
@@ -227,8 +227,8 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'Apply changes carefully': 'Применяйте изменения аккуратно',
     'Use chat for final details': 'Используйте чат для финальных деталей',
     'Add unsupported features only when you build them': 'Добавляйте неподдерживаемые функции только после реализации',
-    'Set OPENAI_API_KEY': 'Установите OPENAI_API_KEY',
-    'Choose OPENAI_MODEL': 'Выберите OPENAI_MODEL',
+    'Set GEMINI_API_KEY': 'Установите GEMINI_API_KEY',
+    'Choose GEMINI_MODEL': 'Выберите GEMINI_MODEL',
     'Restart/rebuild backend': 'Перезапустите или пересоберите backend'
   },
   kk: {
@@ -300,8 +300,8 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'Apply changes carefully': 'Өзгерістерді мұқият қолданыңыз',
     'Use chat for final details': 'Соңғы мәліметтер үшін чатты қолданыңыз',
     'Add unsupported features only when you build them': 'Қолдау жоқ функцияларды іске асырғаннан кейін ғана қосыңыз',
-    'Set OPENAI_API_KEY': 'OPENAI_API_KEY орнатыңыз',
-    'Choose OPENAI_MODEL': 'OPENAI_MODEL таңдаңыз',
+    'Set GEMINI_API_KEY': 'GEMINI_API_KEY орнатыңыз',
+    'Choose GEMINI_MODEL': 'GEMINI_MODEL таңдаңыз',
     'Restart/rebuild backend': 'Backend-ті қайта іске қосыңыз немесе қайта жинаңыз'
   }
 };
@@ -320,7 +320,7 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     account: 'Для проблем с аккаунтом проверьте email/пароль, статус аккаунта, необходимость email-подтверждения, JWT secrets и подключение к базе данных backend.',
     admin: 'Админ-экраны нужны для управления пользователями, категориями и модерацией. Админ-действия должны быть отделены от обычных buyer/seller сценариев.',
     platform_limits: 'Mollmart поддерживает запросы, предложения, чат после принятия, демо-оплату, request-deal заказы и статус отслеживания. Реальная оплата картой, escrow, shipping labels, возвраты и интеграции с перевозчиками не входят в текущий scope.',
-    assistant_setup: 'Помощник использует OPENAI_API_KEY и OPENAI_MODEL на backend. Если ключ отсутствует или API падает, включается локальная справка Mollmart.',
+    assistant_setup: 'Помощник использует GEMINI_API_KEY и GEMINI_MODEL на backend. OpenAI — опциональный запасной вариант. Если ключ отсутствует или API падает, включается локальная справка Mollmart.',
     fallback: 'Я могу помочь с процессами Mollmart: запросы покупателей, предложения продавцов, чат после принятия, профили, уведомления, вход, админка и деплой. Уточните, что вы хотите сделать на этом экране.'
   },
   kk: {
@@ -336,7 +336,7 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     account: 'Аккаунт мәселелері үшін email/құпиясөзді, аккаунт күйін, email растау талабын, JWT secrets және backend дерекқор қосылымын тексеріңіз.',
     admin: 'Админ экрандары пайдаланушыларды, санаттарды және модерацияны басқаруға арналған. Админ әрекеттері buyer/seller сценарийлерінен бөлек болуы керек.',
     platform_limits: 'Mollmart сұраныстарды, ұсыныстарды, қабылдаудан кейінгі чатты, демо төлемді, request-deal тапсырыстарын және бақылау статусын қолдайды. Нақты карта төлемі, escrow, shipping labels, қайтарымдар және тасымалдаушы интеграциялары қазіргі scope-қа кірмейді.',
-    assistant_setup: 'Көмекші backend жағында OPENAI_API_KEY және OPENAI_MODEL қолданады. Кілт жоқ болса немесе API істемесе, локал Mollmart анықтамасы қосылады.',
+    assistant_setup: 'Көмекші backend жағында GEMINI_API_KEY және GEMINI_MODEL қолданады. OpenAI — опционалды резерв. Кілт жоқ болса немесе API істемесе, локал Mollmart анықтамасы қосылады.',
     fallback: 'Мен Mollmart процестерімен көмектесе аламын: сатып алушы сұраныстары, сатушы ұсыныстары, қабылдаудан кейінгі чат, профильдер, хабарландырулар, кіру, админ және деплой. Осы экранда не істегіңіз келетінін нақтылаңыз.'
   }
 };
@@ -348,6 +348,16 @@ type OpenAIResponse = {
       type?: string;
       text?: string;
     }>;
+  }>;
+};
+
+type GeminiResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
   }>;
 };
 
@@ -395,6 +405,28 @@ const chatbotJsonSchema = {
   required: ['reply', 'intent', 'suggestions', 'suggestedRoute', 'actions', 'confidence']
 } as const;
 
+const geminiChatbotJsonSchema = {
+  type: 'object',
+  properties: {
+    reply: { type: 'string' },
+    intent: {
+      type: 'string',
+      enum: [...validIntents]
+    },
+    suggestions: {
+      type: 'array',
+      items: { type: 'string' }
+    },
+    suggestedRoute: { type: 'string' },
+    actions: {
+      type: 'array',
+      items: { type: 'string' }
+    },
+    confidence: { type: 'number' }
+  },
+  required: ['reply', 'intent', 'suggestions', 'suggestedRoute', 'actions', 'confidence']
+} as const;
+
 function normalizeText(message: string): string {
   return message.toLowerCase().replace(/\s+/g, ' ').trim();
 }
@@ -409,6 +441,14 @@ function hasAnyPhrase(text: string, phrases: string[]): boolean {
 
 export class ChatbotService {
   async createReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
+    if (config.gemini.apiKey.trim().length > 0) {
+      try {
+        return await this.createGeminiReply(input);
+      } catch (error) {
+        logger.warn(`Gemini chatbot fallback used: ${(error as Error).message}`);
+      }
+    }
+
     if (config.openai.apiKey.trim().length > 0) {
       try {
         return await this.createOpenAIReply(input);
@@ -437,8 +477,7 @@ export class ChatbotService {
     };
   }
 
-  private async createOpenAIReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
-    const intent = this.detectIntent(input);
+  private buildUserPrompt(input: ChatbotMessageInput, intent: ChatbotIntent): string {
     const recentHistory = (input.history ?? [])
       .slice(-10)
       .map((item) => {
@@ -450,6 +489,85 @@ export class ChatbotService {
       })
       .join('\n');
 
+    return [
+      recentHistory ? `Recent conversation:\n${recentHistory}` : '',
+      this.describeConversationMemory(input),
+      `Current path: ${input.currentPath || 'unknown'}`,
+      `Current user role: ${input.userRole || 'guest'}`,
+      `Detected intent hint: ${intent}`,
+      `Current user message: ${input.message}`
+    ].filter(Boolean).join('\n\n');
+  }
+
+  private finalizeAiReply(
+    parsed: Required<Omit<ChatbotReply, 'source'>>,
+    intent: ChatbotIntent,
+    input: ChatbotMessageInput,
+    source: 'gemini' | 'openai'
+  ): ChatbotReply {
+    const normalizedIntent = this.normalizeIntent(parsed.intent, intent);
+
+    return {
+      ...parsed,
+      intent: normalizedIntent,
+      reply: this.limitReply(parsed.reply),
+      suggestions: this.normalizeStringList(parsed.suggestions, responses[normalizedIntent].suggestions, 4),
+      actions: this.normalizeStringList(parsed.actions, actionsByIntent[normalizedIntent] ?? [], 4),
+      suggestedRoute: this.normalizeRoute(parsed.suggestedRoute, normalizedIntent, input.userRole),
+      confidence: this.normalizeConfidence(parsed.confidence),
+      source
+    };
+  }
+
+  private async createGeminiReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
+    const intent = this.detectIntent(input);
+    const model = config.gemini.model.trim();
+    const apiKey = config.gemini.apiKey.trim();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: this.buildSystemPrompt(input) }]
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: this.buildUserPrompt(input, intent) }]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: geminiChatbotJsonSchema,
+          maxOutputTokens: 650,
+          temperature: 0.35
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`Gemini request failed (${response.status}) ${errorText.slice(0, 200)}`);
+    }
+
+    const data = (await response.json()) as GeminiResponse;
+    const outputText = this.extractGeminiText(data);
+
+    if (outputText.length === 0) {
+      throw new Error('Gemini response did not include text output');
+    }
+
+    const parsed = this.parseOpenAIJson(outputText, intent);
+    return this.finalizeAiReply(parsed, intent, input, 'gemini');
+  }
+
+  private async createOpenAIReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
+    const intent = this.detectIntent(input);
+
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
@@ -459,14 +577,7 @@ export class ChatbotService {
       body: JSON.stringify({
         model: config.openai.model,
         instructions: this.buildSystemPrompt(input),
-        input: [
-          recentHistory ? `Recent conversation:\n${recentHistory}` : '',
-          this.describeConversationMemory(input),
-          `Current path: ${input.currentPath || 'unknown'}`,
-          `Current user role: ${input.userRole || 'guest'}`,
-          `Detected intent hint: ${intent}`,
-          `Current user message: ${input.message}`
-        ].filter(Boolean).join('\n\n'),
+        input: this.buildUserPrompt(input, intent),
         max_output_tokens: 650,
         text: {
           format: {
@@ -492,18 +603,7 @@ export class ChatbotService {
     }
 
     const parsed = this.parseOpenAIJson(outputText, intent);
-    const normalizedIntent = this.normalizeIntent(parsed.intent, intent);
-
-    return {
-      ...parsed,
-      intent: normalizedIntent,
-      reply: this.limitReply(parsed.reply),
-      suggestions: this.normalizeStringList(parsed.suggestions, responses[normalizedIntent].suggestions, 4),
-      actions: this.normalizeStringList(parsed.actions, actionsByIntent[normalizedIntent] ?? [], 4),
-      suggestedRoute: this.normalizeRoute(parsed.suggestedRoute, normalizedIntent, input.userRole),
-      confidence: this.normalizeConfidence(parsed.confidence),
-      source: 'openai'
-    };
+    return this.finalizeAiReply(parsed, intent, input, 'openai');
   }
 
   private buildSystemPrompt(input: ChatbotMessageInput): string {
@@ -517,10 +617,17 @@ export class ChatbotService {
       'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /orders, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/orders, /admin/users.',
       'Demo payment, request-deal orders, and tracking status are supported. Do not invent real card charging, escrow, shipping labels, carrier integrations, refunds, file uploads for requests, realtime websocket features, or unsupported social login.',
       'For deployment: mention production env, secure secrets, PostgreSQL, Prisma migrations, frontend/backend build, Docker rebuild, CORS/SERVER_URL, and optional Redis when relevant.',
-      'For API assistant setup: mention OPENAI_API_KEY and OPENAI_MODEL in backend env, and that local fallback works without a key.',
+      'For API assistant setup: mention GEMINI_API_KEY and GEMINI_MODEL in backend env (OpenAI is optional fallback), and that local fallback works without a key.',
       'Be logical: answer the question first, then give 2-4 concrete next actions. If the request is vague, ask one direct clarifying question and still give the safest next step.',
       'Return only JSON matching the schema. Keep reply under 900 characters. suggestions and actions should be short UI labels.'
     ].join('\n');
+  }
+
+  private extractGeminiText(data: GeminiResponse): string {
+    return (data.candidates?.[0]?.content?.parts ?? [])
+      .map((part) => part.text ?? '')
+      .join('')
+      .trim();
   }
 
   private extractOpenAIText(data: OpenAIResponse): string {

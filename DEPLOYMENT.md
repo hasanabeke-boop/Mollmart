@@ -40,6 +40,8 @@ GMAIL_API_CLIENT_SECRET=your-google-oauth-client-secret
 GMAIL_API_REFRESH_TOKEN=your-google-oauth-refresh-token
 GMAIL_API_USER_ID=me
 EMAIL_FROM=your-sender@gmail.com
+GEMINI_API_KEY=your-gemini-key
+GEMINI_MODEL=gemini-2.0-flash
 OPENAI_API_KEY=your-openai-key
 ```
 

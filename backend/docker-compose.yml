@@ -53,6 +53,8 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-no-reply@example.com}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
     ports:
       - "4040:4040"
     depends_on:
