@@ -29,11 +29,13 @@ function resolveUserFromHeaders(req: Request): AuthUser | null {
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
-  const devUser = resolveUserFromHeaders(req);
-  if (devUser != null) {
-    req.user = devUser;
-    next();
-    return;
+  if (config.nodeEnv !== 'production') {
+    const devUser = resolveUserFromHeaders(req);
+    if (devUser != null) {
+      req.user = devUser;
+      next();
+      return;
+    }
   }
 
   const header = req.header('authorization');

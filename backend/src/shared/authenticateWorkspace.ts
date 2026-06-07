@@ -60,11 +60,13 @@ export async function authenticateWorkspace(
   next: NextFunction
 ): Promise<void> {
   try {
-    const devUser = await resolveDevUser(req);
-    if (devUser != null) {
-      req.user = devUser;
-      next();
-      return;
+    if (config.nodeEnv !== 'production') {
+      const devUser = await resolveDevUser(req);
+      if (devUser != null) {
+        req.user = devUser;
+        next();
+        return;
+      }
     }
 
     const header = req.header('authorization');
