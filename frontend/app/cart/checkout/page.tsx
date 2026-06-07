@@ -6,7 +6,6 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { convertViaBase, fetchLatestRates, type FxRatesResponse } from "@/lib/fxRates";
-import { createCartStripeCheckoutSession, fetchPaymentConfig } from "@/lib/payments";
 import { checkoutCart, fetchCart, type CartItem } from "@/lib/shop";
 
 export default function CheckoutPage() {
@@ -18,7 +17,6 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [fxRates, setFxRates] = useState<FxRatesResponse | null>(null);
   const [fxError, setFxError] = useState("");
-  const [stripeEnabled, setStripeEnabled] = useState(false);
   const [form, setForm] = useState({
     shippingName: "",
     shippingPhone: "",
@@ -50,12 +48,6 @@ export default function CheckoutPage() {
     }
     void load();
   }, [authLoading, user, router, load]);
-
-  useEffect(() => {
-    fetchPaymentConfig()
-      .then((config) => setStripeEnabled(config.stripeEnabled))
-      .catch(() => setStripeEnabled(false));
-  }, []);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
@@ -107,27 +99,17 @@ export default function CheckoutPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!stripeEnabled && form.cardHolderName.trim().length < 2) {
+    if (form.cardHolderName.trim().length < 2) {
       setError("Enter the name on the demo card.");
       return;
     }
-    if (!stripeEnabled && form.cardLast4.length !== 4) {
+    if (form.cardLast4.length !== 4) {
       setError("Enter the last 4 digits of the demo card.");
       return;
     }
     setSubmitting(true);
     setError("");
     try {
-      if (stripeEnabled) {
-        const session = await createCartStripeCheckoutSession({
-          checkoutCurrency: form.checkoutCurrency,
-          shippingName: form.shippingName.trim(),
-          shippingPhone: form.shippingPhone.trim(),
-          shippingAddress: form.shippingAddress.trim(),
-        });
-        window.location.href = session.url;
-        return;
-      }
       const data = await checkoutCart({
         checkoutCurrency: form.checkoutCurrency,
         shippingName: form.shippingName.trim(),
@@ -164,9 +146,7 @@ export default function CheckoutPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-black text-[#0d1b12]">Checkout</h1>
         <p className="mt-1 text-sm text-[#4c9a66]">
-          {stripeEnabled
-            ? "Stripe checkout takes the advance payment, then creates orders after confirmation."
-            : "Demo checkout simulates payment, creates orders, and reserves stock."}
+          Demo checkout simulates payment, creates orders, and reserves stock.
         </p>
       </div>
 
@@ -222,42 +202,36 @@ export default function CheckoutPage() {
           <section className="rounded-xl border border-[#cfe7d7] bg-white p-5">
             <h2 className="text-lg font-black text-[#0d1b12]">Demo payment</h2>
             <p className="mt-1 text-sm text-[#4c9a66]">
-              {stripeEnabled
-                ? "You will enter card details on Stripe's secure checkout page."
-                : "This is an advance demo payment for the order. No real card is charged."}
+              This is an advance demo payment for the order. No real card is charged.
             </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {!stripeEnabled ? (
-                <>
-                  <label className="block sm:col-span-2">
-                    <span className="text-sm font-semibold text-slate-700">Name on card</span>
-                    <input
-                      value={form.cardHolderName}
-                      onChange={(e) => setForm((s) => ({ ...s, cardHolderName: e.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                      placeholder="Jane Buyer"
-                      autoComplete="cc-name"
-                      required
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-700">Last 4 digits</span>
-                    <input
-                      value={form.cardLast4}
-                      onChange={(e) =>
-                        setForm((s) => ({ ...s, cardLast4: e.target.value.replace(/\D/g, "").slice(0, 4) }))
-                      }
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm tracking-widest"
-                      placeholder="4242"
-                      inputMode="numeric"
-                      autoComplete="cc-number"
-                      required
-                    />
-                  </label>
-                </>
-              ) : null}
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-semibold text-slate-700">Name on card</span>
+                <input
+                  value={form.cardHolderName}
+                  onChange={(e) => setForm((s) => ({ ...s, cardHolderName: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Jane Buyer"
+                  autoComplete="cc-name"
+                  required
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">Last 4 digits</span>
+                <input
+                  value={form.cardLast4}
+                  onChange={(e) =>
+                    setForm((s) => ({ ...s, cardLast4: e.target.value.replace(/\D/g, "").slice(0, 4) }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm tracking-widest"
+                  placeholder="4242"
+                  inputMode="numeric"
+                  autoComplete="cc-number"
+                  required
+                />
+              </label>
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-                Payment status: <span className="font-bold">{stripeEnabled ? "Stripe" : "simulated"}</span>
+                Payment status: <span className="font-bold">simulated</span>
                 <br />
                 Orders are created immediately after confirmation.
               </div>
@@ -299,17 +273,12 @@ export default function CheckoutPage() {
             type="submit"
             disabled={
               submitting ||
-              (!stripeEnabled && (form.cardLast4.length !== 4 || form.cardHolderName.trim().length < 2))
+              form.cardLast4.length !== 4 ||
+              form.cardHolderName.trim().length < 2
             }
             className="mt-5 w-full rounded-lg bg-primary px-4 py-3 text-sm font-bold text-[#0d1b12] hover:bg-[#0fd650] disabled:opacity-60"
           >
-            {submitting
-              ? stripeEnabled
-                ? "Opening Stripe..."
-                : "Processing payment..."
-              : stripeEnabled
-                ? "Pay with Stripe"
-                : "Complete advance payment"}
+            {submitting ? "Processing payment..." : "Complete advance payment"}
           </button>
         </aside>
       </form>
