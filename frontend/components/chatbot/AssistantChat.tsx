@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MessageList, Composer } from "./AssistantParts";
 import { useChatbot } from "./useChatbot";
+import AiMark from "./AiMark";
 
 type AssistantChatProps = {
   variant?: "page" | "panel";
@@ -25,9 +26,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
       <div className="flex h-full min-h-0 flex-col bg-[#f5f6f8]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[#e7f3eb] bg-white px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-black text-primary">
-              M
-            </div>
+            <AiMark size="md" />
             <div className="min-w-0">
               <h2 className="truncate text-sm font-semibold text-[#0d1b12]">{t("Mollmart Assistant")}</h2>
               <p className="truncate text-[11px] text-[#4c9a66]">{t("Need help? Ask anything.")}</p>
@@ -79,9 +78,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
     <div className="app-page-min-height flex flex-col bg-[#f5f6f8]">
       <header className="shrink-0 border-b border-[#e7f3eb] bg-white px-4 py-5 lg:px-8">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
-            M
-          </div>
+          <AiMark size="lg" />
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-[#0d1b12]">{t("Mollmart Assistant")}</h1>
             <p className="truncate text-sm text-[#4c9a66]">{roleSubtitle(user?.role, t)}</p>

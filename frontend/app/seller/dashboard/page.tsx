@@ -6,6 +6,7 @@ import { apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { SearchField } from "@/components/ui/SearchField";
 import { canUseSellerWorkspace } from "@/lib/workspace";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 
@@ -141,19 +142,14 @@ export default function SellerDashboardPage() {
     <div className="app-page-min-height relative w-full bg-[#f5f6f8]">
       <main className="app-page-min-height flex flex-col">
         <header className="sticky top-[var(--app-header-height)] z-20 flex h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-6 backdrop-blur">
-          <div className="hidden max-w-md flex-1 md:flex">
-            <div className="relative w-full">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <span className="material-symbols-outlined text-gray-400">search</span>
-              </div>
-              <input
-                className="block w-full rounded-lg border-0 bg-gray-100 py-2 pl-10 pr-4 text-sm text-[#0d1b12] placeholder-gray-500 focus:ring-2 focus:ring-primary"
-                placeholder="Search live requests..."
-                type="text"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
+          <div className="hidden md:block">
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search live requests…"
+              width="narrow"
+              inputClassName="h-10 w-full min-w-0 rounded-lg border-0 bg-gray-100 py-2 pl-10 pr-10 text-sm text-[#0d1b12] outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-primary/30"
+            />
           </div>
           <div className="flex items-center gap-4">
             <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:text-black">

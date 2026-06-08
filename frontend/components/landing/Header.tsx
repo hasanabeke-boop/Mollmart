@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
+import AiMark from "@/components/chatbot/AiMark";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { apiFetchWithRefresh } from "@/lib/api";
@@ -120,7 +121,7 @@ export function Header() {
                 className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
                 aria-label="Assistant chat"
               >
-                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <AiMark size="xs" />
               </Link>
               <Link
                 href="/notifications"
@@ -232,7 +233,7 @@ export function Header() {
                 className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
                 aria-label="Assistant chat"
               >
-                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
+                <AiMark size="xs" />
               </Link>
               <Link
                 href="/login"

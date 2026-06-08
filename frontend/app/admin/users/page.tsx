@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { SearchField } from "@/components/ui/SearchField";
 
 type UserRecord = {
   id: string;
@@ -139,17 +140,11 @@ export default function AdminUsersPage() {
         <p className="mt-1 text-[#4c9a66]">Search, block, and manage platform users.</p>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none placeholder:text-gray-400"
-          placeholder="Search users by name, email, or ID..."
-        />
-      </div>
+      <SearchField
+        value={search}
+        onChange={setSearch}
+        placeholder="Search users by name, email, or ID…"
+      />
 
       {/* Action logs */}
       {actionLogs.length > 0 && (

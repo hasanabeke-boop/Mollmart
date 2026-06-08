@@ -104,6 +104,12 @@
   max-width: 48rem;
 }
 
+/* Balanced search width — avoid full-bleed search bars on wide pages */
+.app-search-form {
+  width: 100%;
+  max-width: 42rem;
+}
+
 .app-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

@@ -11,6 +11,7 @@ import { formatMoney, normalizeCurrency } from "@/lib/currency";
 import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
 import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
+import { SearchField } from "@/components/ui/SearchField";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -714,29 +715,13 @@ export default function BrowseBuyerRequestsPage() {
         </Link>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-          search
-        </span>
-        <input
-          type="text"
+      <div className="mb-6">
+        <SearchField
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
-          placeholder="Search requests by title, description, or category..."
+          onChange={setSearch}
+          placeholder="Search requests by title, description, or category…"
+          width="wide"
         />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              close
-            </span>
-          </button>
-        )}
       </div>
 
       {/* Filter Tabs + Filters */}

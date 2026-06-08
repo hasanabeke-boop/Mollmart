@@ -118,7 +118,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             <WorkspaceModeToggle compact />
           </div>
           <form className="border-t border-[var(--border)] px-3 pb-3 pt-2 sm:hidden sm:px-4" onSubmit={handleMobileSearch}>
-            <label className="relative flex w-full items-center">
+            <label className="app-search-form relative mx-auto flex w-full items-center">
               <span className="absolute left-2.5 text-[var(--text-muted)]">
                 <Search className="h-3.5 w-3.5" />
               </span>

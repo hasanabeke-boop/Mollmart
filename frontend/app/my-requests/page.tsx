@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { SearchBarRow, SearchField } from "@/components/ui/SearchField";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
@@ -487,36 +488,20 @@ export default function MyRequestsPage() {
           </Link>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <div className="relative min-w-0 flex-1">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-[var(--text-muted)]">
-              search
-            </span>
-            <input
-              id="my-requests-search"
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search title, category, status, location…"
-              className="h-11 w-full min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-10 pr-10 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-            />
-            {search.trim().length > 0 && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
-                aria-label="Clear search"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            )}
-          </div>
-          {!loading && requests.length > 0 && (
-            <p className="shrink-0 text-xs text-[var(--text-muted)] sm:text-sm">
-              {filteredRequests.length} of {requests.length} requests
-            </p>
-          )}
-        </div>
+        <SearchBarRow
+          meta={
+            !loading && requests.length > 0
+              ? `${filteredRequests.length} of ${requests.length} requests`
+              : undefined
+          }
+        >
+          <SearchField
+            id="my-requests-search"
+            value={search}
+            onChange={setSearch}
+            placeholder="Search title, category, status, location…"
+          />
+        </SearchBarRow>
       </header>
 
       {error && (

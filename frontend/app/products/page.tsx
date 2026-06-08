@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
+import { SearchField } from "@/components/ui/SearchField";
 
 type Category = {
   id: string;
@@ -293,13 +294,11 @@ export default function CatalogBrowsePage() {
 
         <main className="flex-1">
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Search</label>
-            <input
-              type="search"
+            <SearchField
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={setQ}
               placeholder="Search title or description…"
-              className="app-card w-full rounded-lg px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-primary"
+              width="wide"
             />
           </div>
 

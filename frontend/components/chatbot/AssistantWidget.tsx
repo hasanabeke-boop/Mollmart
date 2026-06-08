@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import AssistantChat from "./AssistantChat";
+import AiMark from "./AiMark";
 
 function isHiddenPath(pathname: string) {
   return pathname === "/chatbot" || pathname.startsWith("/chatbot/");
@@ -46,7 +47,11 @@ export default function AssistantWidget() {
           aria-label={open ? t("Close assistant") : t("Assistant")}
           aria-expanded={open}
         >
-          <span className="material-symbols-outlined text-[26px]">{open ? "close" : "smart_toy"}</span>
+          {open ? (
+            <span className="material-symbols-outlined text-[26px]">close</span>
+          ) : (
+            <AiMark size="sm" variant="plain" className="text-[15px] text-white" />
+          )}
         </button>
       </div>
     </div>

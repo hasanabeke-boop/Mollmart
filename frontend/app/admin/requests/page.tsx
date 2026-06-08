@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { searchInputClassName } from "@/components/ui/SearchField";
 import { deleteAdminRequest, fetchAdminRequests, type AdminRequestRow } from "@/lib/admin";
 
 export default function AdminRequestsPage() {
@@ -60,22 +61,28 @@ export default function AdminRequestsPage() {
       </div>
 
       <form
-        className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center"
+        className="app-search-form mb-4 flex flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
           e.preventDefault();
           setPage(1);
           setSearch(q.trim());
         }}
       >
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by title, id, buyer email…"
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
-        />
+        <div className="relative min-w-0 flex-1">
+          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-[var(--text-muted)]">
+            search
+          </span>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search by title, id, buyer email…"
+            type="search"
+            className={searchInputClassName}
+          />
+        </div>
         <button
           type="submit"
-          className="rounded-lg bg-[#0d1b12] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          className="h-11 shrink-0 rounded-xl bg-[#0d1b12] px-5 text-sm font-semibold text-white hover:opacity-90"
         >
           Search
         </button>
