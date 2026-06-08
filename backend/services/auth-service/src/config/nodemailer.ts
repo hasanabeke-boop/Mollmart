@@ -2,39 +2,20 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import logger from '../middleware/logger';
 import config from './config';
 
-let transporter: Transporter | null = null;
+const smtpPort = parseInt(config.email.smtp.port, 10);
 
-const createTestAccount = async () => {
-  try {
-    const account = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: account.smtp.host,
-      port: account.smtp.port,
-      secure: account.smtp.secure,
-      auth: {
-        user: account.user,
-        pass: account.pass
-      }
-    });
-    logger.info(`Test account created: ${account.user}`);
-    console.log(account);
-  } catch (error) {
-    console.error('Failed to create a test account:', error);
+const transporter: Transporter = nodemailer.createTransport({
+  host: config.email.smtp.host,
+  port: smtpPort,
+  secure: smtpPort === 465,
+  auth: {
+    user: config.email.smtp.auth.username,
+    pass: config.email.smtp.auth.password
   }
-};
+});
 
-if (config.node_env === 'production') {
-  transporter = nodemailer.createTransport({
-    host: config.email.smtp.host,
-    port: parseInt(config.email.smtp.port),
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: config.email.smtp.auth.username,
-      pass: config.email.smtp.auth.password
-    }
-  });
-} else {
-  void createTestAccount();
-}
+logger.info(
+  `SMTP mail transport configured for ${config.email.smtp.host}:${smtpPort}`
+);
 
 export default transporter;

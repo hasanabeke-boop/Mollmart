@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import type { FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetchWithRefresh } from "@/lib/api";
 
 type Interest = "Technology" | "Fashion" | "Home Decor" | "Outdoor" | "Books" | "Vintage";
 
@@ -35,6 +37,12 @@ export default function UserProfilePage() {
     priceDrops: true,
     newsletter: false,
   });
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const toggleInterest = (interest: Interest) => {
     setInterests((prev) =>
@@ -46,6 +54,36 @@ export default function UserProfilePage() {
 
   const handleSaveProfile = () => {
     alert(`Profile saved:\nName: ${name}\nLocation: ${location}`);
+  };
+
+  const handlePasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordStatus("");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await apiFetchWithRefresh<{ message: string }>("/api/v1/change-password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordStatus("Check your email to confirm the password change.");
+    } catch (err) {
+      const error = err as Error & { data?: { message?: string; error?: string } };
+      setPasswordError(
+        error.data?.message || error.data?.error || "Could not request password change",
+      );
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   return (
@@ -265,6 +303,66 @@ export default function UserProfilePage() {
               />
             </div>
           </div>
+        </section>
+
+        <section className="bg-white p-6 rounded-xl border border-[#e7f3eb] shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-symbols-outlined text-primary">lock</span>
+            <h3 className="font-bold">Password</h3>
+          </div>
+          <form className="grid grid-cols-1 md:grid-cols-3 gap-4" onSubmit={handlePasswordChange}>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-semibold text-[#0d1b12]">Current Password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                required
+                minLength={6}
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-semibold text-[#0d1b12]">New Password</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                required
+                minLength={6}
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-semibold text-[#0d1b12]">Confirm Password</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                required
+                minLength={6}
+              />
+            </label>
+            <div className="md:col-span-3 flex flex-col sm:flex-row sm:items-center gap-3">
+              <button
+                type="submit"
+                disabled={passwordSaving}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+              >
+                {passwordSaving ? "Sending..." : "Send Confirmation Email"}
+              </button>
+              {passwordStatus && (
+                <p className="text-sm font-medium text-[#2c7a45]">{passwordStatus}</p>
+              )}
+              {passwordError && (
+                <p className="text-sm font-medium text-red-600">{passwordError}</p>
+              )}
+            </div>
+          </form>
         </section>
       </main>
     </div>

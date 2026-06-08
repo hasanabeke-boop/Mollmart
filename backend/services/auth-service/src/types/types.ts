@@ -58,6 +58,11 @@ export interface ResetPasswordRequestBodyType {
   newPassword: string;
 }
 
+export interface ChangePasswordRequestBodyType {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export type Sanitized<T> = T extends (...args: unknown[]) => unknown
   ? T // if T is a function, return it as is
   : T extends object

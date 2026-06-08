@@ -43,24 +43,24 @@ export const handleSignUp = async (
   req: TypedRequest<UserSignUpCredentials>,
   res: Response
 ) => {
-  const { username, email, password } = req.body;
-
-  // check req.body values
-  if (!username || !email || !password) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      message: 'Username, email and password are required!'
-    });
-  }
-
-  const checkUserEmail = await prismaClient.user.findUnique({
-    where: {
-      email
-    }
-  });
-
-  if (checkUserEmail) return res.sendStatus(httpStatus.CONFLICT); // email is already in db
-
   try {
+    const { username, email, password } = req.body;
+
+    // check req.body values
+    if (!username || !email || !password) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        message: 'Username, email and password are required!'
+      });
+    }
+
+    const checkUserEmail = await prismaClient.user.findUnique({
+      where: {
+        email
+      }
+    });
+
+    if (checkUserEmail) return res.sendStatus(httpStatus.CONFLICT); // email is already in db
+
     const hashedPassword = await argon2.hash(password);
 
     const newUser = await prismaClient.user.create({
@@ -85,9 +85,12 @@ export const handleSignUp = async (
     // Send an email with the verification link
     sendVerifyEmail(email, token);
 
-    res.status(httpStatus.CREATED).json({ message: 'New user created' });
+    return res.status(httpStatus.CREATED).json({ message: 'New user created' });
   } catch (err) {
-    res.status(httpStatus.INTERNAL_SERVER_ERROR);
+    logger.error(err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to create user'
+    });
   }
 };
 
@@ -127,7 +130,7 @@ export const handleLogin = async (
 
   // check if email is verified
   if (!user.emailVerified) {
-    res.status(httpStatus.UNAUTHORIZED).json({
+    return res.status(httpStatus.UNAUTHORIZED).json({
       message: 'Your email is not verified! Please confirm your email!'
     });
   }
@@ -219,7 +222,10 @@ export const handleLogin = async (
     // send access token per json to user so it can be stored in the localStorage
     return res.json({ accessToken });
   } catch (err) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR);
+    logger.error(err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to login'
+    });
   }
 };
 

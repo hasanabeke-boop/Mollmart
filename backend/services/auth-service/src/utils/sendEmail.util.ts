@@ -57,3 +57,31 @@ export const sendVerifyEmail = (email: string, token: string) => {
     }
   });
 };
+
+/**
+ * This function sends an email confirmation link for an authenticated password change.
+ *
+ * @param {string} email - The email of the user
+ * @param {string} token - The pending password change token
+ */
+export const sendPasswordChangeEmail = (email: string, token: string) => {
+  const confirmLink = `${config.server.url}/api/v1/confirm-password-change/${token}`;
+  const mailOptions = {
+    from: config.email.from,
+    to: email,
+    subject: 'Confirm password change',
+    html: `
+      <p>Please confirm your password change by clicking the button below:</p>
+      <p><a href="${confirmLink}">Confirm Password Change</a></p>
+      <p>If you did not request this change, you can ignore this email.</p>
+    `
+  };
+  console.log(confirmLink);
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      logger.error(error);
+    } else {
+      logger.info('Password change confirmation email sent: ' + info.response);
+    }
+  });
+};

@@ -4,11 +4,15 @@ import { randomUUID } from 'crypto';
 import * as argon2 from 'argon2';
 import prismaClient from '../config/prisma';
 import type {
+  ChangePasswordRequestBodyType,
   EmailRequestBody,
   ResetPasswordRequestBodyType,
   TypedRequest
 } from '../types/types';
-import { sendResetEmail } from '../utils/sendEmail.util';
+import {
+  sendPasswordChangeEmail,
+  sendResetEmail
+} from '../utils/sendEmail.util';
 
 /**
  * Sends Forgot password email
@@ -33,8 +37,8 @@ export const handleForgotPassword = async (
   const user = await prismaClient.user.findUnique({ where: { email } });
 
   // check if email is verified
-  if (!user || user.emailVerified) {
-    return res.send(httpStatus.UNAUTHORIZED).json({
+  if (!user || !user.emailVerified) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
       message: 'Your email is not verified! Please confirm your email!'
     });
   }
@@ -114,4 +118,118 @@ export const handleResetPassword = async (
   return res
     .status(httpStatus.OK)
     .json({ message: 'Password reset successful' });
+};
+
+/**
+ * Sends an email confirmation before changing the password for a signed-in user.
+ * @param req
+ * @param res
+ * @returns
+ */
+export const handleChangePasswordRequest = async (
+  req: TypedRequest<ChangePasswordRequestBodyType>,
+  res: Response
+) => {
+  const payload = req.payload as { userID?: unknown } | undefined;
+  const userId = payload?.userID;
+  const { currentPassword, newPassword } = req.body;
+
+  if (typeof userId !== 'string') {
+    return res.sendStatus(httpStatus.UNAUTHORIZED);
+  }
+
+  if (!currentPassword || !newPassword) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      message: 'Current password and new password are required!'
+    });
+  }
+
+  const user = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, emailVerified: true, password: true }
+  });
+
+  if (!user || !user.email || !user.emailVerified) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      message: 'Your email is not verified! Please confirm your email!'
+    });
+  }
+
+  const isCurrentPasswordValid = await argon2.verify(
+    user.password,
+    currentPassword
+  );
+
+  if (!isCurrentPasswordValid) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      message: 'Current password is incorrect!'
+    });
+  }
+
+  const pendingToken = randomUUID();
+  const expiresAt = new Date(Date.now() + 3600000);
+  const hashedPassword = await argon2.hash(newPassword);
+
+  await prismaClient.passwordChangeToken.deleteMany({
+    where: { userId: user.id }
+  });
+
+  await prismaClient.passwordChangeToken.create({
+    data: {
+      token: pendingToken,
+      hashedPassword,
+      expiresAt,
+      userId: user.id
+    }
+  });
+
+  sendPasswordChangeEmail(user.email, pendingToken);
+
+  return res.status(httpStatus.OK).json({
+    message: 'Password change confirmation email sent'
+  });
+};
+
+/**
+ * Confirms an authenticated password change from the emailed token.
+ * @param req
+ * @param res
+ * @returns
+ */
+export const handleConfirmPasswordChange = async (
+  req: TypedRequest,
+  res: Response
+) => {
+  const { token } = req.params;
+
+  if (!token) return res.sendStatus(httpStatus.NOT_FOUND);
+
+  const passwordChangeToken = await prismaClient.passwordChangeToken.findFirst({
+    where: { token, expiresAt: { gt: new Date() } }
+  });
+
+  if (!passwordChangeToken) {
+    return res
+      .status(httpStatus.NOT_FOUND)
+      .json({ error: 'Invalid or expired token' });
+  }
+
+  await prismaClient.user.update({
+    where: { id: passwordChangeToken.userId },
+    data: { password: passwordChangeToken.hashedPassword }
+  });
+
+  await prismaClient.passwordChangeToken.deleteMany({
+    where: { userId: passwordChangeToken.userId }
+  });
+
+  await prismaClient.refreshToken.deleteMany({
+    where: {
+      userId: passwordChangeToken.userId
+    }
+  });
+
+  return res
+    .status(httpStatus.OK)
+    .json({ message: 'Password change confirmed' });
 };
