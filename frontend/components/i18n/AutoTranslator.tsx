@@ -38,11 +38,20 @@ export default function AutoTranslator() {
       const normalized = normalizeText(node.nodeValue ?? "");
       if (!normalized) return;
 
-      if (!textOriginals.has(node)) {
-        textOriginals.set(node, normalized);
+      let original = textOriginals.get(node);
+      if (original === undefined) {
+        original = normalized;
+        textOriginals.set(node, original);
+      } else if (original !== normalized) {
+        // Live UI updates (totals, counts) change text after we stored the original.
+        // Treat the new value as source instead of reverting to a stale translation.
+        const previousTranslation = translateUiText(original, language);
+        if (normalized !== previousTranslation) {
+          original = normalized;
+          textOriginals.set(node, original);
+        }
       }
 
-      const original = textOriginals.get(node) ?? normalized;
       const translated = translateUiText(original, language);
       if (translated !== normalized) {
         node.nodeValue = (node.nodeValue ?? "").replace(normalized, translated);

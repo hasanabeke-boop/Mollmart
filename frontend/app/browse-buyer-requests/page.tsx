@@ -326,6 +326,7 @@ function OfferModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
       onClick={onClose}
+      data-no-translate
     >
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scale-in_0.2s_ease-out]"
