@@ -507,7 +507,7 @@ function CreateProductRequestContent() {
       ctaLabel="Browse buyer requests"
       unauthenticatedDescription="Log in as a buyer to create and publish requests."
     >
-    <div className="app-page app-page-narrow pb-20 sm:pb-24">
+    <div className="app-page pb-20 sm:pb-24">
       <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-12">
         {/* Left Column: Branding & Instructions */}
         <div className="lg:col-span-4 space-y-6">
