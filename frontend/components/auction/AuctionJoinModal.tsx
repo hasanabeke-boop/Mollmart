@@ -6,6 +6,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 import AuctionRulesHelp, { useAuctionRules } from "@/components/auction/AuctionRulesHelp";
+import ModalPortal from "@/components/ui/ModalPortal";
 
 type RequestLike = {
   id: string;
@@ -75,10 +76,11 @@ export default function AuctionJoinModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
-      onClick={onClose}
-    >
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+        onClick={onClose}
+      >
       <div
         className="w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--surface)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -199,5 +201,6 @@ export default function AuctionJoinModal({
         )}
       </div>
     </div>
+    </ModalPortal>
   );
 }
