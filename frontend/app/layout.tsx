@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { ToastProvider } from "@/context/ToastContext";
+import AssistantWidget from "@/components/chatbot/AssistantWidget";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
@@ -39,26 +40,26 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider>
-        <AuthProvider>
-          <LanguageProvider>
-            <WorkspaceProvider>
-              <ToastProvider>
-                <AutoTranslator />
-                <div className="app-shell-bg relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[var(--background)] text-[var(--foreground)] transition-colors duration-200">
-                  <AppHeader />
-                  <main className="flex-1 self-stretch">
-                    <WorkspaceShell>
-                      <WorkspaceModeTransition>{children}</WorkspaceModeTransition>
-                    </WorkspaceShell>
-                  </main>
-                </div>
-              </ToastProvider>
-            </WorkspaceProvider>
-          </LanguageProvider>
-        </AuthProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <WorkspaceProvider>
+                <ToastProvider>
+                  <AutoTranslator />
+                  <div className="app-shell-bg relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[var(--background)] text-[var(--foreground)] transition-colors duration-200">
+                    <AppHeader />
+                    <main className="flex-1 self-stretch">
+                      <WorkspaceShell>
+                        <WorkspaceModeTransition>{children}</WorkspaceModeTransition>
+                      </WorkspaceShell>
+                    </main>
+                    <AssistantWidget />
+                  </div>
+                </ToastProvider>
+              </WorkspaceProvider>
+            </LanguageProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
