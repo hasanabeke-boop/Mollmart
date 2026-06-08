@@ -1,42 +1,43 @@
 'use client';
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type FaqItem = {
   id: number;
   question: string;
   answer: string;
-  category: "buying" | "selling" | "payments" | "account";
+  category: "requests" | "selling" | "moderation" | "account";
 };
 
 const FAQ_ITEMS: FaqItem[] = [
   {
     id: 1,
-    category: "buying",
-    question: "How do I request a refund for an item?",
+    category: "requests",
+    question: "How do I create a strong buyer request?",
     answer:
-      "To request a refund, go to your 'Orders' page, select the specific order, and click on 'Report an Issue'. Select 'Request Refund' from the options and follow the prompts. Sellers have 48 hours to respond before Mollmart steps in.",
+      "Create a request with a clear title, useful product details, target budget, category, and deadline. The more specific the request is, the easier it is for sellers to respond with relevant offers.",
   },
   {
     id: 2,
-    category: "payments",
-    question: "When will I receive my payout after a sale?",
+    category: "selling",
+    question: "How do sellers respond to buyer demand?",
     answer:
-      "Payouts are processed 3 days after the buyer confirms delivery. Once processed, it may take 1-3 business days for the funds to appear in your connected bank account depending on your financial institution.",
+      "Sellers browse published requests, filter by relevant categories, and submit offers with price, message, and timing. If the buyer accepts, the platform opens a chat for direct negotiation.",
   },
   {
     id: 3,
-    category: "account",
-    question: "How can I change my shipping address?",
+    category: "moderation",
+    question: "What happens after I accept an offer?",
     answer:
-      "You can update your default shipping address in 'Account Settings' > 'Shipping Addresses'. For an active order that hasn't shipped yet, please contact the seller immediately via the message center to request a change.",
+      "After you accept an offer, you negotiate price in chat with counter-offers. When both sides agree on a number, the buyer can run a demo payment; the seller receives a balance and an order is created for tracking. Email copies of notifications are sent when mail is configured.",
   },
   {
     id: 4,
-    category: "selling",
-    question: "What are the fees for selling on Mollmart?",
+    category: "account",
+    question: "How do I keep my account safe and trusted?",
     answer:
-      "Listing items is free! We only charge a flat 10% commission fee when your item sells. There is also a small payment processing fee of 2.9% + $0.30 managed by our payment provider.",
+      "Verify your email, keep profile details current, and communicate through the platform respectfully. Admin tools support moderation, user blocking, and review of suspicious activity.",
   },
 ];
 
@@ -61,14 +62,6 @@ export default function HelpFaqPage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-  };
-
-  const handleStartChat = () => {
-    alert("Opening live chat (demo). You can later link this to /chat.");
-  };
-
-  const handleEmailSupport = () => {
-    alert("Opening email support (demo).");
   };
 
   return (
@@ -102,7 +95,7 @@ export default function HelpFaqPage() {
                 </div>
                 <input
                   className="flex w-full min-w-0 flex-1 bg-transparent text-[#0d1b12] focus:outline-0 placeholder:text-[#4c9a66] px-3 md:px-4 text-sm md:text-base"
-                  placeholder="Search for answers (e.g. refunds, shipping, fees)"
+                  placeholder="Search for answers (e.g. requests, offers, moderation)"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -128,14 +121,14 @@ export default function HelpFaqPage() {
               Browse by Topic
             </h2>
             <p className="text-[#4c9a66] mt-2">
-              Find articles related to specific areas of the marketplace.
+              Find articles related to request posting, offers, moderation, and account usage.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-10">
             {[
-              { id: "buying", label: "Buying", icon: "shopping_bag" },
+              { id: "requests", label: "Requests", icon: "playlist_add_check" },
               { id: "selling", label: "Selling", icon: "sell" },
-              { id: "payments", label: "Payments", icon: "payments" },
+              { id: "moderation", label: "Moderation", icon: "gavel" },
               { id: "account", label: "Account", icon: "manage_accounts" },
             ].map((cat) => {
               const active = activeCategory === cat.id;
@@ -164,12 +157,12 @@ export default function HelpFaqPage() {
                       {cat.label}
                     </h3>
                     <p className="text-[#4c9a66] text-sm">
-                      {cat.id === "buying" &&
-                        "Finding items, bidding, and checkout guides."}
+                      {cat.id === "requests" &&
+                        "How buyer requests work and how to improve them."}
                       {cat.id === "selling" &&
-                        "Creating listings, shipping, and managing sales."}
-                      {cat.id === "payments" &&
-                        "Understanding fees, invoices, and payouts."}
+                        "Finding requests, sending offers, and negotiating."}
+                      {cat.id === "moderation" &&
+                        "Safety, blocking, and admin intervention."}
                       {cat.id === "account" &&
                         "Profile settings, security, and preferences."}
                     </p>
@@ -246,29 +239,27 @@ export default function HelpFaqPage() {
             </h2>
             <p className="text-[#4c9a66] mb-8 max-w-md mx-auto">
               Our support team is available 24/7 to assist you with any
-              questions or issues you might have.
+              questions about requests, offers, chats, and account safety.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button
-                type="button"
-                onClick={handleStartChat}
+              <Link
+                href="/chat"
                 className="flex items-center justify-center gap-2 rounded-lg bg-primary hover:bg-[#0eb545] text-[#0d1b12] px-6 py-3 font-bold transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   chat
                 </span>
-                <span>Start Live Chat</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleEmailSupport}
+                <span>Open Chats</span>
+              </Link>
+              <Link
+                href="/profile"
                 className="flex items-center justify-center gap-2 rounded-lg border border-[#cfe7d7] bg-white hover:bg-gray-50 text-[#0d1b12] px-6 py-3 font-semibold transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">
-                  mail
+                  manage_accounts
                 </span>
-                <span>Email Support</span>
-              </button>
+                <span>Account Settings</span>
+              </Link>
             </div>
           </div>
         </div>

@@ -1,23 +1,244 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f5f7fa;
   --foreground: #0d1b12;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --border-muted: #f1f5f9;
+  --text-muted: #64748b;
   --primary-color: #607afb;
   --primary-hover: #4b63e8;
+  /* Matches Header: h-14, xl:h-16 */
+  --app-header-height: 3.5rem;
+}
+
+.dark {
+  --background: #0b0f14;
+  --foreground: #e8edf2;
+  --surface: #141a22;
+  --surface-muted: #1a222c;
+  --surface-hover: #243040;
+  --border: #2a3544;
+  --border-muted: #1f2937;
+  --text-muted: #94a3b8;
+  --primary-color: #7b93fc;
+  --primary-hover: #607afb;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --app-header-height: 4rem;
+  }
+}
+
+/* Full-height app sidebar (buyer / seller) — fixed to viewport, not transformed parents */
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  box-sizing: border-box;
+  height: 100dvh;
+  padding-top: var(--app-header-height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app-layout-with-sidebar {
+  min-height: calc(100dvh - var(--app-header-height));
+  --workspace-subnav-height: 0px;
+}
+
+@media (max-width: 767px) {
+  .app-layout-with-sidebar {
+    /* Mobile workspace bar (title + optional search) below main header */
+    --workspace-subnav-height: 7.5rem;
+  }
+}
+
+/* Standard page container — use on main content wrappers */
+.app-page {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.25rem 0.75rem 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .app-page {
+    padding: 1.5rem 1rem 2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-page {
+    padding: 2rem 1.5rem;
+  }
+}
+
+.app-page-wide {
+  max-width: 90rem;
+}
+
+.app-page-narrow {
+  max-width: 48rem;
+}
+
+.app-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+}
+
+.app-fill-below-header {
+  min-height: calc(100dvh - var(--app-header-height) - var(--workspace-subnav-height));
+  max-height: calc(100dvh - var(--app-header-height) - var(--workspace-subnav-height));
+}
+
+.app-page-min-height {
+  min-height: calc(100dvh - var(--app-header-height));
+}
+
+@media (min-width: 768px) {
+  .app-layout-with-sidebar {
+    padding-left: 16rem;
+  }
+}
+
+.app-main-content {
+  width: 100%;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 767px) {
+  .app-main-content {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Code", "Consolas", "Courier New", monospace;
+  /* Scrollytelling landing (Mollmart brand) */
+  --color-mm-primary: #607afb;
+  --color-mm-primary-hover: #4b63e8;
+  --color-mm-text: #0d1b12;
+  --color-mm-text-secondary: #64748b;
+  --color-mm-text-muted: #94a3b8;
+  --color-mm-bg: #f5f7fa;
+  --color-mm-surface: #ffffff;
+  --color-mm-surface-elevated: #eef1f5;
+  --color-mm-accent-green: #4c9a66;
+  --color-mm-dark-bg: #0a0f1a;
+  --color-mm-dark-surface: #111827;
+  --color-mm-dark-elevated: #1f2937;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 20px 60px rgba(0, 0, 0, 0.08);
+  --shadow-mockup: 0 25px 80px rgba(0, 0, 0, 0.4);
+  --animate-pulse-slow: pulse-slow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.landing-hero-display {
+  font-size: clamp(2rem, 6vw, 5.25rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Hero: static colors + halo so text stays readable on shifting gradient */
+.landing-hero-text {
+  color: #16171a;
+  /* Центрированное объемное свечение во все стороны без контура */
+  text-shadow:
+    0 0 40px rgba(255, 255, 255, 0.95),
+    0 0 16px rgba(255, 255, 255, 0.85);
+}
+
+.landing-hero-text-accent {
+  color: #4b63e8;
+  font-weight: 800;
+}
+
+.landing-hero-desc-text {
+  color: #16171a;
+  text-shadow:
+    0 0 30px rgba(255, 255, 255, 0.9),
+    0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+.landing-hero-desc-text-accent {
+  color: #4b63e8;
+  font-weight: 600;
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+.shadow-card-hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.shadow-mockup {
+  box-shadow: var(--shadow-mockup);
+}
+
+/* Landing: full-bleed hero (own fixed nav, no app header) */
+html[data-landing="true"] .app-shell-bg {
+  background: #f6f6f6;
+}
+
+/* Lenis smooth scroll (landing) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Custom utilities from the landing design */
@@ -85,6 +306,10 @@ body {
   border-radius: 20px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #475569;
+}
+
 .mask-linear-fade {
   -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
   mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
@@ -94,4 +319,219 @@ body {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid #f1f5f9;
+}
+
+.dark .glass-card {
+  background: rgba(20, 26, 34, 0.85);
+  border-color: var(--border);
+}
+
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
+}
+
+.app-sidebar-panel {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+/* Toast stack */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(1.25rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(1rem) scale(0.96);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.toast-exit {
+  animation: toast-exit 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* Full-screen fade when switching buyer ↔ seller (opacity only — transform breaks fixed sidebars) */
+.workspace-screen-fade {
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.workspace-screen-fade--visible {
+  opacity: 1;
+}
+
+.workspace-screen-fade--hidden {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Segmented workspace toggle */
+.workspace-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgba(13, 27, 18, 0.06),
+    0 2px 8px rgba(96, 122, 251, 0.12);
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    transform 0.48s cubic-bezier(0.34, 1.35, 0.64, 1),
+    box-shadow 0.48s ease,
+    width 0.48s cubic-bezier(0.34, 1.35, 0.64, 1);
+  will-change: transform;
+}
+
+.workspace-toggle__thumb--seller {
+  transform: translate3d(100%, 0, 0) scale(1);
+  box-shadow:
+    0 1px 3px rgba(13, 27, 18, 0.08),
+    0 4px 14px rgba(96, 122, 251, 0.2);
+}
+
+.workspace-toggle--animating .workspace-toggle__thumb {
+  transition: none;
+  animation: workspace-toggle-thumb-bounce 0.52s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes workspace-toggle-thumb-bounce {
+  0% {
+    filter: brightness(1);
+  }
+  40% {
+    filter: brightness(1.04);
+    transform: translate3d(var(--thumb-x, 0), 0, 0) scale(0.82);
+  }
+  72% {
+    transform: translate3d(var(--thumb-x, 0), 0, 0) scale(1.06);
+  }
+  100% {
+    filter: brightness(1);
+    transform: translate3d(var(--thumb-x, 0), 0, 0) scale(1);
+  }
+}
+
+.workspace-toggle--animating .workspace-toggle__thumb--seller {
+  --thumb-x: 100%;
+}
+
+.workspace-toggle--animating .workspace-toggle__thumb:not(.workspace-toggle__thumb--seller) {
+  --thumb-x: 0;
+}
+
+.workspace-toggle__btn {
+  position: relative;
+  z-index: 1;
+  border-radius: 5px;
+  padding: 0.25rem 0.5rem;
+  color: #6b7280;
+  transition: color 0.25s ease;
+}
+
+@media (min-width: 640px) {
+  .workspace-toggle__btn {
+    padding: 0.375rem 0.625rem;
+  }
+}
+
+.workspace-toggle__btn--active {
+  color: var(--foreground);
+}
+
+.dark .workspace-toggle__btn {
+  color: var(--text-muted);
+}
+
+.workspace-toggle__btn:disabled {
+  cursor: wait;
+}
+
+.workspace-toggle__btn:not(:disabled):active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-screen-fade {
+    transition-duration: 0.01ms;
+  }
+
+
+  .workspace-toggle__thumb {
+    transition-duration: 0.01ms;
+  }
+
+  .workspace-toggle--animating .workspace-toggle__thumb {
+    animation: none;
+  }
+
+  .auction-price-flash,
+  .auction-row-drop,
+  .auction-timer-urgent {
+    animation: none !important;
+  }
+}
+
+@keyframes auction-flash {
+  0% {
+    background: rgba(96, 122, 251, 0.35);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@keyframes auction-row-pulse {
+  0%,
+  100% {
+    background-color: rgba(96, 122, 251, 0.12);
+  }
+  50% {
+    background-color: rgba(96, 122, 251, 0.28);
+  }
+}
+
+@keyframes auction-urgent-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.35);
+  }
+}
+
+.auction-price-flash {
+  animation: auction-flash 1.2s ease-out forwards;
+}
+
+.auction-row-drop {
+  animation: auction-row-pulse 1.2s ease-in-out;
+}
+
+.auction-timer-urgent {
+  animation: auction-urgent-pulse 1s ease-in-out infinite;
 }

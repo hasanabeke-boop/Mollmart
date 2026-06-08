@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function NewsletterSection() {
   return (
     <section className="py-16 bg-white">
@@ -8,13 +10,12 @@ export function NewsletterSection() {
               Sign up for our newsletter
             </h2>
             <p className="mt-4 max-w-3xl text-lg text-gray-600">
-              Stay up to date with the newest demands, latest trends, and exclusive deals. We only
-              send the good stuff.
+              Create an account to receive request, offer, and chat notifications from Mollmart.
             </p>
           </div>
 
           <div className="mt-8 lg:mt-0 lg:ml-8 relative z-10 w-full lg:w-auto">
-            <form className="sm:flex">
+            <form className="sm:flex" action="/register">
               <label className="sr-only" htmlFor="email-address">
                 Email address
               </label>
@@ -22,7 +23,7 @@ export function NewsletterSection() {
                 autoComplete="email"
                 className="w-full rounded-lg border-gray-300 px-5 py-3 placeholder-gray-500 focus:border-primary focus:ring-primary sm:max-w-xs transition-shadow shadow-sm"
                 id="email-address"
-                name="email-address"
+                name="email"
                 placeholder="Enter your email"
                 required
                 type="email"
@@ -32,15 +33,15 @@ export function NewsletterSection() {
                   className="flex w-full items-center justify-center rounded-lg border border-transparent bg-primary px-5 py-3 text-base font-bold text-white hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-transform active:scale-95"
                   type="submit"
                 >
-                  Notify me
+                  Create account
                 </button>
               </div>
             </form>
             <p className="mt-3 text-sm text-gray-500">
               We care about the protection of your data. Read our{" "}
-              <a className="font-medium text-primary underline" href="#">
+              <Link className="font-medium text-primary underline" href="/help">
                 Privacy Policy
-              </a>
+              </Link>
               .
             </p>
           </div>

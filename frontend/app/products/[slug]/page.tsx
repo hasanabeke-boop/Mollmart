@@ -1,224 +1,268 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
+import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
+import { addCartItem } from "@/lib/shop";
 
-const MAIN_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuD8Kh_2ZTubCIMDWX-AgEEwXfBEVtdyZcfdcrRqzQRb17X0f-Upd3DO1L0WiTOPUpyvGsPRCg7h9EiPVAuz7LwkZMxpBZ2vPSIcoublDuu5mkC1HNpMRUbQPU8fbcBH602Mf7yCxm1PA35qFALYtWeRFUu_rrKrnUQsI7OPu5e0OChjrV2FORYW98A4u51mK3XqiY9fY2y-R1AA_s7oC2NIIlwc5okFHPM3ZCLYs3fXMQ3HS9uGJBMWJO5rf8qVAlC6Qca1zRdYL8g",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuD87QWBfu0vL8Agkp4-9jYcfNg9Xb5_jofHJRmJ_pH_rTIile12Xt_nQ9wkhV9aTLYdPn1NhduG7I_iLQ9gVWGkf1JZdRY0hEOR9aTD9GgnfYna82GdF0dJs3YWjyhjq2RlwJlQ64JliA5Y_vllbx2_Gz8KC-YZjMVpFC2T2AMcCJJGPS4ooePG3owNAnmC0O9AR8bYETQI9IO4WmP62Hgb0thKuE-Z91HtT7GwkemgMGpKQ8OQY3LC19HKMzHKkKx-NHu_TyyqcuA",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBf73FTCoflMoPQrza4m4uORxtUXcyXJ-jRedmOpKah1P2PY3sqQBiEdULwsYUhZ0Vr0I1dPs28utrMKAQeowUEdKHC99MaVdpQdFKA_JjeAJQGNvneKtE9ne2nJMjE2gJHAmpSY041tebsxleGseKEeECx05YWs1gab82nAGxILG762DWqfU3hz2BV1Ir_Yz-Oum_22s4mhW3Pmm7Ugy9APYv0nhXaZFbDM12ZFzO-PxB4PqyMJ1VSSpkuG9PUKYBmcJx_NoYdEVc",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCQAdTt9NL3Q_Ylxp_-qwNANKOaSrn88r1Wr6uLZphxFIakIxzIg6cKGSSiRU0HZQzJEo2U36DrECeWAtNro-bp7O2Kec4EPmmYNNd0I81W0u4wPo56x6NPd6ZDVsFr1BCLwDhFGV1iiuqAEkg0e8ti4OYwyBmg5o37c0ts9cNLuZGwcChoNe5Wehzo5wyas6NTDv7Z1z4j33WDxr0fu5rg5gV3zgpFfeMkXvQFOtlH-UbfH0Pb2j38BLmGC9-2UBX9lIO9LauBoPE",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBicudYufkLRdbjQ-qKTNPhmEJKeK4GqqwBUGWbBNKP-01bwzA86pkrGIWwJmbAWQQKYdnU1q5f4VkQaZmD25PHVqNOlNnj2ZHvdFqKQVsOBjG71F8KvtlToJBqlMmNiNaHZUNAVmxaqS1npqN9NEyf1h3g-Ov783urOrNhx5Xe9Jmx9eCA_2vKugpQ-9uJqMoRqK5UCnAxFiHEDtivqiTkCceFc580qlbVEGK8OWW1DJfn4Tph7ra5Sh_bhOp96W0O0iX7wlDfeQM",
-];
-
-type PageProps = {
-  params: { slug: string };
+type ShowcaseDetail = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  price: number;
+  compareAtPrice: number | null;
+  currency: string;
+  listedPrice?: number;
+  listedCurrency?: string;
+  imageUrl: string;
+  galleryUrls: string[];
+  quantity: number;
+  category: { id: string; name: string; slug: string } | null;
+  seller: { id: string; name: string };
 };
 
-export default function ProductDetailsPage({ params }: PageProps) {
-  // Пока один продукт, но slug пригодится, когда появятся другие
-  const { slug } = params;
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [offer, setOffer] = useState<string>("");
-  const [offerError, setOfferError] = useState<string | null>(null);
+export default function ShowcaseDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
+  const slug = typeof params.slug === "string" ? params.slug : "";
+  const displayCurrency = useMemo(() => normalizeCatalogCurrencyCode("USD"), []);
 
-  const handleSendOffer = () => {
-    const value = Number(offer);
-    if (!offer || Number.isNaN(value) || value <= 0) {
-      setOfferError("Введите корректную сумму предложения.");
+  const [product, setProduct] = useState<ShowcaseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const qs = new URLSearchParams();
+        qs.set("currency", displayCurrency);
+        const data = await apiFetch<ShowcaseDetail>(
+          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}?${qs.toString()}`,
+          { service: "catalog" },
+        );
+        if (!cancelled) {
+          setProduct(data);
+          setActiveIndex(0);
+        }
+      } catch (e: unknown) {
+        const err = e as Error & { status?: number };
+        if (!cancelled) {
+          setProduct(null);
+          setError(err.status === 404 ? "Listing not found." : err.message || "Failed to load listing");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, displayCurrency]);
+
+  const images = useMemo(() => {
+    if (!product) return [];
+    const extra = Array.isArray(product.galleryUrls) ? product.galleryUrls.filter(Boolean) : [];
+    const list = [product.imageUrl, ...extra.filter((u) => u !== product.imageUrl)];
+    return list.length > 0 ? list : [];
+  }, [product]);
+
+  const mainImage = images[activeIndex] ?? "";
+
+  const requestHref = useMemo(() => {
+    if (!product?.slug) return "/create-product-request";
+    return `/create-product-request?fromShowcase=${encodeURIComponent(product.slug)}`;
+  }, [product?.slug]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-16 text-center text-slate-500">
+        Loading…
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <p className="text-slate-700 mb-4">{error || "Listing unavailable."}</p>
+        <Link href="/products" className="text-primary font-semibold hover:underline">
+          Back to catalog
+        </Link>
+      </div>
+    );
+  }
+
+  const isOwnListing = user?.id === product.seller.id;
+  const inStock = product.quantity > 0;
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      router.push(`/login?returnUrl=${encodeURIComponent(`/products/${product.slug}`)}`);
       return;
     }
-    setOfferError(null);
-    alert(`Ваше предложение $${value.toFixed(2)} отправлено продавцу (демо).`);
+    setAdding(true);
+    setCartMessage("");
+    try {
+      await addCartItem(product.id, 1);
+      setCartMessage("Added to cart.");
+    } catch (err: unknown) {
+      setCartMessage((err as Error).message || "Failed to add to cart.");
+    } finally {
+      setAdding(false);
+    }
   };
 
-  const mainImage = MAIN_IMAGES[activeIndex] ?? MAIN_IMAGES[0];
-
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-10 lg:px-20 py-6">
-      {/* Breadcrumbs */}
+    <div className="app-page app-page-wide max-w-[90rem]">
       <div className="flex flex-wrap gap-2 pb-6 px-4">
         <Link href="/" className="text-[#4c9a66] text-sm font-medium hover:underline">
           Home
         </Link>
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
-        <a className="text-[#4c9a66] text-sm font-medium hover:underline" href="#">
-          Electronics
-        </a>
+        <Link href="/products" className="text-[#4c9a66] text-sm font-medium hover:underline">
+          Catalog
+        </Link>
+        {product.category && (
+          <>
+            <span className="text-[#4c9a66] text-sm font-medium">/</span>
+            <span className="text-[#0d1b12] text-sm font-medium">{product.category.name}</span>
+          </>
+        )}
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
-        <a className="text-[#4c9a66] text-sm font-medium hover:underline" href="#">
-          Audio
-        </a>
-        <span className="text-[#4c9a66] text-sm font-medium">/</span>
-        <span className="text-[#0d1b12] text-sm font-medium">Headphones</span>
+        <span className="text-[#0d1b12] text-sm font-medium line-clamp-1">{product.title}</span>
       </div>
 
-      {/* Product Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 px-4">
-        {/* Left: gallery */}
+      <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7 flex flex-col gap-4">
-          <div className="w-full aspect-square md:aspect-[4/3] bg-white rounded-xl border border-[#e7f3eb] overflow-hidden relative group">
-            <div
-              className="w-full h-full bg-center bg-contain bg-no-repeat p-8 transition-transform duration-500 group-hover:scale-105"
-              style={{ backgroundImage: `url("${mainImage}")` }}
-            />
-            <button className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white text-[#0d1b12] shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="material-symbols-outlined">favorite</span>
-            </button>
+          <div className="app-card relative aspect-square w-full overflow-hidden rounded-xl md:aspect-[4/3]">
+            {mainImage ? (
+              <div
+                className="w-full h-full bg-center bg-contain bg-no-repeat p-8 transition-transform duration-500 group-hover:scale-105"
+                style={{ backgroundImage: `url("${mainImage}")` }}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-slate-400">No image</div>
+            )}
           </div>
 
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {MAIN_IMAGES.map((img, index) => (
-              <button
-                key={img}
-                type="button"
-                onClick={() => setActiveIndex(index)}
-                className={`flex-shrink-0 size-20 md:size-24 rounded-lg bg-white p-2 border ${
-                  activeIndex === index ? "border-primary" : "border-transparent hover:border-[#e7f3eb]"
-                }`}
-              >
-                <div
-                  className="w-full h-full bg-center bg-cover bg-no-repeat rounded"
-                  style={{ backgroundImage: `url("${img}")` }}
-                />
-              </button>
-            ))}
-          </div>
+          {images.length > 1 && (
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {images.map((img, index) => (
+                <button
+                  key={`${img}-${index}`}
+                  type="button"
+                  onClick={() => setActiveIndex(index)}
+                  className={`shrink-0 size-20 md:size-24 rounded-lg bg-white p-2 border ${
+                    activeIndex === index ? "border-primary" : "border-transparent hover:border-[#e7f3eb]"
+                  }`}
+                >
+                  <div
+                    className="w-full h-full bg-center bg-cover bg-no-repeat rounded"
+                    style={{ backgroundImage: `url("${img}")` }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Right: details */}
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-1 rounded bg-[#e7f3eb] text-[#4c9a66] text-xs font-bold uppercase tracking-wider">
-                Best Seller
+            {product.category && (
+              <span className="px-2 py-1 rounded bg-[#e7f3eb] text-[#4c9a66] text-xs font-bold uppercase tracking-wider w-fit">
+                {product.category.name}
               </span>
-              <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-bold uppercase tracking-wider">
-                Low Stock
-              </span>
-            </div>
-            <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">
-              Sony WH-1000XM5 Wireless Noise Canceling Headphones
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex text-primary">
-                <span className="material-symbols-outlined text-[20px]">star</span>
-                <span className="material-symbols-outlined text-[20px]">star</span>
-                <span className="material-symbols-outlined text-[20px]">star</span>
-                <span className="material-symbols-outlined text-[20px]">star</span>
-                <span className="material-symbols-outlined text-[20px]">star_half</span>
-              </div>
-              <span className="text-[#0d1b12] font-bold">4.8</span>
-              <a
-                href="#reviews"
-                className="text-[#4c9a66] underline decoration-[#4c9a66]/50 hover:decoration-[#4c9a66] text-sm"
-              >
-                (1,240 reviews)
-              </a>
-            </div>
+            )}
+            <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">{product.title}</h1>
           </div>
 
-          {/* Price */}
-          <div className="p-5 rounded-xl bg-white border border-[#e7f3eb] shadow-sm">
-            <div className="flex flex-col gap-1">
-              <p className="text-[#4c9a66] text-xs font-bold uppercase tracking-wider">
-                Asking Price
-              </p>
-              <div className="flex items-end gap-3">
-                <p className="text-[#0d1b12] text-4xl font-black tracking-tight">$348.00</p>
-                <p className="text-[#4c9a66] text-lg line-through mb-1.5">$399.99</p>
-                <span className="mb-2 px-2 py-0.5 rounded-full bg-primary/20 text-[#0d1b12] text-xs font-bold">
-                  -13%
-                </span>
-              </div>
-              <p className="text-[#4c9a66] text-sm">Free shipping on orders over $50</p>
-            </div>
-          </div>
-
-          {/* Seller */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-[#e7f3eb]">
-            <div className="flex items-center gap-3">
-              <div
-                className="size-10 rounded-full bg-gray-200 bg-center bg-cover"
-                style={{
-                  backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB60yniJhXZnD2wF1VD5X1ijEtrgO0AT1QHX6Bn20357uhIOvC8TtZGTEpBriZ10Lr8dhpm9OSN37WJj_ROvJbEKgKU1szVYOKZiPnWGIJXRfuJv3QYOdf4oofNrw0fzN9m7d8U7-M67YK5Qmev8Zw-0ibuFsP64q2iaCf7V5-FaHpOop3j19FVhQZHP2TzeNjgl7H1VNIOkwZPsJebXCsPhx7HmA--JjgEJnWrS5VAz9UpJbIzWt6B0fvFAJqatGie5p_0KWyDNns")',
-                }}
-              />
-              <div className="flex flex-col">
-                <p className="text-[#0d1b12] font-bold text-sm">Sold by TechGiant</p>
-                <div className="flex items-center gap-1 text-xs text-[#4c9a66]">
-                  <span className="material-symbols-outlined text-[14px] text-primary">verified</span>
-                  <span>Verified Seller</span>
-                  <span>•</span>
-                  <span>98% Positive</span>
-                </div>
-              </div>
-            </div>
-            <button className="text-[#0d1b12] text-sm font-bold hover:text-primary">
-              View Profile
-            </button>
-          </div>
-
-          {/* Offer */}
-          <div className="flex flex-col gap-4 p-5 rounded-xl bg-white border-2 border-primary/20 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">payments</span>
-              <h3 className="text-[#0d1b12] font-bold text-lg">Make an Offer</h3>
-            </div>
-            <p className="text-[#4c9a66] text-sm">
-              Think this product is worth a different price? Let the seller know what you&apos;re
-              willing to pay.
-            </p>
-            <div className="flex flex-col gap-3">
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                  <span className="text-[#4c9a66] text-lg font-medium">$</span>
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={offer}
-                  onChange={(e) => setOffer(e.target.value)}
-                  className="block w-full rounded-lg border-[#e7f3eb] bg-[#f5f6f8] py-3 pl-8 pr-4 text-[#0d1b12] focus:border-primary focus:ring-primary sm:text-lg font-bold"
-                  placeholder="0.00"
-                />
-              </div>
-              {offerError && (
-                <p className="text-xs text-red-600">
-                  {offerError}
+          <div className="app-card rounded-xl p-4 sm:p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Price</p>
+                <p className="text-3xl font-black text-[#0d1b12]">
+                  {formatCatalogMoney(product.price, product.currency, 2)}
                 </p>
-              )}
-              <button
-                type="button"
-                onClick={handleSendOffer}
-                className="w-full h-12 rounded-lg bg-primary hover:bg-[#4a63e8] text-white text-base font-bold shadow-md transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined">send</span>
-                Send Offer
-              </button>
+                {product.listedCurrency && product.listedPrice != null ? (
+                  <p className="text-xs text-slate-500">
+                    Listed as {formatCatalogMoney(product.listedPrice, product.listedCurrency, 2)}
+                  </p>
+                ) : null}
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                {inStock ? `${product.quantity} in stock` : "Out of stock"}
+              </span>
             </div>
-            <p className="text-[10px] text-[#4c9a66] text-center uppercase tracking-widest">
-              Sellers usually respond within 24 hours
-            </p>
           </div>
 
-          {/* Short description */}
-          <div className="pt-4 border-t border-[#e7f3eb] text-[#0d1b12]/80 text-sm space-y-2">
-            <p>
-              Industry-leading noise cancellation optimized to you. Magnificent Sound, engineered to
-              perfection. Crystal clear hands-free calling. Up to 30-hour battery life with quick
-              charging (3 min charge for 3 hours of playback).
-            </p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Ultra-comfortable, lightweight design</li>
-              <li>Multipoint connection</li>
-              <li>Carry case included</li>
-            </ul>
+          <div className="app-card flex flex-col gap-3 rounded-xl p-4 sm:flex-row">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-[#0d1b12]">
+                {product.seller.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex flex-col">
+                <p className="text-[#0d1b12] font-bold text-sm">{product.seller.name}</p>
+                <p className="text-xs text-[#4c9a66]">Seller</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[200px]">
+              {isOwnListing ? (
+                <p className="text-sm text-slate-600">This is your listing.</p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={!inStock || adding}
+                    onClick={handleAddToCart}
+                    className="min-h-10 px-4 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-[#0fd650] disabled:opacity-60 flex items-center justify-center text-center"
+                  >
+                    {adding ? "Adding..." : inStock ? "Add to cart" : "Out of stock"}
+                  </button>
+                  <Link
+                    href={user ? requestHref : `/login?returnUrl=${encodeURIComponent(requestHref)}`}
+                    className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
+                  >
+                    Request something like this
+                  </Link>
+                  <Link
+                    href="/cart"
+                    className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
+                  >
+                    View cart
+                  </Link>
+                  {cartMessage ? <p className="text-xs text-[#4c9a66] text-center sm:text-right">{cartMessage}</p> : null}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#e7f3eb] text-[#0d1b12]/80 text-sm space-y-3 whitespace-pre-wrap">
+            {product.description}
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => router.push("/products")}
+              className="text-primary font-semibold hover:underline"
+            >
+              ← More products
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

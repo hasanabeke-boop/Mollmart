@@ -9,8 +9,11 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   apiFetch,
+  apiFetchWithRefresh,
+  getAccessToken,
   refreshAccessToken,
   setAccessToken,
   type ApiError,
@@ -20,73 +23,129 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  emailVerified?: string | boolean | null;
+  role: "buyer" | "seller" | "admin";
+  canBuy?: boolean;
+  canSell?: boolean;
+  activeWorkspaceMode?: "buyer" | "seller";
+  languagePreference?: "en" | "ru" | "kk";
+  hasDualWorkspace?: boolean;
+  recommendationsOnboardingPending?: boolean;
+  status: "active" | "blocked" | "suspended";
 };
 
 type AuthState = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (username: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  signup: (
+    username: string,
+    email: string,
+    password: string,
+    role: "buyer" | "seller" | "both",
+  ) => Promise<{
+    message: string;
+    requiresEmailVerification?: boolean;
+    verificationToken?: string;
+  }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function parseJwt(token: string): Record<string, unknown> | null {
-  try {
-    const base64 = token.split(".")[1];
-    const json = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
+type MeResponse =
+  | User
+  | {
+      user: User;
+    };
+
+function unwrapUser(data: MeResponse): User {
+  return "user" in data ? data.user : data;
 }
 
-function userFromToken(token: string): User | null {
-  const payload = parseJwt(token);
-  if (!payload) return null;
+function mapMeToUser(me: User): User {
   return {
-    id: (payload.userID as string) || "",
-    name: (payload.name as string) || "",
-    email: (payload.email as string) || "",
+    id: me.id,
+    name: me.name || "",
+    email: me.email || "",
+    emailVerified: me.emailVerified ?? null,
+    role: (me.role as User["role"]) || "buyer",
+    canBuy: me.canBuy ?? true,
+    canSell: me.canSell ?? false,
+    activeWorkspaceMode: me.activeWorkspaceMode,
+    languagePreference: me.languagePreference ?? "en",
+    hasDualWorkspace: me.hasDualWorkspace ?? Boolean(me.canBuy && me.canSell),
+    recommendationsOnboardingPending: me.recommendationsOnboardingPending ?? false,
+    status: (me.status as User["status"]) || "active",
   };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = useCallback(async () => {
-    const token = await refreshAccessToken();
-    if (token) {
-      setUser(userFromToken(token));
-    } else {
+  const fetchMe = useCallback(async () => {
+    try {
+      const data = await apiFetchWithRefresh<MeResponse>("/api/v1/auth/me", { service: "auth" });
+      setUser(mapMeToUser(unwrapUser(data)));
+    } catch {
       setUser(null);
+      setAccessToken(null);
     }
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    await refreshAccessToken();
+    if (!getAccessToken()) {
+      setUser(null);
+      return;
+    }
+    await fetchMe();
+  }, [fetchMe]);
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<User> => {
     const data = await apiFetch<{ accessToken: string }>(
       "/api/v1/auth/login",
       {
         method: "POST",
+        service: "auth",
         body: JSON.stringify({ email, password }),
       },
     );
     setAccessToken(data.accessToken);
-    setUser(userFromToken(data.accessToken));
+    let nextUser: User;
+    try {
+      const meRes = await apiFetch<MeResponse>("/api/v1/auth/me", { service: "auth" });
+      nextUser = mapMeToUser(unwrapUser(meRes));
+    } catch {
+      nextUser = { id: "", name: "", email, role: "buyer", status: "active" };
+    }
+    setUser(nextUser);
+    return nextUser;
   }, []);
 
   const signup = useCallback(
-    async (username: string, email: string, password: string) => {
-      await apiFetch<{ message: string }>("/api/v1/auth/signup", {
+    async (
+      username: string,
+      email: string,
+      password: string,
+      role: "buyer" | "seller" | "both",
+    ) => {
+      return await apiFetch<{
+        message: string;
+        requiresEmailVerification?: boolean;
+        verificationToken?: string;
+      }>("/api/v1/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ username, email, password }),
+        service: "auth",
+        body: JSON.stringify({ username, email, password, role }),
       });
     },
     [],
@@ -94,13 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await apiFetch("/api/v1/auth/logout", { method: "POST" });
+      await apiFetch("/api/v1/auth/logout", { method: "POST", service: "auth" });
     } catch {
       // ignore
     }
     setAccessToken(null);
     setUser(null);
-  }, []);
+    router.replace("/");
+  }, [router]);
 
   const value = useMemo(
     () => ({ user, loading, login, signup, logout, refreshUser }),

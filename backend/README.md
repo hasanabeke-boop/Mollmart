@@ -1,61 +1,105 @@
 # Backend
 
-This backend can now run in two ways:
+The backend is now a modular monolith.
 
-- all services together from `backend/docker-compose.yml`
-- each service separately from its own `backend/services/<service>/docker-compose.yml`
+Database support is PostgreSQL only. MySQL/MariaDB drivers, connection strings, and Prisma providers are intentionally not part of this project.
 
-## Run Whole Backend
+One Express application runs all domain modules:
 
-From `backend/`:
+- auth
+- profile
+- request
+- offer
+- chat
+- deal
+- admin
+- notification
+- catalog
+- currency
 
-```bash
-docker compose up --build
+Current diploma scope is Option B: buyer requests, seller offers, accepted-offer chat, demo payment after an agreed price, request-deal orders, tracking status, and admin management. Real payment processing, escrow, shipping labels, and carrier integrations are outside the current implementation.
+
+The former service source now lives in `src/modules/*` and is wired through a single `src/app.ts` entry point. Cross-module calls happen in-process instead of through service-to-service HTTP clients.
+
+## Structure
+
+```text
+backend/
+  src/
+    app.ts
+    index.ts
+    config/
+    middleware/
+    modules/
+      auth/
+      profile/
+      request/
+      offer/
+      chat/
+      deal/
+      admin/
+      notification/
+      catalog/
+      currency/
+  prisma/
+    schema.prisma
+    seed.ts
+  docker-compose.yml
+  package.json
 ```
 
-Services:
-
-- auth-service: `http://localhost:4040`
-- request-service: `http://localhost:4050`
-- offer-service: `http://localhost:4060`
-- chat-service: `http://localhost:4070`
-- profile-service: `http://localhost:4080`
-- admin-service: `http://localhost:4090`
-- notification-service: `http://localhost:4100`
-
-Databases:
-
-- auth: `localhost:5432`
-- request: `localhost:5435`
-- offer: `localhost:5436`
-- chat: `localhost:5437`
-- profile: `localhost:5438`
-- admin: `localhost:5439`
-- notification: `localhost:5440`
-
-Redis:
-
-- `localhost:6379`
-
-Optional shared env file:
+## Local Setup
 
 ```bash
 cp .env.example .env
+npm install
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev
 ```
 
-You can set:
+## Smoke Tests
 
-- `JWT_ACCESS_SECRET`
-- `JWT_REFRESH_SECRET`
-- `CORS_ORIGIN`
+Smoke tests exercise the main API flow against a local PostgreSQL database: health, signup/login, categories, request creation, offer creation, and accepting an offer into chat.
 
-## Run One Service Separately
-
-Example:
+Set `DATABASE_URL` to a local database before running:
 
 ```bash
-cd services/auth-service
+DATABASE_URL="postgresql://postgres:<password>@localhost:54320/mollmart?schema=public" npm run test:smoke
+```
+
+The test suite refuses non-local database URLs.
+
+API base URL:
+
+```text
+http://localhost:4040/api/v1
+```
+
+Health check:
+
+```text
+http://localhost:4040/health
+```
+
+## Docker
+
+Backend-only from `backend/`:
+
+```bash
 docker compose up --build
 ```
 
-The per-service compose files still work independently.
+Docker now starts:
+
+- one backend app on `localhost:4040`
+- one PostgreSQL database on `localhost:54320`
+- one Redis instance on `localhost:6380`
+
+Full-stack deployment is available from the repository root:
+
+```bash
+cp .env.deploy.example .env
+docker compose up --build
+```

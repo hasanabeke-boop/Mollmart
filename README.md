@@ -1,236 +1,113 @@
 # Mollmart
 
-**Mollmart** is a web-based reverse auction marketplace platform where buyers create structured purchase requests and sellers compete by submitting offers.  
-Unlike traditional fixed-price marketplaces, Mollmart shifts the interaction model from seller-first listing publication to buyer-first demand creation.
+Mollmart is a web-based request-and-offer platform where buyers publish product requests, sellers respond with offers, and accepted offers continue into chat-based negotiation.
 
-The project is being developed as a realistic, modular software engineering solution with a web frontend, microservice-based backend, PostgreSQL as the primary database, Redis for caching and realtime support, and Cloudflare Tunnel for secure public demonstration access from a locally hosted machine.
+The current diploma scope is **Option B**: request creation, seller offers, buyer-seller chat, demo payment after an agreed price, request-deal orders, tracking status, and admin management. Payments and withdrawals are simulated for demonstration only; Mollmart does not provide real card charging, escrow, shipping labels, or carrier integrations. A request/offer/chat-only version can be kept as a later simplified scope.
 
----
+The project uses a web frontend and a modular monolith backend. Backend domains are separated as internal modules, not independent deployable apps.
 
-## Table of Contents
+## Core Flow
 
-- [Project Overview](#project-overview)
-- [Business Concept](#business-concept)
-- [Goals and Scope](#goals-and-scope)
-- [Core Features](#core-features)
-- [System Architecture](#system-architecture)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Microservices Overview](#microservices-overview)
-- [Main User Roles](#main-user-roles)
-- [Core Business Flow](#core-business-flow)
-- [MVP Scope](#mvp-scope)
-- [Non-Functional Requirements](#non-functional-requirements)
-- [Deployment Model](#deployment-model)
-- [Environment Variables](#environment-variables)
-- [Local Development Setup](#local-development-setup)
-- [Running with Docker](#running-with-docker)
-- [API Gateway](#api-gateway)
-- [Database and Prisma](#database-and-prisma)
-- [Authentication and Authorization](#authentication-and-authorization)
-- [Realtime and Notifications](#realtime-and-notifications)
-- [Testing Strategy](#testing-strategy)
-- [Logging and Monitoring](#logging-and-monitoring)
-- [Security Considerations](#security-considerations)
-- [Future Improvements](#future-improvements)
-- [Development Guidelines](#development-guidelines)
-- [Troubleshooting](#troubleshooting)
-- [Authors](#authors)
-- [License](#license)
+1. Buyers register, create request drafts, and publish requests for products they need.
+2. Sellers browse published requests and submit offers.
+3. Buyers compare offers and accept the best one.
+4. After acceptance, buyers and sellers continue negotiation in chat.
+5. When both sides agree on a final price, the buyer can complete a demo payment.
+6. A request-deal order is created for tracking, and admins can update order status, carrier, and tracking number.
+7. Admins manage categories, moderation cases, user blocking, and request-deal orders.
 
----
+## Architecture
 
-## Project Overview
+- **Frontend:** Next.js, React, TypeScript.
+- **Backend:** Node.js, Express, TypeScript modular monolith.
+- **Database:** one PostgreSQL database managed with Prisma. MySQL/MariaDB are not used or supported by this project.
+- **Realtime/events:** Redis pub/sub used internally by the backend.
+- **Containerization:** Docker Compose for local development/demo.
 
-Mollmart is a reverse auction marketplace designed for situations where a buyer wants to describe a need and receive competitive offers from multiple sellers.
+## Backend Modules
 
-Instead of browsing only static product listings, the buyer creates a request that includes relevant details such as product description, budget range, delivery expectations, and optional preferences. Sellers then browse available buyer requests and submit their own offers. The buyer compares these offers and can continue communication through contextual chat before accepting one option.
+The backend runs as one application from `backend/src/index.ts`.
 
-The project is intended to demonstrate:
-- practical marketplace system design;
-- modular backend architecture;
-- realistic deployment strategy;
-- clear separation of concerns between frontend, services, data, and infrastructure.
-
-Mollmart is currently focused on a **web-first MVP** with a **simple but scalable architecture** that can be demonstrated locally and extended later.
-
----
-
-## Business Concept
-
-Traditional marketplaces usually follow a seller-driven model:
-1. the seller publishes a listing;
-2. the buyer searches among many offers;
-3. the buyer compares price, quality, trust, and delivery conditions manually.
-
-Mollmart inverts this flow:
-1. the buyer creates a structured request;
-2. multiple sellers respond with offers;
-3. the buyer compares responses in one place.
-
-This approach is particularly useful when:
-- multiple sellers can provide similar products or services;
-- price is flexible;
-- buyers want to save time on comparison;
-- small sellers need access to direct buyer intent without paying heavily for visibility.
-
----
-
-## Goals and Scope
-
-### Main Goal
-
-The main goal of Mollmart is to design and implement a realistic reverse auction marketplace platform that supports the complete interaction cycle between buyers and sellers in a structured digital environment.
-
-### Specific Goals
-
-- provide a buyer-first request creation flow;
-- support competitive seller offer submission;
-- enable direct buyer-seller communication through chat;
-- maintain a modular and understandable microservice architecture;
-- use a realistic deployment model suitable for a student team and local hosting;
-- preserve room for future extension without overengineering the current stage.
-
----
-
-## Core Features
-
-### Buyer Features
-- registration and login;
-- buyer profile management;
-- create structured requests;
-- save request drafts;
-- publish requests;
-- view request status and history;
-- view received offers;
-- compare seller offers;
-- communicate with sellers through chat;
-- accept one offer and close the request.
-
-### Seller Features
-- registration and login;
-- seller profile creation;
-- browse published buyer requests;
-- filter and search available requests;
-- submit offers;
-- update or withdraw offers;
-- communicate with buyers through chat;
-- track accepted or rejected offers.
-
-### Admin Features
-- manage categories;
-- review flagged or suspicious content;
-- block or unblock users;
-- hide inappropriate marketplace content;
-- review simple platform summary metrics.
-
----
-
-## System Architecture
-
-Mollmart follows a modular architecture with a separate frontend and multiple backend services.
-
-### High-Level Components
-
-- **Frontend**
-  - Next.js 14 web application
-  - App Router
-  - TypeScript
-
-- **Backend**
-  - Node.js + Express.js microservices
-  - TypeScript
-  - REST-based communication
-
-- **Data Layer**
-  - PostgreSQL as the main relational database
-  - Redis for caching, pub/sub, and realtime support
-
-- **Gateway**
-  - Kong API Gateway for routing and centralized entry point
-
-- **Deployment**
-  - local machine hosting
-  - secure public exposure through Cloudflare Tunnel
-
-### Architectural Principles
-
-- keep the current implementation realistic and runnable on one machine;
-- separate responsibilities by domain, not by random folder mood;
-- use synchronous REST communication first;
-- add complexity only when justified by actual need;
-- keep future scaling possible without pretending the current version is already cloud-native at enterprise scale.
-
----
-
-## Technology Stack
-
-### Frontend
-- Next.js 14
-- React
-- TypeScript
-
-### Backend
-- Node.js
-- Express.js
-- TypeScript
-
-### Database
-- PostgreSQL
-- Prisma ORM
-
-### Cache / Realtime
-- Redis
-
-### Gateway / Networking
-- Kong API Gateway
-- Cloudflare Tunnel
-
-### Containerization
-- Docker
-- Docker Compose
-
-### Development Tools
-- npm or yarn
-- Prisma CLI
-- VS Code
-- Git and GitHub
-
----
+- `auth`: registration, login, refresh tokens, password reset, email verification.
+- `profile`: buyer and seller profile management.
+- `request`: buyer requests and request discovery board.
+- `offer`: seller offers and offer acceptance.
+- `chat`: buyer-seller conversations and messages.
+- `deal`: price proposals, demo payment, request-deal orders, and wallet demo balance.
+- `admin`: categories, moderation, user blocking, dashboard summary.
+- `notification`: notification API and Redis event worker.
+- `catalog`: seller showcase listings used as inspiration for buyer requests.
+- `currency`: supported currency metadata and exchange-rate helpers.
 
 ## Project Structure
 
-Example project structure:
+```text
+Mollmart/
+  frontend/
+  backend/
+    src/
+      app.ts
+      index.ts
+      config/
+      middleware/
+      modules/
+        auth/
+        profile/
+        request/
+        offer/
+        chat/
+        admin/
+        notification/
+    prisma/
+      schema.prisma
+      seed.ts
+    docker-compose.yml
+    package.json
+    .env.example
+```
+
+## Run Backend
+
+From `backend/`:
+
+```bash
+cp .env.example .env
+npm install
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev
+```
+
+The API base URL is:
 
 ```text
-mollmart/
-├── frontend/
-│   ├── app/
-│   ├── components/
-│   ├── lib/
-│   ├── services/
-│   ├── public/
-│   ├── package.json
-│   └── ...
-│
-├── backend/
-│   ├── services/
-│   │   ├── auth-service/
-│   │   ├── profile-service/
-│   │   ├── request-service/
-│   │   ├── offer-service/
-│   │   ├── chat-service/
-│   │   ├── admin-service/
-│   │   └── notification-service/
-│   │
-│   ├── packages/
-│   │   └── shared/
-│   │
-│   ├── docs/
-│   ├── docker-compose.yml
-│   ├── package.json
-│   ├── .env
-│   └── .env.example
-│
-├── README.md
-└── ...
+http://localhost:4040/api/v1
+```
+
+Health check:
+
+```text
+http://localhost:4040/health
+```
+
+## Run With Docker
+
+For the whole stack from the repository root:
+
+```bash
+cp .env.deploy.example .env
+docker compose up --build
+```
+
+This starts the frontend, backend, one PostgreSQL container, and one Redis container.
+
+Local URLs:
+
+```text
+Frontend: http://localhost:3000
+Backend:  http://localhost:4040
+Health:   http://localhost:4040/health
+```
+
+The backend container runs Prisma migrations and category seed on startup.

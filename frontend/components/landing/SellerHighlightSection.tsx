@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function SellerHighlightSection() {
   return (
     <section className="py-16 bg-[#0f1323] relative overflow-hidden">
@@ -36,14 +38,14 @@ export function SellerHighlightSection() {
               </div>
             </div>
             <div className="pt-4">
-              <button className="bg-primary hover:bg-[var(--primary-hover)] text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary/30 transition-all hover:scale-105">
+              <Link href="/products?q=handmade" className="inline-flex bg-primary hover:bg-[var(--primary-hover)] text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary/30 transition-all hover:scale-105">
                 Visit Shop
-              </button>
+              </Link>
             </div>
           </div>
 
           <div className="lg:w-2/3 w-full grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer">
+            <Link href="/products?q=crafts" className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer block">
               <img
                 alt="Product 1"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -52,9 +54,9 @@ export function SellerHighlightSection() {
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <span className="text-white font-bold">View Item</span>
               </div>
-            </div>
+            </Link>
 
-            <div className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer md:mt-8">
+            <Link href="/products?q=handmade" className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer md:mt-8 block">
               <img
                 alt="Product 2"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -63,9 +65,9 @@ export function SellerHighlightSection() {
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <span className="text-white font-bold">View Item</span>
               </div>
-            </div>
+            </Link>
 
-            <div className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer">
+            <Link href="/products?q=decor" className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer block">
               <img
                 alt="Product 3"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -74,7 +76,7 @@ export function SellerHighlightSection() {
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <span className="text-white font-bold">View Item</span>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>

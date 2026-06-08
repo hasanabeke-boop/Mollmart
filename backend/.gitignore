@@ -16,6 +16,8 @@ pnpm-debug.log*
 # environment files
 **/.env
 **/.env.*
+**/.env.local
+**/.env.production
 !**/.env.example
 
 # TypeScript
@@ -45,3 +47,6 @@ temp/
 # runtime files
 *.pid
 *.seed
+
+# local uploaded catalog images (see uploads/README in repo if added)
+uploads/

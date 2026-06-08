@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chat with Seller - Mollmart</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#607AFB", "primary-dark": "#0eb544", "background-light": "#f5f6f8", "background-dark": "#0f1323", "surface-light": "#ffffff", "surface-dark": "#1a2e22", "border-light": "#e7f3eb", "border-dark": "#253a2d", "text-main": "#0d1b12", "text-secondary": "#4c9a66"}, fontFamily: {display: "Inter"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e7f3eb;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4c9a66;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden h-screen flex flex-col">
+<!-- Top Navigation -->
+<header class="flex-none flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light dark:border-border-dark px-6 lg:px-10 py-3 bg-surface-light dark:bg-surface-dark z-20">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-text-main dark:text-white cursor-pointer">
+<div class="size-8 text-primary">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-xl font-bold leading-tight tracking-tight">Mollmart</h2>
+</div>
+<label class="hidden md:flex flex-col min-w-40 h-10 w-96">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-background-light dark:bg-background-dark border border-transparent focus-within:border-primary transition-colors">
+<div class="text-text-secondary flex items-center justify-center pl-4 pr-2">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="flex w-full min-w-0 flex-1 bg-transparent text-text-main dark:text-white focus:outline-0 border-none h-full placeholder:text-text-secondary px-2 text-sm" placeholder="Search for items, brands..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex items-center gap-4 lg:gap-8">
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-text-main dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Browse</a>
+<a class="text-text-main dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Selling</a>
+<a class="text-text-main dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Buying</a>
+<a class="text-text-main dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Community</a>
+</nav>
+<div class="flex gap-2">
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-border-light dark:hover:bg-border-dark transition-colors text-text-main dark:text-white relative">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-primary rounded-full"></span>
+</button>
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-border-light dark:hover:bg-border-dark transition-colors text-text-main dark:text-white">
+<span class="material-symbols-outlined text-[24px]">shopping_cart</span>
+</button>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 ml-2 cursor-pointer ring-2 ring-transparent hover:ring-primary transition-all" data-alt="User profile picture of a smiling person" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPDexNVRnrM4GsYBL3ZQfNCca_Vvg8HJLx-BD4F17ntEFzQ1BPGsdanJdEPbAfS1IoRSJkQAB1GxwfnV4k8WUyiW_cqLD16-IrfygUy0DCUMAg2RKrDMaDGmU7tu3Hxh_O8zNH-GB9eSRk96e5s_M02F4qMnLV-jqUU4tWzr8-LHKAMUog8gXU9k3V7LJsFuNR2MEMG1H1OsJnG8j1p5NTqjqxbk4xsK1Ot3bD3LNo4A5UjgmHZ45tR4IMllXFakFNVeYXb83xyRI");'></div>
+</div>
+</div>
+</header>
+<!-- Main Layout -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Sidebar: Conversations List -->
+<aside class="w-80 lg:w-96 flex flex-col border-r border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark shrink-0 z-10">
+<div class="p-4 border-b border-border-light dark:border-border-dark">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-lg font-bold text-text-main dark:text-white">Messages</h2>
+<button class="text-primary hover:text-primary-dark">
+<span class="material-symbols-outlined">edit_square</span>
+</button>
+</div>
+<label class="flex flex-col h-10 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-background-light dark:bg-background-dark">
+<div class="text-text-secondary flex items-center justify-center pl-3">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="flex w-full bg-transparent border-none text-text-main dark:text-white focus:ring-0 h-full placeholder:text-text-secondary px-3 text-sm" placeholder="Search chats..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Active Chat Item -->
+<div class="group flex items-center gap-3 px-4 py-3 bg-primary/10 border-l-4 border-primary cursor-pointer hover:bg-primary/20 transition-colors">
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-12" data-alt="Seller profile photo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCIaDLPQhuNfnTP0jiaFqN3ILWfCKjjQM38XZmHxeHZ5-Ypc0V34jWlvB7TpXZwrsFO-PJuHozlxwRiCU9vAYQ7bH67le6557xrc9O8S667MdzA8DQGuda8wP5q2_v_VRyeGib7p21BFQmzDBoWlm70yaAEQNzr2Ty4IJXb83pE_sgnD7tuAAa0zNKWlssJLaVC2iDVBZhElPmfj7Qs-1zA3s3p3ikOdOgEkXINUbbrpkJBMh-9OvTXTnA_h8Cmi9A3l9_nxKqmXMg");'></div>
+<span class="absolute bottom-0 right-0 size-3 bg-primary border-2 border-white dark:border-surface-dark rounded-full"></span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<p class="text-text-main dark:text-white font-semibold truncate">PhotoPro22</p>
+<p class="text-text-secondary text-xs">2m</p>
+</div>
+<p class="text-text-secondary text-sm truncate font-medium">Great, can you ship it by Friday?</p>
+</div>
+</div>
+<!-- Inactive Chat Item -->
+<div class="group flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-background-dark cursor-pointer border-l-4 border-transparent transition-colors">
+<div class="shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-12" data-alt="Alice Walker profile photo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDJVSqCtckSBz2VBRQ9Jy4pZjfmo4YOFKRWBREK_4gHwEY-Kkz2XLQ2ngMs0k6QETMbMzmnC12ikmqTqu52W_hK8zBpLKS2hQjpD4A1EkpUVQjuvRpMcv8JRBTgWU4kjcZlfgqfeJzd4YAKcIWvP-64OTPW2u03txfwXXionqEfn4AyFILnNrOTEbygjyy5gOWaUhS_djuwD3h3Cu0SH7UXC3PQDleRrfXT8qFqPV2EjJ00iQlZRjsqj0leFG9-4laPxU_RzbG8gRo");'></div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<p class="text-text-main dark:text-white font-medium truncate">Alice Walker</p>
+<p class="text-text-secondary text-xs">1d</p>
+</div>
+<p class="text-text-secondary text-sm truncate">Is this still available?</p>
+</div>
+</div>
+<!-- Inactive Chat Item -->
+<div class="group flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-background-dark cursor-pointer border-l-4 border-transparent transition-colors">
+<div class="shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-12" data-alt="Gadget Store logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAhW_8fAtiif_eqhfcciZ3eq5x5L8xPf_iIX9eyiu8JLm5M9edzGOECdZb65go1Nte2BGMm4Sr4fubY7CcAbue4s51F-u8WmAiEEN203dDzmw0MjBZwbAbcd5wPlbgi4p5-sDD7nvVXhsEPWLZmCspDwbi96cjDpU8wr2K2_GYAx2vxMtSW6cD-WdO6WdObF1COhE3Oa6_oAeUSZwP4ko-Ex2KAH4nIHMh8dFIMW5d39uLTIalKyu35nLo50h1F_k5NiiYZigWtlyM");'></div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<p class="text-text-main dark:text-white font-medium truncate">Gadget Store</p>
+<p class="text-text-secondary text-xs">3d</p>
+</div>
+<p class="text-text-secondary text-sm truncate">Thanks for the offer!</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center: Chat Interface -->
+<main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark relative">
+<!-- Chat Header -->
+<div class="flex-none flex items-center justify-between px-6 py-3 border-b border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark z-10">
+<div class="flex items-center gap-3">
+<div class="lg:hidden">
+<button class="text-text-secondary hover:text-text-main">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+</div>
+<div class="relative">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10" data-alt="Seller profile photo header" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDm0iUsxivA_SuKl8RFN-YRTJXEv735l3-lukZidmOvJiTHVqdFjWyUpRcInHSnNlT4Bq2Uwul7HK7PXV8ILKISsGmPcnW8utE7qgBt4avSa7x8ntXw4Oywd_4k5cshZEi8pdOLRcWsYAfYpoffhOcMinl3h_aPSaXn-3oxxJUFtxIyHZk06ubI8i7348myhBfownfFc66s4Q2u26WU-8a87dz9mQVXhJdhr3xe3hw4IzNTzqmnIw3dhpU1ciybKZNOS7q-6-2IAUA");'></div>
+<span class="absolute bottom-0 right-0 size-2.5 bg-primary border-2 border-white dark:border-surface-dark rounded-full"></span>
+</div>
+<div>
+<h3 class="text-text-main dark:text-white font-bold text-base leading-tight">PhotoPro22</h3>
+<p class="text-text-secondary text-xs flex items-center gap-1">
+                            Active now <span class="size-1 rounded-full bg-primary inline-block"></span>
+</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="size-8 flex items-center justify-center text-text-secondary hover:text-text-main rounded-full hover:bg-background-light dark:hover:bg-surface-dark transition-colors" title="Report or Block">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+<!-- Info Toggle for Mobile (simulated) -->
+<button class="lg:hidden size-8 flex items-center justify-center text-text-secondary hover:text-text-main rounded-full hover:bg-background-light dark:hover:bg-surface-dark transition-colors">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</button>
+</div>
+</div>
+<!-- Chat Content -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Safety Tip -->
+<div class="flex justify-center">
+<div class="bg-border-light/50 dark:bg-border-dark/50 px-4 py-2 rounded-lg flex items-start gap-2 max-w-lg">
+<span class="material-symbols-outlined text-text-secondary text-[18px] mt-0.5">shield</span>
+<p class="text-xs text-text-secondary leading-tight">
+<span class="font-bold text-text-main dark:text-white">Safety Tip:</span> Always keep transactions inside Mollmart for your protection. Never transfer money directly.
+                        </p>
+</div>
+</div>
+<!-- Date Separator -->
+<div class="flex justify-center">
+<span class="text-xs font-medium text-text-secondary bg-surface-light dark:bg-surface-dark px-3 py-1 rounded-full shadow-sm">Today</span>
+</div>
+<!-- Messages -->
+<!-- Received -->
+<div class="flex gap-3 max-w-[80%]">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-8 shrink-0 self-end mb-1" data-alt="Seller avatar small" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAvr5U-_hSwrzMR4SFkuxB0hWbvWFGba4ZkapjwRM9Eqa0L8VIPSdInOmiQSA4LgZVCuj8pDazb2jq-VZvqXP6Lp89ixoRT3UhPzUfqS4eOJkTD2HFc79P26PKsciOuBPpcPVxHD6D_Xa18bRoTQA9ss5UKdcQ-VNEgyRxZzjX5azJHeOVPI4ZwOeK1uy8e8u5gZ6IX_P90ZDHckTrDutULrKXQAgq8S4zvSL_CBNUZFnNRJ22v8tJ5Dk8q0HZVB14e543vUMAgeGc");'></div>
+<div class="flex flex-col gap-1">
+<div class="bg-surface-light dark:bg-surface-dark text-text-main dark:text-white p-3 rounded-2xl rounded-bl-none shadow-sm border border-border-light dark:border-border-dark">
+<p class="text-sm leading-relaxed">Hi! Yes, the lens is in mint condition. I barely used it for a year.</p>
+</div>
+<span class="text-[10px] text-text-secondary ml-1">10:42 AM</span>
+</div>
+</div>
+<!-- Sent -->
+<div class="flex flex-row-reverse gap-3 max-w-[80%] ml-auto">
+<div class="flex flex-col gap-1 items-end">
+<div class="bg-primary text-green-950 p-3 rounded-2xl rounded-br-none shadow-md">
+<p class="text-sm leading-relaxed font-medium">That sounds perfect! Does it come with the original lens cap and box?</p>
+</div>
+<span class="text-[10px] text-text-secondary mr-1">10:44 AM</span>
+</div>
+</div>
+<!-- Received -->
+<div class="flex gap-3 max-w-[80%]">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-8 shrink-0 self-end mb-1" data-alt="Seller avatar small" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmjBnBUwUXqC7YP8uh4VVYAU212HMYGKLXvEFdi-1K9sDWTAoQZgKWplWiaXUj5bJ0nk7a7K5QxYzNiESFvFsygeYxL1BVDVeNODY7DOE4ucIZSBJtDq_fKHzQkZE-8lZtN11HLDlUYQWScM9VYiZwcE-UiJrjfmxhAE3yrIsNHn-No8Vbt8ICpiQTI53ODoldgW8pXaGL-pPlQ62JLFvRBEVb4p9BcR-GrM1p5MwWSKmObrAYQLov_J5Mb5Fh_W1-8dbVRib0SI8");'></div>
+<div class="flex flex-col gap-1">
+<div class="bg-surface-light dark:bg-surface-dark text-text-main dark:text-white p-3 rounded-2xl rounded-bl-none shadow-sm border border-border-light dark:border-border-dark">
+<p class="text-sm leading-relaxed">Absolutely, full original packaging included.</p>
+</div>
+<div class="flex gap-2 mt-1">
+<div class="bg-surface-light dark:bg-surface-dark p-2 rounded-lg border border-border-light dark:border-border-dark w-24 h-24 bg-cover bg-center" data-alt="Photo of lens box" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDudvtyd1vALlUew4KCxdKDftUTC5Rln2ioWVdCfL2D84Je-m-DcXoSO7dyfV7B3u2so9qbcKGh81abSgHWM1NjO194waQrflvAof3OyfcXucpziUep5izsA1qzLp83P3K58TJavCpVx2Arwh68MlsbQHRl582yiL2EfW0kgbgfMJlVvvWBjlNqlfJcTMiYdf8EKy6sVSF0O1YgXGuX2AFAlAY9RnsdNOpxJqlm_wYgARU246zdtOciLuvYrNW0uTQZFLYUcqz0dyM");'></div>
+</div>
+<span class="text-[10px] text-text-secondary ml-1">10:45 AM</span>
+</div>
+</div>
+<!-- Sent -->
+<div class="flex flex-row-reverse gap-3 max-w-[80%] ml-auto">
+<div class="flex flex-col gap-1 items-end">
+<div class="bg-primary text-green-950 p-3 rounded-2xl rounded-br-none shadow-md">
+<p class="text-sm leading-relaxed font-medium">Great, can you ship it by Friday?</p>
+</div>
+<span class="text-[10px] text-text-secondary mr-1">10:46 AM • Read</span>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="flex-none p-4 bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark">
+<div class="flex items-end gap-2 max-w-4xl mx-auto">
+<button class="size-10 flex items-center justify-center text-text-secondary hover:text-primary rounded-full hover:bg-background-light dark:hover:bg-background-dark transition-colors shrink-0">
+<span class="material-symbols-outlined">add_circle</span>
+</button>
+<button class="size-10 flex items-center justify-center text-text-secondary hover:text-primary rounded-full hover:bg-background-light dark:hover:bg-background-dark transition-colors shrink-0">
+<span class="material-symbols-outlined">image</span>
+</button>
+<div class="flex-1 bg-background-light dark:bg-background-dark rounded-2xl border border-transparent focus-within:border-primary/50 transition-colors flex items-center px-4 py-2 min-h-[48px]">
+<input autofocus="" class="w-full bg-transparent border-none focus:ring-0 p-0 text-text-main dark:text-white placeholder:text-text-secondary" placeholder="Type a message..." type="text"/>
+<button class="text-text-secondary hover:text-text-main ml-2">
+<span class="material-symbols-outlined text-[20px]">mood</span>
+</button>
+</div>
+<button class="size-12 flex items-center justify-center bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg shadow-primary/30 transition-all shrink-0">
+<span class="material-symbols-outlined text-[24px]">send</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Right Sidebar: Context Panel -->
+<aside class="hidden xl:flex w-80 flex-col border-l border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark shrink-0 overflow-y-auto">
+<!-- Product Info -->
+<div class="p-6 border-b border-border-light dark:border-border-dark">
+<h4 class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-4">Related Product</h4>
+<div class="bg-background-light dark:bg-background-dark rounded-xl overflow-hidden border border-border-light dark:border-border-dark group cursor-pointer">
+<div class="aspect-[4/3] bg-cover bg-center group-hover:scale-105 transition-transform duration-300" data-alt="Canon 50mm Lens product shot" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAtYB8aV36wzFnIw4_HdrKS-n2xAIuW1y2YeTCX0mYXASATFhDRF0s1sf_u-nWwS8DkzJarNzdXiS5NP7rsj4OJQaa7j5YL4ty-JuPNEyURywKOra_FZHyOGMkuH0KZfQ0y0hABknw4v1iouRZ8LZKHwzlRmf5n7J9Op8mqaaQc1ZwPJRXSkG16x5ivX5R11f8Po1ZpV0fz4brbhCidQnqQcHbeSpEflcSMUg2REWqyLtjDmYUvRtth71aRvZv0aqwTZYDkmHDyA9k");'></div>
+<div class="p-3">
+<h3 class="font-bold text-text-main dark:text-white text-lg leading-tight mb-1">Canon 50mm f/1.8 STM Lens</h3>
+<p class="text-primary font-bold text-xl">$120.00</p>
+<div class="mt-3 flex gap-2">
+<button class="flex-1 bg-primary text-green-950 text-sm font-bold py-2 rounded-lg hover:bg-primary-dark transition-colors">Buy Now</button>
+<button class="flex-1 bg-white dark:bg-background-dark border border-border-light dark:border-border-dark text-text-main dark:text-white text-sm font-medium py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-border-dark transition-colors">Offer</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Seller Info -->
+<div class="p-6">
+<h4 class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-4">Seller Details</h4>
+<div class="flex items-center gap-4 mb-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-16" data-alt="Seller profile large" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDb55AT82h5Z8xhq8JfykywcuNlClUUDZ6C6ndEQ_i3jbjQm6jxLREMz59fGzXACZt77DJ_yFoPWzMhlznY2NB5_HgpCV8UprOzEiNsXfmZ0LK_5behjJbv_wVgyh-ODq37ozLg7RNg6K8q0WYKD5SmpHekun51Cxa27r9EVmzz44UsJA-bkv4TrRw1oVUkxZ1MOfE1Oe97HIMphamIDfi-tErwOyvqt5J-uwkKKKxJYBJno1Wj2noE0rfR1hIcARz59E8eRjLkjl0");'></div>
+<div>
+<h3 class="font-bold text-text-main dark:text-white text-lg">PhotoPro22</h3>
+<div class="flex items-center gap-1 text-yellow-400">
+<span class="material-symbols-outlined text-[16px] fill-current">star</span>
+<span class="text-text-main dark:text-white text-sm font-bold ml-1">4.8</span>
+<span class="text-text-secondary text-xs font-normal">(124 reviews)</span>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center py-2 border-b border-border-light dark:border-border-dark border-dashed">
+<span class="text-text-secondary text-sm">Joined</span>
+<span class="text-text-main dark:text-white text-sm font-medium">Oct 2021</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-border-light dark:border-border-dark border-dashed">
+<span class="text-text-secondary text-sm">Response Time</span>
+<span class="text-text-main dark:text-white text-sm font-medium">Within 1 hour</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-border-light dark:border-border-dark border-dashed">
+<span class="text-text-secondary text-sm">Location</span>
+<span class="text-text-main dark:text-white text-sm font-medium">Seattle, WA</span>
+</div>
+</div>
+<div class="mt-6">
+<button class="w-full text-text-main dark:text-white border border-border-light dark:border-border-dark rounded-lg py-2.5 text-sm font-bold hover:bg-background-light dark:hover:bg-background-dark transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+                        Visit Store
+                     </button>
+</div>
+</div>
+</aside>
+</div>
+</body></html>
