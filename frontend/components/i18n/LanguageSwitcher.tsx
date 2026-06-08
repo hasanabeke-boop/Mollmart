@@ -28,12 +28,12 @@ export default function LanguageSwitcher() {
         aria-label="Language"
         title={languageNames[language]}
       >
-        <span className="material-symbols-outlined text-[19px] text-gray-600" aria-hidden>
+        <span className="material-symbols-outlined text-[19px] text-[var(--text-muted)]" aria-hidden>
           language
         </span>
         <span>{languageLabels[language]}</span>
         <span
-          className={`material-symbols-outlined text-[16px] text-gray-400 transition-transform ${
+          className={`material-symbols-outlined text-[16px] text-[var(--text-muted)] transition-transform ${
             open ? "rotate-180" : ""
           }`}
           aria-hidden
@@ -55,11 +55,13 @@ export default function LanguageSwitcher() {
                   setOpen(false);
                 }}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
-                  active ? "bg-primary/10 font-bold text-[#0d1b12]" : "font-medium text-white-700 hover:bg-gray-50"
+                  active
+                    ? "bg-primary/10 font-bold text-[var(--foreground)]"
+                    : "font-medium text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
                 }`}
               >
                 <span>{languageNames[item]}</span>
-                <span className="text-xs font-black text-gray-500">{languageLabels[item]}</span>
+                <span className="text-xs font-black text-[var(--text-muted)]">{languageLabels[item]}</span>
               </button>
             );
           })}

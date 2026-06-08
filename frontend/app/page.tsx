@@ -1,5 +1,5 @@
-import ScrollytellingLanding from "@/components/landing/scrollytelling/ScrollytellingLanding";
+import LandingPageGate from "@/components/landing/LandingPageGate";
 
 export default function Home() {
-  return <ScrollytellingLanding />;
+  return <LandingPageGate />;
 }

@@ -66,7 +66,7 @@ const VARIANT_STYLES: Record<ToastVariant, string> = {
 
   error: "border-red-200 bg-red-50 text-red-900 shadow-red-900/10",
 
-  info: "border-slate-200 bg-white text-slate-900 shadow-slate-900/10",
+  info: "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-slate-900/10",
 
 };
 

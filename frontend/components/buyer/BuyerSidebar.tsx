@@ -106,8 +106,8 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
                 onClick={onClose}
                 className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
                   active === "admin"
-                    ? "bg-red-50 text-red-800"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                    : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
                 }`}
               >
                 <span

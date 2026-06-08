@@ -15,7 +15,7 @@ export function MollmartLogo({
   showWordmark = false,
   className = "",
   imageClassName = "",
-  wordmarkClassName = "text-lg font-bold tracking-tight text-[#0d1b12]",
+  wordmarkClassName = "text-lg font-bold tracking-tight text-[var(--foreground)]",
 }: MollmartLogoProps) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`.trim()}>
@@ -43,7 +43,7 @@ export function MollmartLogoLink({
   showWordmark = true,
   className = "group",
   imageClassName = "shadow-lg shadow-primary/30 transition-transform duration-300 group-hover:scale-110",
-  wordmarkClassName = "hidden text-lg font-bold tracking-tight text-[#0d1b12] transition-colors group-hover:text-primary md:inline",
+  wordmarkClassName = "hidden text-lg font-bold tracking-tight text-[var(--foreground)] transition-colors group-hover:text-primary md:inline",
 }: MollmartLogoLinkProps) {
   return (
     <Link href={href} className={`flex items-center gap-2 ${className}`.trim()}>
