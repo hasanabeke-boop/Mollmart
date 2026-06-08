@@ -410,7 +410,6 @@ export const uiTranslations = {
     "Log in to manage your product listings.": "Войдите, чтобы управлять товарами.",
     "Manage your catalog products in seller mode. Switch to seller using the toggle in the navbar.":
       "Управление каталогом доступно в режиме продавца. Переключитесь через переключатель в шапке.",
-    "Sign in required": "Требуется вход",
     "Please log in to continue.": "Войдите, чтобы продолжить.",
     "Log in": "Войти",
     "Language": "Язык",
@@ -870,7 +869,6 @@ export const uiTranslations = {
     "Log in to manage your product listings.": "Тауарларды басқару үшін кіріңіз.",
     "Manage your catalog products in seller mode. Switch to seller using the toggle in the navbar.":
       "Каталог тауарларын сатушы режимінде басқарыңыз. Жоғарғы панельдегі ауыстырғыш арқылы сатушыға өтіңіз.",
-    "Sign in required": "Кіру қажет",
     "Please log in to continue.": "Жалғастыру үшін кіріңіз.",
     "Log in": "Кіру",
     "Language": "Тіл",
