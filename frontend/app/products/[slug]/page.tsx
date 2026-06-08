@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { apiFetch } from "@/lib/api";
 import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
 import { addCartItem } from "@/lib/shop";
@@ -29,6 +30,7 @@ export default function ShowcaseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const slug = typeof params.slug === "string" ? params.slug : "";
   const displayCurrency = useMemo(() => normalizeCatalogCurrencyCode("USD"), []);
 
@@ -60,7 +62,7 @@ export default function ShowcaseDetailPage() {
         const err = e as Error & { status?: number };
         if (!cancelled) {
           setProduct(null);
-          setError(err.status === 404 ? "Listing not found." : err.message || "Failed to load listing");
+          setError(err.status === 404 ? t("Listing not found.") : err.message || t("Failed to load catalog"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -69,7 +71,7 @@ export default function ShowcaseDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, displayCurrency]);
+  }, [slug, displayCurrency, t]);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -88,7 +90,7 @@ export default function ShowcaseDetailPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 py-16 text-center text-slate-500">
-        Loading…
+        {t("Loading…")}
       </div>
     );
   }
@@ -96,9 +98,9 @@ export default function ShowcaseDetailPage() {
   if (error || !product) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-slate-700 mb-4">{error || "Listing unavailable."}</p>
+        <p className="text-slate-700 mb-4">{error || t("Listing unavailable.")}</p>
         <Link href="/products" className="text-primary font-semibold hover:underline">
-          Back to catalog
+          {t("Back to catalog")}
         </Link>
       </div>
     );
@@ -116,9 +118,9 @@ export default function ShowcaseDetailPage() {
     setCartMessage("");
     try {
       await addCartItem(product.id, 1);
-      setCartMessage("Added to cart.");
+      setCartMessage(t("Added to cart."));
     } catch (err: unknown) {
-      setCartMessage((err as Error).message || "Failed to add to cart.");
+      setCartMessage((err as Error).message || t("Failed to add to cart."));
     } finally {
       setAdding(false);
     }
@@ -128,11 +130,11 @@ export default function ShowcaseDetailPage() {
     <div className="app-page app-page-wide max-w-[90rem]">
       <div className="flex flex-wrap gap-2 pb-6 px-4">
         <Link href="/" className="text-[#4c9a66] text-sm font-medium hover:underline">
-          Home
+          {t("Home")}
         </Link>
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
         <Link href="/products" className="text-[#4c9a66] text-sm font-medium hover:underline">
-          Catalog
+          {t("Catalog")}
         </Link>
         {product.category && (
           <>
@@ -153,7 +155,7 @@ export default function ShowcaseDetailPage() {
                 style={{ backgroundImage: `url("${mainImage}")` }}
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-slate-400">No image</div>
+              <div className="flex h-full items-center justify-center text-slate-400">{t("No image")}</div>
             )}
           </div>
 
@@ -191,18 +193,22 @@ export default function ShowcaseDetailPage() {
           <div className="app-card rounded-xl p-4 sm:p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Price</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">{t("Price")}</p>
                 <p className="text-3xl font-black text-[#0d1b12]">
                   {formatCatalogMoney(product.price, product.currency, 2)}
                 </p>
                 {product.listedCurrency && product.listedPrice != null ? (
                   <p className="text-xs text-slate-500">
-                    Listed as {formatCatalogMoney(product.listedPrice, product.listedCurrency, 2)}
+                    {t("Listed as {price}", {
+                      price: formatCatalogMoney(product.listedPrice, product.listedCurrency, 2),
+                    })}
                   </p>
                 ) : null}
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                {inStock ? `${product.quantity} in stock` : "Out of stock"}
+                {inStock
+                  ? t("{count} in stock", { count: product.quantity })
+                  : t("Out of stock")}
               </span>
             </div>
           </div>
@@ -214,12 +220,12 @@ export default function ShowcaseDetailPage() {
               </div>
               <div className="flex flex-col">
                 <p className="text-[#0d1b12] font-bold text-sm">{product.seller.name}</p>
-                <p className="text-xs text-[#4c9a66]">Seller</p>
+                <p className="text-xs text-[#4c9a66]">{t("Seller")}</p>
               </div>
             </div>
             <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[200px]">
               {isOwnListing ? (
-                <p className="text-sm text-slate-600">This is your listing.</p>
+                <p className="text-sm text-slate-600">{t("This is your listing.")}</p>
               ) : (
                 <>
                   <button
@@ -228,19 +234,23 @@ export default function ShowcaseDetailPage() {
                     onClick={handleAddToCart}
                     className="min-h-10 px-4 rounded-lg bg-primary text-[#0d1b12] text-sm font-bold hover:bg-[#0fd650] disabled:opacity-60 flex items-center justify-center text-center"
                   >
-                    {adding ? "Adding..." : inStock ? "Add to cart" : "Out of stock"}
+                    {adding
+                      ? t("Adding...")
+                      : inStock
+                        ? t("Add to cart")
+                        : t("Out of stock")}
                   </button>
                   <Link
                     href={user ? requestHref : `/login?returnUrl=${encodeURIComponent(requestHref)}`}
                     className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
                   >
-                    Request something like this
+                    {t("Request something like this")}
                   </Link>
                   <Link
                     href="/cart"
                     className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
                   >
-                    View cart
+                    {t("View cart")}
                   </Link>
                   {cartMessage ? <p className="text-xs text-[#4c9a66] text-center sm:text-right">{cartMessage}</p> : null}
                 </>
@@ -258,7 +268,7 @@ export default function ShowcaseDetailPage() {
               onClick={() => router.push("/products")}
               className="text-primary font-semibold hover:underline"
             >
-              ← More products
+              {t("← More products")}
             </button>
           </div>
         </div>

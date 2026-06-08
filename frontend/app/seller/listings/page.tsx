@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/context/ToastContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { canUseSellerWorkspace } from "@/lib/workspace";
@@ -30,6 +31,7 @@ function mergeFilesFromInput(list: FileList | null): File[] {
 export default function SellerListingsManagePage() {
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
 
@@ -246,18 +248,18 @@ export default function SellerListingsManagePage() {
   return (
     <RoleGate
       allowedRoles={["seller", "admin"]}
-      title="Seller workspace"
-      description="Manage your catalog products in seller mode. Switch to seller using the toggle in the navbar."
+      title={t("Seller workspace")}
+      description={t("Manage your catalog products in seller mode. Switch to seller using the toggle in the navbar.")}
       ctaHref="/seller/products/new"
-      ctaLabel="New product"
-      unauthenticatedDescription="Log in to manage your product listings."
+      ctaLabel={t("New product")}
+      unauthenticatedDescription={t("Log in to manage your product listings.")}
     >
     <main className="mx-auto max-w-5xl px-3 py-6 pb-16 sm:px-4 sm:py-8 sm:pb-20">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">My listings</h1>
+          <h1 className="text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">{t("My listings")}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)] sm:text-base">
-            Set price and stock for each product. Published items appear in the buyer catalog and can be purchased via cart.
+            {t("Set price and stock for each product. Published items appear in the buyer catalog and can be purchased via cart.")}
           </p>
         </div>
         <Link
@@ -265,7 +267,7 @@ export default function SellerListingsManagePage() {
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-[#0d1b12] shadow-sm hover:opacity-95"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
-          New listing
+          {t("New listing")}
         </Link>
       </div>
 
@@ -283,10 +285,10 @@ export default function SellerListingsManagePage() {
         </div>
       ) : items.length === 0 ? (
         <div className="app-card rounded-2xl p-10 text-center shadow-sm">
-          <h2 className="text-lg font-bold text-[var(--foreground)]">No products yet</h2>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">Add your first product with price and quantity to sell in the catalog.</p>
+          <h2 className="text-lg font-bold text-[var(--foreground)]">{t("No products yet")}</h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Add your first product with price and quantity to sell in the catalog.")}</p>
           <Link href="/seller/products/new" className="mt-6 inline-block font-bold text-primary hover:underline">
-            New product
+            {t("New product")}
           </Link>
         </div>
       ) : (
@@ -301,7 +303,7 @@ export default function SellerListingsManagePage() {
                   {p.imageUrl ? (
                     <img src={p.imageUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
+                    <div className="flex h-full items-center justify-center text-xs text-slate-400">{t("No image")}</div>
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -320,7 +322,7 @@ export default function SellerListingsManagePage() {
                   <p className="text-sm font-bold text-[var(--foreground)]">
                     {formatCatalogMoney(p.price, p.currency, 2)}
                     <span className="ml-2 font-medium text-[var(--text-muted)]">
-                      · {p.quantity > 0 ? `${p.quantity} in stock` : "Out of stock"}
+                      · {p.quantity > 0 ? t("{count} in stock", { count: p.quantity }) : t("Out of stock")}
                     </span>
                   </p>
                   <div className="mt-auto flex flex-wrap gap-2 pt-2">
@@ -328,14 +330,14 @@ export default function SellerListingsManagePage() {
                       href={`/products/${p.slug}`}
                       className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
                     >
-                      View public
+                      {t("View public")}
                     </Link>
                     <button
                       type="button"
                       onClick={() => openEdit(p)}
                       className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
                     >
-                      Edit
+                      {t("Edit")}
                     </button>
                     <button
                       type="button"
@@ -343,7 +345,7 @@ export default function SellerListingsManagePage() {
                       onClick={() => setDeleteTarget(p)}
                       className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
                     >
-                      Delete
+                      {t("Delete")}
                     </button>
                   </div>
                 </div>
@@ -361,10 +363,10 @@ export default function SellerListingsManagePage() {
             onClick={() => setPage((x) => Math.max(1, x - 1))}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50 hover:bg-slate-50"
           >
-            Previous
+            {t("Previous")}
           </button>
           <span className="text-sm text-slate-600">
-            Page {page} of {totalPages}
+            {t("Page {page} of {totalPages}", { page, totalPages })}
           </span>
           <button
             type="button"
@@ -372,7 +374,7 @@ export default function SellerListingsManagePage() {
             onClick={() => setPage((x) => x + 1)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50 hover:bg-slate-50"
           >
-            Next
+            {t("Next")}
           </button>
         </div>
       )}
@@ -393,7 +395,7 @@ export default function SellerListingsManagePage() {
             }`}
           >
             <div className="mb-4 flex items-start justify-between gap-2">
-              <h2 className="text-lg font-black text-[var(--foreground)]">Edit product</h2>
+              <h2 className="text-lg font-black text-[var(--foreground)]">{t("Edit product")}</h2>
               <button
                 type="button"
                 onClick={closeEdit}
@@ -406,7 +408,7 @@ export default function SellerListingsManagePage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-500">Title</label>
+                <label className="block text-xs font-bold uppercase text-slate-500">{t("Title")}</label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -414,7 +416,7 @@ export default function SellerListingsManagePage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-500">Category</label>
+                <label className="block text-xs font-bold uppercase text-slate-500">{t("Category")}</label>
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
@@ -429,7 +431,7 @@ export default function SellerListingsManagePage() {
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase text-slate-500">Price</label>
+                  <label className="block text-xs font-bold uppercase text-slate-500">{t("Price")}</label>
                   <input
                     type="number"
                     min={0.01}
@@ -441,7 +443,7 @@ export default function SellerListingsManagePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500">Currency</label>
+                  <label className="block text-xs font-bold uppercase text-slate-500">{t("Currency")}</label>
                   <select
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
@@ -456,7 +458,7 @@ export default function SellerListingsManagePage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-500">Quantity in stock</label>
+                <label className="block text-xs font-bold uppercase text-slate-500">{t("Quantity in stock")}</label>
                 <input
                   type="number"
                   min={0}
@@ -474,7 +476,7 @@ export default function SellerListingsManagePage() {
                   onChange={(e) => setStatus(e.target.value as typeof status)}
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
                 >
-                  <option value="published">Published (visible in catalog)</option>
+                  <option value="published">{t("Published (visible in catalog)")}</option>
                   <option value="draft">Draft</option>
                   <option value="archived">Archived</option>
                 </select>
@@ -507,13 +509,13 @@ export default function SellerListingsManagePage() {
                   disabled={uploadingMain}
                   className="mt-2 w-full rounded-xl border border-dashed border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:border-primary/50 disabled:opacity-50"
                 >
-                  {uploadingMain ? "Uploading…" : "Replace main image"}
+                  {uploadingMain ? t("Uploading…") : t("Replace main image")}
                 </button>
                 <input
                   type="url"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Image URL"
+                  placeholder={t("Image URL")}
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono text-slate-900"
                 />
               </div>
@@ -537,7 +539,7 @@ export default function SellerListingsManagePage() {
                   disabled={uploadingGallery}
                   className="mt-2 w-full rounded-xl border border-dashed border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:border-primary/50 disabled:opacity-50"
                 >
-                  {uploadingGallery ? "Uploading…" : "Add gallery images"}
+                  {uploadingGallery ? t("Uploading…") : t("Add gallery images")}
                 </button>
                 {galleryUrls.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -560,7 +562,7 @@ export default function SellerListingsManagePage() {
                   rows={2}
                   value={galleryUrlLines}
                   onChange={(e) => setGalleryUrlLines(e.target.value)}
-                  placeholder="Extra image URLs, one per line"
+                  placeholder={t("Extra image URLs, one per line")}
                   className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono text-slate-900"
                 />
               </div>
@@ -582,7 +584,7 @@ export default function SellerListingsManagePage() {
                 onClick={() => void submitEdit()}
                 className="rounded-xl bg-[#607afb] px-4 py-2 text-sm font-bold text-white hover:bg-blue-600 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save changes"}
+                {saving ? t("Saving...") : t("Save changes")}
               </button>
             </div>
           </div>
@@ -591,13 +593,13 @@ export default function SellerListingsManagePage() {
 
       <ConfirmModal
         open={deleteTarget != null}
-        title="Remove this listing?"
+        title={t("Remove this listing?")}
         description={
           deleteTarget
             ? `“${deleteTarget.title}” will be removed from your catalog. If it was linked to past orders, it may be archived instead of fully deleted.`
             : ""
         }
-        confirmLabel="Remove"
+        confirmLabel={t("Remove")}
         variant="danger"
         loading={deleteLoading}
         onClose={() => {

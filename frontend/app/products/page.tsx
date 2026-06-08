@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
@@ -36,11 +37,6 @@ type PageMeta = {
   totalPages: number;
 };
 
-const BUYER_REC_HINT =
-  "To get personalized recommendations, submit a buyer request or choose category preferences in your profile settings.";
-const GUEST_REC_HINT =
-  "Sign in to see recommendations based on your profile and requests. After signing in, submit a buyer request or choose preferences in your profile settings.";
-
 function filterOwnListings(items: CatalogItem[], userId: string | undefined, hideOwn: boolean) {
   if (!hideOwn || !userId) return items;
   return items.filter((p) => p.sellerId !== userId);
@@ -48,6 +44,7 @@ function filterOwnListings(items: CatalogItem[], userId: string | undefined, hid
 
 export default function CatalogBrowsePage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const workspace = useWorkspaceOptional();
   const hideOwnInCatalog = canUseBuyerWorkspace(user, workspace?.activeRole);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -67,6 +64,13 @@ export default function CatalogBrowsePage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const buyerRecHint = t(
+    "To get personalized recommendations, submit a buyer request or choose category preferences in your profile settings.",
+  );
+  const guestRecHint = t(
+    "Sign in to see recommendations based on your profile and requests. After signing in, submit a buyer request or choose preferences in your profile settings.",
+  );
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const initialQ = params.get("q")?.trim();
@@ -77,8 +81,8 @@ export default function CatalogBrowsePage() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q.trim()), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedQ(q.trim()), 400);
+    return () => clearTimeout(timer);
   }, [q]);
 
   useEffect(() => {
@@ -157,7 +161,7 @@ export default function CatalogBrowsePage() {
       if (e instanceof Error && e.name === "AbortError") {
         return;
       }
-      const msg = e instanceof Error ? e.message : "Failed to load catalog";
+      const msg = e instanceof Error ? e.message : t("Failed to load catalog");
       if (!ac.signal.aborted) {
         setError(msg);
         setItems([]);
@@ -170,7 +174,7 @@ export default function CatalogBrowsePage() {
         firstLoadDone.current = true;
       }
     }
-  }, [page, debouncedQ, categoryId, showRecommendations, user, hideOwnInCatalog, workspace?.activeMode]);
+  }, [page, debouncedQ, categoryId, showRecommendations, user, hideOwnInCatalog, workspace?.activeMode, t]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -185,13 +189,13 @@ export default function CatalogBrowsePage() {
   const totalPages = meta?.totalPages ?? 1;
 
   const pageTitle = useMemo(() => {
-    if (showRecommendations) return "Recommendations";
+    if (showRecommendations) return t("Recommendations");
     if (categoryId) {
       const c = categories.find((x) => x.id === categoryId);
-      return c ? c.name : "Catalog";
+      return c ? c.name : t("Catalog");
     }
-    return "Catalog";
-  }, [showRecommendations, categoryId, categories]);
+    return t("Catalog");
+  }, [showRecommendations, categoryId, categories, t]);
 
   return (
     <div className="app-page">
@@ -216,7 +220,9 @@ export default function CatalogBrowsePage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl lg:text-4xl">{pageTitle}</h1>
         <p className="mt-2 max-w-3xl text-sm text-[var(--text-muted)] sm:text-base">
-          Shop seller products with fixed prices and stock. Add to cart and checkout, or post a custom request when you want offers.
+          {t(
+            "Shop seller products with fixed prices and stock. Add to cart and checkout, or post a custom request when you want offers.",
+          )}
         </p>
       </div>
 
@@ -229,12 +235,12 @@ export default function CatalogBrowsePage() {
             className="app-card flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold shadow-sm md:hidden"
           >
             <span className="material-symbols-outlined">filter_list</span>
-            Filters
+            {t("Filters")}
           </button>
 
           <div className={`${filtersOpen ? "block" : "hidden"} space-y-6 md:block`}>
             <div className="space-y-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground)]">Browse</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground)]">{t("Browse")}</h3>
               <div className="space-y-2">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -249,7 +255,7 @@ export default function CatalogBrowsePage() {
                     className="h-4 w-4 border-slate-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm font-semibold text-slate-800 group-hover:text-primary transition-colors">
-                    Recommendations
+                    {t("Recommendations")}
                   </span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
@@ -265,7 +271,7 @@ export default function CatalogBrowsePage() {
                     className="h-4 w-4 border-slate-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">
-                    All categories
+                    {t("All categories")}
                   </span>
                 </label>
                 {!showRecommendations &&
@@ -297,7 +303,7 @@ export default function CatalogBrowsePage() {
             <SearchField
               value={q}
               onChange={setQ}
-              placeholder="Search title or description…"
+              placeholder={t("Search title or description…")}
               width="wide"
             />
           </div>
@@ -305,11 +311,10 @@ export default function CatalogBrowsePage() {
           <div className="app-card mb-6 flex min-h-[3.25rem] flex-wrap items-center justify-between gap-4 rounded-xl p-3 shadow-sm">
             <p className="pl-2 text-sm text-[var(--text-muted)]">
               {loading ? (
-                <span>Loading…</span>
+                <span>{t("Loading…")}</span>
               ) : (
                 <span>
-                  Showing <span className="font-bold text-[var(--foreground)]">{items.length}</span> of{" "}
-                  <span className="font-bold text-[var(--foreground)]">{total}</span> products
+                  {t("Showing {shown} of {total} products", { shown: items.length, total })}
                 </span>
               )}
             </p>
@@ -345,30 +350,32 @@ export default function CatalogBrowsePage() {
             showRecommendations &&
             (hasRecommendationSignals === false ? (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-                <p className="font-semibold text-amber-900 mb-1">No recommendation data yet</p>
-                <p className="text-amber-900/90">{user ? BUYER_REC_HINT : GUEST_REC_HINT}</p>
+                <p className="font-semibold text-amber-900 mb-1">{t("No recommendation data yet")}</p>
+                <p className="text-amber-900/90">{user ? buyerRecHint : guestRecHint}</p>
                 {user && (
                   <div className="mt-3 flex flex-wrap gap-3">
                     <Link href="/create-product-request" className="font-bold text-primary hover:underline">
-                      Create a request
+                      {t("Create a request")}
                     </Link>
                     <Link href="/profile" className="font-bold text-primary hover:underline">
-                      Profile settings
+                      {t("Profile settings")}
                     </Link>
                   </div>
                 )}
                 {!user && !authLoading && (
                   <Link href="/login" className="mt-3 inline-block font-bold text-primary hover:underline">
-                    Sign in
+                    {t("Sign in")}
                   </Link>
                 )}
               </div>
             ) : (
-              <p className="text-center text-slate-500 py-12">No examples match your search in these categories yet.</p>
+              <p className="text-center text-slate-500 py-12">
+                {t("No examples match your search in these categories yet.")}
+              </p>
             ))}
 
           {!loading && items.length === 0 && !error && !showRecommendations && (
-            <p className="text-center text-slate-500 py-12">No examples match your search yet.</p>
+            <p className="text-center text-slate-500 py-12">{t("No examples match your search yet.")}</p>
           )}
 
           <div
@@ -413,10 +420,12 @@ export default function CatalogBrowsePage() {
                         {formatCatalogMoney(product.price, product.currency, 2)}
                       </span>
                       <span className="text-xs font-medium text-slate-500">
-                        {product.quantity > 0 ? `${product.quantity} in stock` : "Out of stock"}
+                        {product.quantity > 0
+                          ? t("{count} in stock", { count: product.quantity })
+                          : t("Out of stock")}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-primary">View</span>
+                    <span className="text-sm font-semibold text-primary">{t("View")}</span>
                   </div>
                 </div>
               </Link>
@@ -431,10 +440,10 @@ export default function CatalogBrowsePage() {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50 hover:bg-slate-50"
               >
-                Previous
+                {t("Previous")}
               </button>
               <span className="text-sm text-slate-600">
-                Page {page} of {totalPages}
+                {t("Page {page} of {totalPages}", { page, totalPages })}
               </span>
               <button
                 type="button"
@@ -442,7 +451,7 @@ export default function CatalogBrowsePage() {
                 onClick={() => setPage((p) => p + 1)}
                 className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50 hover:bg-slate-50"
               >
-                Next
+                {t("Next")}
               </button>
             </div>
           )}

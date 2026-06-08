@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth, type User } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import type { ReactNode } from "react";
 
@@ -27,12 +28,13 @@ export default function RoleGate({
   unauthenticatedDescription = "Please log in to continue.",
 }: RoleGateProps) {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const workspace = useWorkspaceOptional();
 
   if (loading) {
     return (
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8] px-4">
-        <p className="text-sm font-semibold text-[#4c9a66]">Checking access...</p>
+        <p className="text-sm font-semibold text-[#4c9a66]">{t("Checking access...")}</p>
       </main>
     );
   }
@@ -41,10 +43,10 @@ export default function RoleGate({
     return (
       <AccessMessage
         icon="lock"
-        title={unauthenticatedTitle}
-        description={unauthenticatedDescription}
+        title={t(unauthenticatedTitle)}
+        description={t(unauthenticatedDescription)}
         ctaHref="/login"
-        ctaLabel="Log in"
+        ctaLabel={t("Log in")}
       />
     );
   }
@@ -63,10 +65,10 @@ export default function RoleGate({
       return (
         <AccessMessage
           icon="switch_account"
-          title={title}
-          description={description}
+          title={t(title)}
+          description={t(description)}
           ctaHref={ctaHref}
-          ctaLabel={ctaLabel}
+          ctaLabel={t(ctaLabel)}
           onCtaClick={() => workspace.setActiveMode(targetMode)}
         />
       );
@@ -75,10 +77,10 @@ export default function RoleGate({
     return (
       <AccessMessage
         icon="switch_account"
-        title={title}
-        description={description}
+        title={t(title)}
+        description={t(description)}
         ctaHref={ctaHref}
-        ctaLabel={ctaLabel}
+        ctaLabel={t(ctaLabel)}
       />
     );
   }
@@ -101,6 +103,7 @@ function AccessMessage({
   ctaLabel: string;
   onCtaClick?: () => void;
 }) {
+  const { t } = useLanguage();
   const ctaClass =
     "mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20";
 
@@ -114,7 +117,7 @@ function AccessMessage({
         <p className="mt-2 text-sm leading-6 text-[#4c9a66]">{description}</p>
         {onCtaClick ? (
           <button type="button" onClick={onCtaClick} className={ctaClass}>
-            Switch workspace
+            {t("Switch workspace")}
           </button>
         ) : (
           <Link href={ctaHref} className={ctaClass}>
