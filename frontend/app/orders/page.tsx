@@ -19,37 +19,58 @@ const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
-function statusBadge(status: ShopOrder["status"]) {
-  if (status === "delivered") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
-        <span className="size-1.5 rounded-full bg-green-500" />
-        Delivered
-      </span>
-    );
-  }
-  if (status === "shipped") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-        <span className="size-1.5 rounded-full bg-blue-500" />
-        Shipped
-      </span>
-    );
-  }
-  if (status === "processing") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-        <span className="size-1.5 rounded-full bg-yellow-500" />
-        Processing
-      </span>
-    );
-  }
+const STATUS_STYLES: Record<
+  ShopOrder["status"],
+  { label: string; dot: string; bg: string; text: string; border: string }
+> = {
+  delivered: {
+    label: "Delivered",
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-700 dark:text-emerald-300",
+    border: "border-emerald-500/20",
+  },
+  shipped: {
+    label: "Shipped",
+    dot: "bg-sky-500",
+    bg: "bg-sky-500/10",
+    text: "text-sky-700 dark:text-sky-300",
+    border: "border-sky-500/20",
+  },
+  processing: {
+    label: "Processing",
+    dot: "bg-amber-500",
+    bg: "bg-amber-500/10",
+    text: "text-amber-700 dark:text-amber-300",
+    border: "border-amber-500/20",
+  },
+  cancelled: {
+    label: "Cancelled",
+    dot: "bg-rose-500",
+    bg: "bg-rose-500/10",
+    text: "text-rose-700 dark:text-rose-300",
+    border: "border-rose-500/20",
+  },
+};
+
+function StatusBadge({ status }: { status: ShopOrder["status"] }) {
+  const style = STATUS_STYLES[status];
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
-      <span className="size-1.5 rounded-full bg-red-500" />
-      Cancelled
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${style.bg} ${style.text} ${style.border}`}
+    >
+      <span className={`size-1.5 rounded-full ${style.dot}`} />
+      {style.label}
     </span>
   );
+}
+
+function formatOrderDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function OrdersPage() {
@@ -104,11 +125,13 @@ export default function OrdersPage() {
       const thumb = resolveUploadedAssetUrl(rawThumb) ?? "";
       const title =
         order.lines.length === 1
-          ? order.lines[0]?.title ?? "Order"
+          ? (order.lines[0]?.title ?? "Order")
           : `${order.lines[0]?.title ?? "Items"} +${order.lines.length - 1}`;
-      return { order, thumb, title };
+      const counterparty = isSellerView ? order.buyer.name : order.seller.name;
+      const counterpartyLabel = isSellerView ? "Buyer" : "Seller";
+      return { order, thumb, title, counterparty, counterpartyLabel };
     });
-  }, [items]);
+  }, [items, isSellerView]);
 
   if (authLoading || (!user && !error)) {
     return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading…</div>;
@@ -117,154 +140,139 @@ export default function OrdersPage() {
   if (!user) return null;
 
   return (
-    <div className="app-page app-page-wide">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-[#0d1b12] mb-2 tracking-tight">
+    <div className="app-page flex flex-col gap-6">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
           {isSellerView ? "Order history" : "My orders"}
         </h1>
-        <p className="text-[#4c9a66]">
+        <p className="max-w-2xl text-sm text-[var(--text-muted)] sm:text-base">
           {isSellerView
             ? "Orders from paid request deals and catalog checkout. Open one to see details and tracking."
             : "Orders after checkout or demo payment in chat. Track status and details here."}
         </p>
-      </div>
+      </header>
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+          {error}
+        </p>
       ) : null}
 
-      <div className="flex flex-col sm:flex-row justify-between items-center border-b border-[#cfe7d7] mb-6 gap-4">
-        <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-6">
-          {STATUS_TABS.map((tab) => (
+      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {STATUS_TABS.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
             <button
               key={tab.id}
               type="button"
               onClick={() => handleTabChange(tab.id)}
-              className={`pb-3 border-b-[3px] text-sm whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "border-primary text-[#0d1b12] font-bold"
-                  : "border-transparent text-[#4c9a66] hover:text-[#0d1b12]"
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                active
+                  ? "bg-primary text-white shadow-sm"
+                  : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-primary/30 hover:text-[var(--foreground)]"
               }`}
             >
               {tab.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      <div className="bg-white rounded-xl border border-[#cfe7d7] overflow-hidden shadow-sm">
-        <div className="app-table-wrap border border-[var(--border-muted)] bg-[var(--surface)]">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="text-xs text-[#4c9a66] uppercase bg-[#f8fcf9] border-b border-[#cfe7d7]">
-              <tr>
-                <th className="px-6 py-4 font-semibold w-16" scope="col">
-                  Item
-                </th>
-                <th className="px-6 py-4 font-semibold" scope="col">
-                  Order
-                </th>
-                <th className="px-6 py-4 font-semibold" scope="col">
-                  Date
-                </th>
-                <th className="px-6 py-4 font-semibold" scope="col">
-                  Status
-                </th>
-                <th className="px-6 py-4 font-semibold" scope="col">
-                  Total
-                </th>
-                <th className="px-6 py-4 font-semibold text-right" scope="col">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#cfe7d7]">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                    Loading…
-                  </td>
-                </tr>
-              ) : (
-                rows.map(({ order, thumb, title }) => (
-                  <tr key={order.id} className="bg-white hover:bg-[#f8fcf9] transition-colors">
-                    <td className="px-6 py-4">
-                      <div
-                        className="size-12 rounded-lg bg-gray-100 bg-cover bg-center border border-gray-100"
-                        style={thumb ? { backgroundImage: `url("${thumb}")` } : undefined}
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-[#0d1b12] line-clamp-2">{title}</div>
-                      <div className="text-xs text-[#4c9a66] mt-1">
-                        {isSellerView ? "Buyer" : "Seller"}:{" "}
-                        {isSellerView ? order.buyer.name : order.seller.name} ·{" "}
-                        <span className="font-mono text-[10px] sm:text-xs">{order.id.slice(0, 12)}…</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-[#0d1b12] opacity-80">
-                      {new Date(order.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-6 py-4">{statusBadge(order.status)}</td>
-                    <td className="px-6 py-4 font-bold text-[#0d1b12]">
-                      {formatCatalogMoney(order.total, order.currency, 2)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {order.status === "shipped" || order.status === "delivered" ? (
-                        <Link
-                          href={`/orders/${order.id}/tracking`}
-                          className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-primary text-[#0d1b12] font-bold text-xs tracking-wide uppercase hover:bg-[#0fd650] transition-colors shadow-sm"
-                        >
-                          Track
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/orders/${order.id}`}
-                          className="text-primary hover:text-green-600 font-medium text-sm inline-flex items-center gap-1"
-                        >
-                          Details
-                          <span className="material-symbols-outlined text-base">arrow_forward</span>
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#4c9a66]">
-                    No orders yet.{" "}
-                    {isSellerView ? (
-                      <Link href="/seller/products/new" className="text-primary font-semibold underline">
-                        List a product
-                      </Link>
-                    ) : (
-                      <Link href="/products" className="text-primary font-semibold underline">
-                        Browse catalog
-                      </Link>
-                    )}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[#cfe7d7] px-6 py-4 bg-[#f8fcf9]">
-          <div className="text-sm text-[#4c9a66]">
-            Page <span className="font-semibold text-[#0d1b12]">{meta.page}</span> of{" "}
-            <span className="font-semibold text-[#0d1b12]">{totalPages}</span> ·{" "}
-            <span className="font-semibold text-[#0d1b12]">{meta.total}</span> orders
+      <section className="flex flex-col gap-3">
+        {loading ? (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-12 text-center text-sm text-[var(--text-muted)]">
+            Loading…
           </div>
-          <div className="flex items-center gap-2">
+        ) : rows.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-12 text-center">
+            <span className="material-symbols-outlined mb-3 text-4xl text-[var(--text-muted)]">receipt_long</span>
+            <p className="text-sm text-[var(--text-muted)]">
+              No orders yet.{" "}
+              {isSellerView ? (
+                <Link href="/seller/products/new" className="font-semibold text-primary hover:underline">
+                  List a product
+                </Link>
+              ) : (
+                <Link href="/products" className="font-semibold text-primary hover:underline">
+                  Browse catalog
+                </Link>
+              )}
+            </p>
+          </div>
+        ) : (
+          rows.map(({ order, thumb, title, counterparty, counterpartyLabel }) => {
+            const canTrack = order.status === "shipped" || order.status === "delivered";
+            const href = canTrack ? `/orders/${order.id}/tracking` : `/orders/${order.id}`;
+            const actionLabel = canTrack ? "Track" : "Details";
+
+            return (
+              <article
+                key={order.id}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 transition hover:border-primary/25 hover:shadow-sm sm:p-5"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
+                  <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+                    <div
+                      className="size-14 shrink-0 rounded-lg border border-[var(--border-muted)] bg-[var(--surface-muted)] bg-cover bg-center sm:size-16"
+                      style={thumb ? { backgroundImage: `url("${thumb}")` } : undefined}
+                      role="img"
+                      aria-label={title}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start gap-2 gap-y-1">
+                        <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug text-[var(--foreground)] sm:text-lg">
+                          {title}
+                        </h2>
+                        <StatusBadge status={order.status} />
+                      </div>
+                      <p className="mt-1.5 text-xs text-[var(--text-muted)] sm:text-sm">
+                        {counterpartyLabel}: <span className="text-[var(--foreground)]">{counterparty}</span>
+                        <span className="mx-2 text-[var(--border)]">·</span>
+                        <span className="font-mono text-[11px] sm:text-xs">{order.id.slice(0, 12)}…</span>
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)] sm:hidden">{formatOrderDate(order.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-muted)] pt-4 lg:shrink-0 lg:flex-nowrap lg:justify-end lg:gap-5 lg:border-t-0 lg:pt-0">
+                    <p className="hidden text-sm text-[var(--text-muted)] lg:block">{formatOrderDate(order.createdAt)}</p>
+                    <p className="text-base font-semibold tabular-nums text-[var(--foreground)]">
+                      {formatCatalogMoney(order.total, order.currency, 2)}
+                    </p>
+                    <Link
+                      href={href}
+                      className={
+                        canTrack
+                          ? "inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                          : "inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary/40 hover:bg-primary/5"
+                      }
+                    >
+                      {actionLabel}
+                      {!canTrack && <span className="material-symbols-outlined text-base">arrow_forward</span>}
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </section>
+
+      {!loading && rows.length > 0 && (
+        <footer className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-sm text-[var(--text-muted)]">
+            Page <span className="font-semibold text-[var(--foreground)]">{meta.page}</span> of{" "}
+            <span className="font-semibold text-[var(--foreground)]">{totalPages}</span>
+            <span className="mx-2 text-[var(--border)]">·</span>
+            <span className="font-semibold text-[var(--foreground)]">{meta.total}</span> orders
+          </p>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={meta.page <= 1}
-              className="flex items-center justify-center size-9 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] hover:bg-[#e7f3eb] disabled:opacity-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Previous page"
             >
               <span className="material-symbols-outlined text-sm">chevron_left</span>
             </button>
@@ -272,13 +280,14 @@ export default function OrdersPage() {
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={meta.page >= totalPages}
-              className="flex items-center justify-center size-9 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] hover:bg-[#e7f3eb] disabled:opacity-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Next page"
             >
               <span className="material-symbols-outlined text-sm">chevron_right</span>
             </button>
           </div>
-        </div>
-      </div>
+        </footer>
+      )}
     </div>
   );
 }
