@@ -207,7 +207,7 @@ function parseOptionalMoney(v: unknown): number | undefined {
   return Number.isFinite(n) && !Number.isNaN(n) ? n : undefined;
 }
 
-type FilterTab = "recommendations" | "all" | "published" | "has_offers";
+type FilterTab = "recommendations" | "all" | "has_offers";
 
 const SELLER_REC_HINT =
   "To see recommended buyer requests, publish catalog products in your categories or choose selling preferences in your profile settings.";
@@ -215,7 +215,6 @@ const SELLER_REC_HINT =
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "recommendations", label: "Recommendations" },
   { id: "all", label: "All Requests" },
-  { id: "published", label: "Published" },
   { id: "has_offers", label: "Has Offers" },
 ];
 
@@ -489,7 +488,7 @@ export default function BrowseBuyerRequestsPage() {
   const { t } = useLanguage();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
-  const [activeTab, setActiveTab] = useState<FilterTab>("published");
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -642,9 +641,7 @@ export default function BrowseBuyerRequestsPage() {
   const filteredRequests = useMemo(() => {
     let data = requests;
 
-    if (activeTab === "published") {
-      data = data.filter((r) => r.status === "published");
-    } else if (activeTab === "has_offers") {
+    if (activeTab === "has_offers") {
       data = data.filter((r) => r.status === "has_offers");
     }
 
