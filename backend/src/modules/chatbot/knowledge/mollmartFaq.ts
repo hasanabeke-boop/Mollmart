@@ -386,7 +386,7 @@ export function rankMollmartFaq(message: string, role?: string, limit = 3): FaqM
 /** Best single FAQ match above threshold */
 export function matchMollmartFaq(message: string, role?: string): FaqMatch | null {
   const best = rankMollmartFaq(message, role, 1)[0];
-  return best && best.score >= 2.5 ? best : null;
+  return best && best.score >= 2.0 ? best : null;
 }
 
 export function faqAnswerForLanguage(

@@ -447,7 +447,7 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     admin: 'Админ-экраны нужны для управления пользователями, категориями и модерацией. Админ-действия должны быть отделены от обычных buyer/seller сценариев.',
     platform_limits: 'Mollmart поддерживает запросы, предложения, чат после принятия, демо-оплату, request-deal заказы и статус отслеживания. Реальная оплата картой, escrow, shipping labels, возвраты и интеграции с перевозчиками не входят в текущий scope.',
     assistant_setup: 'Помощник использует GEMINI_API_KEY и GEMINI_MODEL на backend. OpenAI — опциональный запасной вариант. Если ключ отсутствует или API падает, включается локальная справка Mollmart.',
-    fallback: 'Могу помочь с Mollmart: запросы, предложения, чат, каталог, аукционы, заказы, профиль и уведомления. Уточните, что вы хотите сделать на этом экране.'
+    fallback: 'Могу помочь с Mollmart: запросы, предложения, чат, каталог, аукционы, заказы, профиль и уведомления. Напишите конкретный вопрос или нажмите подсказку ниже.'
   },
   kk: {
     greeting: 'Mollmart бойынша көмектесемін: сатып алушы сұраныстары, сатушы ұсыныстары, қабылдаудан кейінгі чат, баға келісу, демо төлем және тапсырыстар.',
@@ -466,7 +466,7 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     admin: 'Админ экрандары пайдаланушыларды, санаттарды және модерацияны басқаруға арналған. Админ әрекеттері buyer/seller сценарийлерінен бөлек болуы керек.',
     platform_limits: 'Mollmart сұраныстарды, ұсыныстарды, қабылдаудан кейінгі чатты, демо төлемді, request-deal тапсырыстарын және бақылау статусын қолдайды. Нақты карта төлемі, escrow, shipping labels, қайтарымдар және тасымалдаушы интеграциялары қазіргі scope-қа кірмейді.',
     assistant_setup: 'Көмекші backend жағында GEMINI_API_KEY және GEMINI_MODEL қолданады. OpenAI — опционалды резерв. Кілт жоқ болса немесе API істемесе, локал Mollmart анықтамасы қосылады.',
-    fallback: 'Mollmart бойынша көмектесе аламын: сұраныстар, ұсыныстар, чат, каталог, аукциондар, тапсырыстар, профиль және хабарландырулар. Осы экранда не істегіңіз келетінін нақтылаңыз.'
+    fallback: 'Mollmart бойынша көмектесе аламын: сұраныстар, ұсыныстар, чат, каталог, аукциондар, тапсырыстар, профиль және хабарландырулар. Нақты сұрақ жазыңыз немесе төмендегі ұсынысты басыңыз.'
   }
 };
 
@@ -561,6 +561,11 @@ function normalizeText(message: string): string {
 }
 
 function hasPhrase(text: string, phrase: string): boolean {
+  const normalized = phrase.toLowerCase().trim();
+  if (!normalized) return false;
+  if (normalized.includes(' ') || /[^\x00-\x7F]/.test(normalized)) {
+    return text.includes(normalized);
+  }
   return new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text);
 }
 
@@ -569,7 +574,36 @@ function hasAnyPhrase(text: string, phrases: string[]): boolean {
 }
 
 export class ChatbotService {
+  /** Answer greetings and high-confidence FAQ locally — avoids generic AI fallbacks for RU/KK chips. */
+  private tryQuickLocalReply(input: ChatbotMessageInput): ChatbotReply | null {
+    const language = this.normalizeLanguage(input.language);
+
+    if (this.isGreetingMessage(input.message)) {
+      return {
+        intent: 'greeting',
+        reply: this.shortGreetingReply(language),
+        suggestions: this.translateList(defaultSuggestionsForRole(input.userRole), language),
+        source: 'local',
+        suggestedRoute: '',
+        actions: [],
+        confidence: 0.9
+      };
+    }
+
+    const { ranked, localized } = intelligentFaqAnalysis(input.message, input.userRole, language);
+    const top = ranked[0];
+    if (top && (localized || top.score >= 6)) {
+      logger.info(`Chatbot quick FAQ: ${top.entry.id} (score=${top.score.toFixed(1)})`);
+      return this.createFaqReply(input, top.entry, null);
+    }
+
+    return null;
+  }
+
   async createReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
+    const quick = this.tryQuickLocalReply(input);
+    if (quick) return quick;
+
     const geminiKey = config.gemini.apiKey.trim();
     if (geminiKey.length > 0) {
       try {
@@ -625,9 +659,36 @@ export class ChatbotService {
     };
   }
 
+  private isGreetingMessage(message: string): boolean {
+    const text = message.trim().toLowerCase();
+    return /^(hello|hi|hey|сәлем|привет|здравствуй|добрый|салем)\b/i.test(text) && text.split(/\s+/).length <= 4;
+  }
+
+  private shortGreetingReply(language: ChatbotLanguage): string {
+    if (language === 'ru') {
+      return 'Здравствуйте! Спросите о запросах, предложениях, чате, заказах или аукционах — или нажмите подсказку ниже.';
+    }
+    if (language === 'kk') {
+      return 'Сәлем! Сұраныстар, ұсыныстар, чат, тапсырыстар немесе аукциондар туралы сұраңыз — немесе төмендегі ұсынысты басыңыз.';
+    }
+    return 'Hello! Ask about requests, offers, chat, orders, or auctions — or tap a suggestion below.';
+  }
+
   private createLocalReply(input: ChatbotMessageInput): ChatbotReply {
     const language = this.normalizeLanguage(input.language);
     const pageCtx = resolvePageContext(input.currentPath);
+
+    if (this.isGreetingMessage(input.message)) {
+      return {
+        intent: 'greeting',
+        reply: this.shortGreetingReply(language),
+        suggestions: this.translateList(defaultSuggestionsForRole(input.userRole), language),
+        source: 'local',
+        suggestedRoute: '',
+        actions: [],
+        confidence: 0.9
+      };
+    }
 
     if (pageCtx && isVagueHelpRequest(input.message)) {
       logger.info(`Chatbot proactive page help: ${pageCtx.path}`);
@@ -648,10 +709,10 @@ export class ChatbotService {
       };
     }
 
-    const { ranked } = intelligentFaqAnalysis(input.message, input.userRole);
+    const { ranked } = intelligentFaqAnalysis(input.message, input.userRole, language);
     const top = ranked[0];
 
-    if (top && top.score >= 2.5) {
+    if (top && top.score >= 2.0) {
       logger.info(`Chatbot FAQ match: ${top.entry.id} (score=${top.score.toFixed(1)})`);
       return this.createFaqReply(input, top.entry, pageCtx);
     }
@@ -713,7 +774,7 @@ export class ChatbotService {
   private buildUserPrompt(input: ChatbotMessageInput, intent: ChatbotIntent): string {
     const language = this.normalizeLanguage(input.language);
     const pageCtx = resolvePageContext(input.currentPath);
-    const { ranked } = intelligentFaqAnalysis(input.message, input.userRole);
+    const { ranked } = intelligentFaqAnalysis(input.message, input.userRole, language);
     const expandedQuery = expandUserQuery(input.message);
 
     const recentHistory = (input.history ?? [])
@@ -994,7 +1055,18 @@ export class ChatbotService {
       scores.set(intent, (scores.get(intent) ?? 0) + points);
     };
 
-    if (hasAnyPhrase(text, ['hello', 'hey', 'hi']) && text.split(' ').length <= 5) add('greeting', 5);
+    if (hasAnyPhrase(text, ['hello', 'hey', 'hi', 'привет', 'здравствуй', 'сәлем', 'салем']) && text.split(' ').length <= 5) {
+      add('greeting', 5);
+    }
+
+    if (hasAnyPhrase(text, ['создать запрос', 'опубликовать запрос', 'запрос покупател', 'сұраныс жасау'])) add('buyer_request', 6);
+    if (hasAnyPhrase(text, ['принять предложение', 'принять оффер', 'ұсынысты қабылда'])) add('buyer_offers', 6);
+    if (hasAnyPhrase(text, ['как работает чат', 'чат работает', 'демо-оплат', 'чат қалай'])) add('chat', 6);
+    if (hasAnyPhrase(text, ['продавцы отправляют', 'отправить предложение', 'сатушылар ұсыныс', 'найти запросы'])) {
+      add(input.userRole === 'buyer' ? 'seller_offer' : 'seller_board', 6);
+    }
+    if (hasAnyPhrase(text, ['аукцион', 'аукциондар', 'auction'])) add('auction', 5);
+    if (hasAnyPhrase(text, ['заказ', 'тапсырыс', 'история заказ'])) add('orders', 5);
     if (hasAnyPhrase(text, ['gemini', 'openai api', 'api key', 'configure assistant', 'assistant api', 'smart assistant setup'])) add('assistant_setup', 5);
 
     if (hasAnyPhrase(text, ['catalog', 'showcase', 'product listing', 'my listings', 'cart', 'checkout', 'shop'])) add('catalog', 5);
@@ -1032,7 +1104,11 @@ export class ChatbotService {
       add(contextualIntent, 3.5);
     }
 
-    const faqTop = intelligentFaqAnalysis(input.message, input.userRole).ranked[0];
+    const faqTop = intelligentFaqAnalysis(
+      input.message,
+      input.userRole,
+      this.normalizeLanguage(input.language)
+    ).ranked[0];
     if (faqTop && faqTop.score >= 4) {
       add(this.faqIntentToChatbot(faqTop.entry.intent), faqTop.score);
     }
@@ -1132,19 +1208,10 @@ export class ChatbotService {
     }
 
     if (intent === 'fallback') {
-      if (input.language === 'ru') {
-        return input.currentPath
-          ? `${reply} Сейчас вы на ${input.currentPath}; скажите, что хотите сделать на этом экране.`
-          : reply;
+      const path = input.currentPath?.split('?')[0];
+      if (path === '/chatbot' || path?.startsWith('/chatbot/')) {
+        return reply;
       }
-      if (input.language === 'kk') {
-        return input.currentPath
-          ? `${reply} Қазір сіз ${input.currentPath} бетінде тұрсыз; осы экранда не істегіңіз келетінін айтыңыз.`
-          : reply;
-      }
-      return input.currentPath
-        ? `${reply} You are currently on ${input.currentPath}; tell me what you are trying to do from this screen.`
-        : reply;
     }
 
     return reply;

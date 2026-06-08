@@ -175,6 +175,25 @@ const PAGE_RULES: Array<{
     }
   },
   {
+    match: (p) => p === '/chatbot' || p.startsWith('/chatbot/'),
+    ctx: {
+      screen: 'Mollmart Assistant',
+      purpose: 'Ask how Mollmart works — requests, offers, chat, orders, catalog, auctions.',
+      primaryIntent: 'greeting',
+      route: '/chatbot',
+      tips: {
+        en: 'You are in the Assistant — ask about buyer requests, seller offers, chat, payments, or auctions. Try the suggestion chips below.',
+        ru: 'Вы в Помощнике — спрашивайте о запросах, предложениях, чате, оплате или аукционах. Используйте подсказки ниже.',
+        kk: 'Сіз Көмекшідесіз — сұраныстар, ұсыныстар, чат, төлем немесе аукциондар туралы сұраңыз. Төмендегі ұсыныстарды қолданыңыз.'
+      },
+      nextSteps: {
+        en: ['Tap a suggestion chip', 'Ask in Russian, Kazakh, or English', 'Use “Open this page” links in answers'],
+        ru: ['Нажмите подсказку ниже', 'Пишите на русском, казахском или английском', 'Переходите по ссылкам в ответах'],
+        kk: ['Төмендегі ұсынысты басыңыз', 'Орысша, қазақша немесе ағылшынша жазыңыз', 'Жауаптағы сілтемелерді қолданыңыз']
+      }
+    }
+  },
+  {
     match: (p) => p.startsWith('/admin'),
     ctx: {
       screen: 'Admin',

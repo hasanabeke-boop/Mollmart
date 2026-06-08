@@ -5,6 +5,7 @@ import {
   type FaqEntry,
   type FaqIntent
 } from './mollmartFaq';
+import { matchLocalizedFaq } from './multilingualFaq';
 import {
   localizedPageSteps,
   localizedPageTip,
@@ -81,6 +82,10 @@ export function enrichReplyWithPageContext(
 
   const path = input.currentPath?.split('?')[0];
   if (!path || path !== pageCtx.path) return baseReply;
+
+  if (path === '/chatbot' || path.startsWith('/chatbot/')) {
+    return baseReply;
+  }
 
   const tip = localizedPageTip(pageCtx, language);
   if (baseReply.toLowerCase().includes(pageCtx.screen.toLowerCase())) {
@@ -162,8 +167,19 @@ export function pickContextualSuggestions(entries: FaqEntry[], max = 4): string[
   return [...new Set(entries.flatMap((e) => e.suggestions))].slice(0, max);
 }
 
-export function intelligentFaqAnalysis(message: string, role?: string) {
+export function intelligentFaqAnalysis(
+  message: string,
+  role?: string,
+  language: Language = 'en'
+) {
+  const localized = matchLocalizedFaq(message, language);
   const expanded = expandUserQuery(message);
   const ranked = rankMollmartFaq(expanded, role, 3);
-  return { expanded, ranked };
+
+  if (localized) {
+    const withoutDup = ranked.filter((r) => r.entry.id !== localized.entry.id);
+    return { expanded, ranked: [localized, ...withoutDup], localized };
+  }
+
+  return { expanded, ranked, localized: null };
 }
