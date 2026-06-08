@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import ThemeToggle from "@/components/theme/ThemeToggle";
@@ -23,7 +24,10 @@ const navSectionLink =
 
 export default function LandingNavigation() {
   const copy = useLandingCopy();
+  const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const onLanding = pathname === "/";
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -32,10 +36,14 @@ export default function LandingNavigation() {
     };
   }, [menuOpen]);
 
-  const scrollToSection = (href: string) => {
+  const goToSection = (href: string) => {
     setMenuOpen(false);
-    const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    if (onLanding) {
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    router.push(`/${href}`);
   };
 
   return (
@@ -59,7 +67,7 @@ export default function LandingNavigation() {
                 <button
                   key={href}
                   type="button"
-                  onClick={() => scrollToSection(href)}
+                  onClick={() => goToSection(href)}
                   className={navSectionLink}
                 >
                   {copy.nav.links[key]}
@@ -73,19 +81,27 @@ export default function LandingNavigation() {
             <LanguageSwitcher />
             <Link
               href="/login"
-              className="hidden rounded-full border border-[#242424]/15 bg-white/90 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#242424] shadow-sm transition-colors hover:bg-white sm:block"
+              className={`hidden rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wide shadow-sm transition-colors sm:block ${
+                pathname === "/login"
+                  ? "border border-[#242424] bg-[#242424] text-white"
+                  : "border border-[#242424]/15 bg-white/90 text-[#242424] hover:bg-white"
+              }`}
             >
               {copy.nav.login}
             </Link>
             <Link
               href="/register"
-              className="hidden rounded-full bg-mm-primary px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:brightness-110 sm:block"
+              className={`hidden rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm transition-colors sm:block ${
+                pathname === "/register"
+                  ? "bg-[#242424] hover:brightness-110"
+                  : "bg-mm-primary hover:brightness-110"
+              }`}
             >
               {copy.nav.signup}
             </Link>
             <button
               type="button"
-              onClick={() => scrollToSection("#cta")}
+              onClick={() => goToSection("#cta")}
               className="hidden rounded-full bg-[#242424] px-5 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-mm-primary md:block"
             >
               {copy.nav.cta}
@@ -129,7 +145,7 @@ export default function LandingNavigation() {
               <button
                 key={href}
                 type="button"
-                onClick={() => scrollToSection(href)}
+                onClick={() => goToSection(href)}
                 className={`${navSectionLink} w-full py-3 text-sm tracking-wide`}
                 style={{
                   transitionDelay: menuOpen ? `${i * 40}ms` : "0ms",

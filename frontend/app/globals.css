@@ -15,6 +15,7 @@
   --primary-hover: #4b63e8;
   /* Matches Header: h-14, xl:h-16 */
   --app-header-height: 3.5rem;
+  --landing-nav-height: 4.5rem;
 }
 
 .dark {
@@ -30,10 +31,22 @@
   --primary-hover: #607afb;
 }
 
+@media (min-width: 768px) {
+  :root {
+    --landing-nav-height: 5.5rem;
+  }
+}
+
 @media (min-width: 1280px) {
   :root {
     --app-header-height: 4rem;
   }
+}
+
+.auth-below-landing-nav {
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding-top: var(--landing-nav-height);
 }
 
 /* Full-height app sidebar (buyer / seller) — fixed to viewport, not transformed parents */

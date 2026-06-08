@@ -170,7 +170,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-[#f5f6f8] text-slate-900">
+    <div className="auth-below-landing-nav flex bg-[#f5f6f8] text-slate-900">
       {/* Left visual section (desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary">
         <div className="absolute inset-0 z-10 bg-gradient-to-br from-primary/80 to-primary/40" />

@@ -92,7 +92,7 @@ export default function RegisterPage() {
         );
 
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8] p-8">
+      <div className="auth-below-landing-nav flex items-center justify-center bg-[#f5f6f8] p-8">
         <div className="w-full max-w-md text-center space-y-6 animate-[fadeIn_0.5s_ease-out]">
           <div
             className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full ${
@@ -138,7 +138,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col lg:flex-row bg-[#f5f6f8] text-slate-900">
+    <div className="auth-below-landing-nav flex flex-col bg-[#f5f6f8] text-slate-900 lg:flex-row">
       {/* Left Side: Image / Branding (desktop) */}
       <div className="relative hidden w-full items-center justify-center bg-primary lg:flex lg:w-1/2 overflow-hidden">
         <div className="absolute inset-0 z-0">
