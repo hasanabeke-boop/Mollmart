@@ -51,8 +51,8 @@ export default function AdminSidebar({ active, open, onClose }: Props) {
                 <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-[#0d1b12]">Admin</h1>
-                <p className="text-[10px] font-medium text-[#4c9a66] uppercase tracking-widest">Mollmart</p>
+                <h1 className="text-xl font-bold tracking-tight text-[var(--foreground)]">Admin</h1>
+                <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Mollmart</p>
               </div>
             </div>
 
@@ -66,8 +66,8 @@ export default function AdminSidebar({ active, open, onClose }: Props) {
                     onClick={onClose}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
                       isActive
-                        ? "bg-red-50 text-red-700"
-                        : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                        : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
                     }`}
                   >
                     <span
@@ -93,20 +93,20 @@ export default function AdminSidebar({ active, open, onClose }: Props) {
           <div className="flex flex-col gap-2">
             <Link
               href="/"
-              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-600 hover:bg-gray-50 transition-all"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[var(--text-muted)] transition-all hover:bg-[var(--surface-hover)]"
             >
               <span className="material-symbols-outlined">arrow_back</span>
               <span className="text-sm font-medium">Back to Site</span>
             </Link>
-            <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-700">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
                 <span className="material-symbols-outlined">shield_person</span>
               </div>
               <div className="flex flex-1 flex-col overflow-hidden">
-                <p className="truncate text-sm font-bold text-[#0d1b12]">
+                <p className="truncate text-sm font-bold text-[var(--foreground)]">
                   {user?.name || "Admin"}
                 </p>
-                <p className="truncate text-xs text-gray-500">Administrator</p>
+                <p className="truncate text-xs text-[var(--text-muted)]">Administrator</p>
               </div>
             </div>
           </div>

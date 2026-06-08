@@ -386,7 +386,91 @@ body {
   color: var(--foreground);
 }
 
-/* Toast stack */
+/*
+ * Dark theme: remap legacy light-only Tailwind classes in the app shell.
+ * Scoped to non-landing pages (landing sets data-landing on <html>).
+ */
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  :where(.bg-white) {
+  background-color: var(--surface);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  :where(.bg-gray-50, .bg-slate-50) {
+  background-color: var(--surface-muted);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  :where(.bg-\[\#f5f6f8\], .bg-\[\#f8fcf9\]) {
+  background-color: var(--background);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  :where(.text-\[\#0d1b12\], .text-slate-800, .text-slate-900) {
+  color: var(--foreground);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  :where(.text-slate-600, .text-slate-500, .text-gray-500, .text-gray-600, .text-\[\#4c9a66\]) {
+  color: var(--text-muted);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  :where(.border-slate-200, .border-gray-100, .border-gray-200, .border-\[\#e7f3eb\], .border-\[\#dfe7f2\], .border-slate-100) {
+  border-color: var(--border);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  .hover\:bg-slate-50:hover,
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  .hover\:bg-gray-50:hover,
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  .hover\:bg-\[\#f5f6f8\]:hover {
+  background-color: var(--surface-hover);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  thead.bg-gray-50 {
+  background-color: var(--surface-muted);
+}
+
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  tr.hover\:bg-gray-50:hover,
+html:not([data-landing="true"]).dark
+  :is(.app-page, .app-main-content, .app-layout-with-sidebar, .app-page-min-height)
+  tr.hover\:bg-gray-50\/80:hover {
+  background-color: var(--surface-hover);
+}
+
+html:not([data-landing="true"]).dark body .bg-white {
+  background-color: var(--surface);
+}
+
+html:not([data-landing="true"]).dark body .border-\[\#e7f3eb\],
+html:not([data-landing="true"]).dark body .border-slate-200 {
+  border-color: var(--border);
+}
+
+html:not([data-landing="true"]).dark body .text-\[\#0d1b12\],
+html:not([data-landing="true"]).dark body .text-slate-900 {
+  color: var(--foreground);
+}
+
+html:not([data-landing="true"]).dark body .bg-\[\#f5f6f8\] {
+  background-color: var(--surface-muted);
+}
+
 @keyframes toast-enter {
   from {
     opacity: 0;
