@@ -14,7 +14,12 @@ import {
 } from "@/lib/requestDeals";
 import { computeOfferLineTotal, normalizeRequestQuantity } from "@/lib/offerPricing";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { SearchField, searchInputClassName } from "@/components/ui/SearchField";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
+
+const panelInputClass =
+  "h-10 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-1 focus:ring-primary/20";
 
 type ApiMessage = {
   id: string;
@@ -200,7 +205,7 @@ function Avatar({ name, src, size = "md" }: { name: string; src?: string | null;
   }
 
   return (
-    <div className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full bg-[#d7f7df] font-bold text-[#0d1b12]`}>
+    <div className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary`}>
       {initials(name)}
     </div>
   );
@@ -208,6 +213,7 @@ function Avatar({ name, src, size = "md" }: { name: string; src?: string | null;
 
 function ChatPageContent() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const preferredConversationId = searchParams.get("c");
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -444,18 +450,18 @@ function ChatPageContent() {
 
   if (authLoading || loading) {
     return (
-      <main className="flex h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8]">
-        <p className="text-sm font-medium text-[#4c9a66]">Loading chat...</p>
+      <main className="app-fill-below-header flex items-center justify-center bg-[var(--background)]">
+        <p className="text-sm text-[var(--text-muted)]">{t("Loading chat...")}</p>
       </main>
     );
   }
 
   if (!user) {
     return (
-      <main className="flex h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8] px-4">
-        <div className="w-full max-w-sm rounded-lg border border-[#e7f3eb] bg-white p-6 text-center shadow-sm">
-          <h1 className="text-lg font-bold text-[#0d1b12]">Sign in required</h1>
-          <p className="mt-2 text-sm text-[#4c9a66]">Please log in to view your messages.</p>
+      <main className="app-fill-below-header flex items-center justify-center bg-[var(--background)] px-4">
+        <div className="app-card w-full max-w-sm rounded-lg p-6 text-center">
+          <h1 className="text-lg font-semibold text-[var(--foreground)]">{t("Sign in required")}</h1>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Please log in to view your messages.")}</p>
         </div>
       </main>
     );
@@ -463,14 +469,14 @@ function ChatPageContent() {
 
   if (conversations.length === 0) {
     return (
-      <main className="flex h-[calc(100vh-4rem)] items-center justify-center bg-[#f5f6f8] px-4">
-        <div className="w-full max-w-md rounded-lg border border-[#e7f3eb] bg-white p-8 text-center shadow-sm">
+      <main className="app-fill-below-header flex items-center justify-center bg-[var(--background)] px-4">
+        <div className="app-card w-full max-w-md rounded-lg p-8 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <span className="material-symbols-outlined">forum</span>
           </div>
-          <h1 className="text-xl font-bold text-[#0d1b12]">No conversations yet</h1>
-          <p className="mt-2 text-sm text-[#4c9a66]">Chats will appear after an accepted offer.</p>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <h1 className="text-xl font-semibold text-[var(--foreground)]">{t("No conversations yet")}</h1>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Chats will appear after an accepted offer.")}</p>
+          {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
       </main>
     );
@@ -481,29 +487,27 @@ function ChatPageContent() {
       <aside
         className={`${
           mobileListOpen ? "fixed inset-0 z-50 flex w-full" : "hidden lg:flex"
-        } w-80 shrink-0 flex-col border-r border-[#e7f3eb] bg-white xl:w-96`}
+        } w-80 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)] xl:w-96`}
       >
-        <div className="border-b border-[#e7f3eb] p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-[#0d1b12]">Messages</h2>
+        <div className="border-b border-[var(--border)] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[var(--foreground)]">{t("Messages")}</h2>
             <button
               type="button"
-              className="lg:hidden rounded-full p-2 text-[#4c9a66] hover:bg-[#f5f6f8]"
+              className="rounded-md p-2 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] lg:hidden"
               onClick={() => setMobileListOpen(false)}
               aria-label="Close conversations"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
-          <label className="flex h-10 items-center rounded-lg bg-[#f5f6f8] px-3 text-[#4c9a66]">
-            <span className="material-symbols-outlined text-[20px]">search</span>
-            <input
-              className="h-full min-w-0 flex-1 border-none bg-transparent px-3 text-sm text-[#0d1b12] outline-none placeholder:text-[#4c9a66]"
-              placeholder="Search messages"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder={t("Search conversations")}
+            width="full"
+            inputClassName={`${searchInputClassName} h-9 pl-9 pr-9`}
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -515,19 +519,19 @@ function ChatPageContent() {
                 setActiveId(conversation.id);
                 setMobileListOpen(false);
               }}
-              className={`flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition-colors ${
+              className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
                 conversation.id === activeId
-                  ? "border-primary bg-primary/10"
-                  : "border-transparent hover:bg-[#f5f6f8]"
+                  ? "border-primary bg-primary/8"
+                  : "border-transparent hover:bg-[var(--surface-hover)]"
               }`}
             >
               <Avatar name={conversation.name} src={conversation.avatarUrl} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate font-semibold text-[#0d1b12]">{conversation.name}</p>
-                  <span className="shrink-0 text-xs text-[#4c9a66]">{formatTime(conversation.lastMessageAt)}</span>
+                  <p className="truncate font-medium text-[var(--foreground)]">{conversation.name}</p>
+                  <span className="shrink-0 text-xs text-[var(--text-muted)]">{formatTime(conversation.lastMessageAt)}</span>
                 </div>
-                <p className="truncate text-sm text-[#4c9a66]">{conversation.lastMessage}</p>
+                <p className="truncate text-sm text-[var(--text-muted)]">{conversation.lastMessage}</p>
               </div>
               {conversation.unreadCount > 0 && (
                 <span className="flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white">
@@ -542,11 +546,11 @@ function ChatPageContent() {
       <main className="flex min-w-0 flex-1 flex-col">
         {active && (
           <>
-            <header className="flex items-center justify-between border-b border-[#e7f3eb] bg-white px-4 py-3 lg:px-6">
+            <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 lg:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
-                  className="rounded-full p-2 text-[#4c9a66] hover:bg-[#f5f6f8] lg:hidden"
+                  className="rounded-md p-2 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] lg:hidden"
                   onClick={() => setMobileListOpen(true)}
                   aria-label="Open conversations"
                 >
@@ -554,34 +558,34 @@ function ChatPageContent() {
                 </button>
                 <Avatar name={active.name} src={active.avatarUrl} />
                 <div className="min-w-0">
-                  <h1 className="truncate text-base font-bold text-[#0d1b12]">{active.name}</h1>
-                  <p className="truncate text-xs text-[#4c9a66]">{active.request.title}</p>
+                  <h1 className="truncate text-base font-semibold text-[var(--foreground)]">{active.name}</h1>
+                  <p className="truncate text-xs text-[var(--text-muted)]">{active.request.title}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-[#e7f3eb] px-3 py-1.5 text-xs font-bold text-[#0d1b12] lg:hidden"
+                  className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] lg:hidden"
                   onClick={() => (showPayCta ? setPayOpen(true) : setDealPanelOpen(true))}
                 >
-                  {showPayCta ? "Pay" : "Deal"}
+                  {showPayCta ? t("Pay") : t("Deal")}
                 </button>
-                <span className="rounded-full bg-[#e7f3eb] px-3 py-1 text-xs font-bold capitalize text-[#0d1b12]">
+                <span className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-xs font-medium capitalize text-[var(--text-muted)]">
                   {active.status}
                 </span>
               </div>
             </header>
 
             {error && (
-              <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700 lg:px-6">
+              <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 lg:px-6">
                 {error}
               </div>
             )}
 
             <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 lg:px-6">
               {active.messages.length === 0 && (
-                <div className="mx-auto mt-10 max-w-sm rounded-lg border border-[#e7f3eb] bg-white p-5 text-center text-sm text-[#4c9a66] shadow-sm">
-                  Start the conversation with {active.name}.
+                <div className="app-card mx-auto mt-10 max-w-sm rounded-lg p-5 text-center text-sm text-[var(--text-muted)]">
+                  {t("Start the conversation with")} {active.name}.
                 </div>
               )}
 
@@ -592,18 +596,20 @@ function ChatPageContent() {
                     {!mine && <Avatar name={active.name} src={active.avatarUrl} size="sm" />}
                     <div className={`max-w-[78%] ${mine ? "items-end" : "items-start"} flex flex-col gap-1`}>
                       <div
-                        className={`rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm ${
-                          mine
-                            ? "rounded-br-sm bg-primary text-green-950"
-                            : "rounded-bl-sm border border-[#e7f3eb] bg-white text-[#0d1b12]"
-                        } ${message.failed ? "border border-red-300 bg-red-50 text-red-700" : ""}`}
+                        className={`rounded-lg px-3.5 py-2 text-sm leading-relaxed ${
+                          message.failed
+                            ? "border border-red-300 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
+                            : mine
+                              ? "bg-[var(--foreground)] text-[var(--background)]"
+                              : "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
+                        }`}
                       >
                         {message.body}
                       </div>
-                      <span className="text-[11px] text-[#4c9a66]">
+                      <span className="text-[10px] text-[var(--text-muted)]">
                         {formatTime(message.createdAt)}
-                        {message.pending ? " - Sending" : ""}
-                        {message.failed ? " - Failed" : ""}
+                        {message.pending ? ` · ${t("Sending")}` : ""}
+                        {message.failed ? ` · ${t("Failed")}` : ""}
                       </span>
                     </div>
                   </div>
@@ -612,51 +618,49 @@ function ChatPageContent() {
             </div>
 
             {showPayCta && dealState && (
-              <div className="border-t border-primary/30 bg-primary/10 px-4 py-3 lg:px-6">
+              <div className="border-t border-primary/25 bg-primary/8 px-4 py-3 lg:px-6">
                 <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66]">Ready to pay</p>
-                    <p className="text-sm font-bold text-[#0d1b12]">
+                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">{t("Ready to pay")}</p>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">
                       {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
                       {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""}
                     </p>
                   </div>
                   <button
                     type="button"
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-black hover:bg-[#0fd650]"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
                     onClick={() => setPayOpen(true)}
                   >
-                    Pay now (demo)
+                    {t("Pay now (demo)")}
                   </button>
                 </div>
               </div>
             )}
 
             <form
-              className="border-t border-[#e7f3eb] bg-white p-4"
+              className="border-t border-[var(--border)] bg-[var(--surface)] p-4"
               onSubmit={(event) => {
                 event.preventDefault();
                 void sendMessage();
               }}
             >
-              <div className="mx-auto flex max-w-4xl items-end gap-3">
-                <div className="flex min-h-12 flex-1 items-center rounded-2xl border border-transparent bg-[#f5f6f8] px-4 focus-within:border-primary/60">
-                  <input
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    placeholder="Type a message"
-                    className="h-12 min-w-0 flex-1 border-none bg-transparent text-[#0d1b12] outline-none placeholder:text-[#4c9a66]"
-                    maxLength={5000}
-                    disabled={active.status === "closed"}
-                  />
-                </div>
+              <div className="mx-auto flex max-w-4xl items-center gap-2">
+                <input
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder={t("Type a message")}
+                  className={`${panelInputClass} min-h-10 flex-1`}
+                  maxLength={5000}
+                  disabled={active.status === "closed"}
+                />
                 <button
                   type="submit"
                   disabled={!input.trim() || sending || active.status === "closed"}
-                  className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 transition disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Send message"
+                  className="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={t("Send message")}
                 >
-                  <span className="material-symbols-outlined">send</span>
+                  {t("Send message")}
                 </button>
               </div>
             </form>
@@ -676,35 +680,35 @@ function ChatPageContent() {
         <aside
           className={`${
             dealPanelOpen ? "fixed inset-y-0 right-0 z-50 flex w-full max-w-sm shadow-2xl" : "hidden"
-          } w-80 shrink-0 flex-col overflow-y-auto border-l border-[#e7f3eb] bg-white lg:relative lg:flex lg:max-w-none`}
+          } w-80 shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] lg:relative lg:flex lg:max-w-none`}
         >
-          <div className="flex items-center justify-between border-b border-[#e7f3eb] px-4 py-3 lg:hidden">
-            <p className="text-sm font-bold text-[#0d1b12]">Deal &amp; payment</p>
+          <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 lg:hidden">
+            <p className="text-sm font-semibold text-[var(--foreground)]">{t("Deal & payment")}</p>
             <button
               type="button"
-              className="rounded-full p-2 text-[#4c9a66] hover:bg-[#f5f6f8]"
+              className="rounded-md p-2 text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
               onClick={() => setDealPanelOpen(false)}
               aria-label="Close"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
-          <section className="border-b border-[#e7f3eb] p-6">
-            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Request</h2>
+          <section className="border-b border-[var(--border)] p-6">
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Request</h2>
             <div className="space-y-3">
-              <h3 className="text-lg font-bold leading-tight text-[#0d1b12]">{active.request.title}</h3>
+              <h3 className="text-lg font-bold leading-tight text-[var(--foreground)]">{active.request.title}</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg bg-[#f5f6f8] p-3">
-                  <p className="text-xs text-[#4c9a66]">Budget</p>
-                  <p className="font-bold text-[#0d1b12]">{formatBudget(active)}</p>
+                <div className="rounded-lg bg-[var(--surface-muted)] p-3">
+                  <p className="text-xs text-[var(--text-muted)]">Budget</p>
+                  <p className="font-bold text-[var(--foreground)]">{formatBudget(active)}</p>
                 </div>
-                <div className="rounded-lg bg-[#f5f6f8] p-3">
-                  <p className="text-xs text-[#4c9a66]">Status</p>
-                  <p className="font-bold capitalize text-[#0d1b12]">{active.request.status || "active"}</p>
+                <div className="rounded-lg bg-[var(--surface-muted)] p-3">
+                  <p className="text-xs text-[var(--text-muted)]">Status</p>
+                  <p className="font-bold capitalize text-[var(--foreground)]">{active.request.status || "active"}</p>
                 </div>
               </div>
               {active.request.location && (
-                <p className="flex items-center gap-2 text-sm text-[#4c9a66]">
+                <p className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                   <span className="material-symbols-outlined text-[18px]">location_on</span>
                   {active.request.location}
                 </p>
@@ -713,43 +717,43 @@ function ChatPageContent() {
           </section>
 
           {active.offer && (
-            <section className="border-b border-[#e7f3eb] p-6">
-              <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Offer</h2>
-              <div className="rounded-lg border border-[#e7f3eb] p-4">
+            <section className="border-b border-[var(--border)] p-6">
+              <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Offer</h2>
+              <div className="rounded-lg border border-[var(--border)] p-4">
                 {(() => {
                   const qty = normalizeRequestQuantity(active.request.quantity);
                   const unit = Number(active.offer.price);
                   const total = computeOfferLineTotal(unit, qty);
                   return (
                     <>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66]">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                         Price per unit · qty {qty}
                       </p>
-                      <p className="mt-1 text-2xl font-black text-[#0d1b12]">
+                      <p className="mt-1 text-2xl font-semibold text-[var(--foreground)]">
                         {formatCurrency(unit, active.offer.currency)}
                       </p>
-                      <p className="mt-2 text-sm text-[#4c9a66]">
+                      <p className="mt-2 text-sm text-[var(--text-muted)]">
                         Order total:{" "}
-                        <span className="font-bold text-[#0d1b12]">
+                        <span className="font-bold text-[var(--foreground)]">
                           {formatCurrency(total, active.offer.currency)}
                         </span>
                       </p>
                     </>
                   );
                 })()}
-                <p className="mt-1 text-sm font-semibold capitalize text-[#4c9a66]">{active.offer.status}</p>
+                <p className="mt-1 text-sm font-semibold capitalize text-[var(--text-muted)]">{active.offer.status}</p>
               </div>
             </section>
           )}
 
-          <section className="border-b border-[#e7f3eb] p-6">
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">Price &amp; pay</h2>
+          <section className="border-b border-[var(--border)] p-6">
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Price &amp; pay</h2>
             {dealLoading && !dealState ? (
-              <p className="text-sm text-[#4c9a66]">Loading deal…</p>
+              <p className="text-sm text-[var(--text-muted)]">Loading deal…</p>
             ) : dealState ? (
               <div className="space-y-4">
                 {dealState.orderId ? (
-                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900">
+                  <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-200">
                     Paid —{" "}
                     <Link className="font-bold underline" href={`/orders/${dealState.orderId}`}>
                       view order
@@ -758,10 +762,10 @@ function ChatPageContent() {
                 ) : null}
                 {dealState.initialOffer && !dealState.orderId && (
                   <div className="space-y-2">
-                    <p className="text-xs text-[#4c9a66]">
+                    <p className="text-xs text-[var(--text-muted)]">
                       Seller offer: {formatCurrency(dealState.initialOffer.unitPrice, dealState.initialOffer.currency)}{" "}
                       × {dealState.initialOffer.quantity} ={" "}
-                      <span className="font-bold text-[#0d1b12]">
+                      <span className="font-bold text-[var(--foreground)]">
                         {formatCurrency(dealState.initialOffer.totalPrice, dealState.initialOffer.currency)}
                       </span>
                     </p>
@@ -781,14 +785,14 @@ function ChatPageContent() {
                           setDealBusy(false);
                         }
                       }}
-                      className="flex-1 rounded-lg bg-primary py-2 text-xs font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                      className="flex-1 rounded-lg bg-primary py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
                     >
                       Use offer total
                     </button>
                   </div>
                 )}
-                <div className="rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] p-3">
-                  <p className="text-xs text-[#4c9a66] mb-1">
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+                  <p className="text-xs text-[var(--text-muted)] mb-1">
                     Your counter (order total
                     {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""})
                   </p>
@@ -796,7 +800,7 @@ function ChatPageContent() {
                     <select
                       value={proposeCurrency}
                       onChange={(e) => setProposeCurrency(e.target.value)}
-                      className="rounded-md border border-[#e7f3eb] bg-white px-2 py-1.5 text-xs font-bold text-[#0d1b12]"
+                      className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs font-bold text-[var(--foreground)]"
                       aria-label="Proposal currency"
                     >
                       {["KZT", "USD", "EUR", "RUB"].map((c) => (
@@ -812,7 +816,7 @@ function ChatPageContent() {
                       value={proposeAmount}
                       onChange={(e) => setProposeAmount(e.target.value)}
                       placeholder={normalizeCurrency(dealState.requestCurrency)}
-                      className="min-w-0 flex-1 rounded-md border border-[#e7f3eb] px-2 py-1.5 text-sm"
+                      className="min-w-0 flex-1 rounded-md border border-[var(--border)] px-2 py-1.5 text-sm"
                     />
                     <button
                       type="button"
@@ -835,7 +839,7 @@ function ChatPageContent() {
                           setDealBusy(false);
                         }
                       }}
-                      className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-[#0d1b12] ring-1 ring-[#e7f3eb] hover:bg-[#f5f6f8] disabled:opacity-50"
+                      className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
                     >
                       Offer
                     </button>
@@ -843,10 +847,10 @@ function ChatPageContent() {
                 </div>
                 {dealState.agreedPrice != null && dealState.agreedCurrency && !dealState.orderId ? (
                   <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
-                    <p className="font-bold text-[#0d1b12]">
+                    <p className="font-bold text-[var(--foreground)]">
                       Agreed total: {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
                       {dealState.requestQuantity > 1 ? (
-                        <span className="block text-xs font-normal text-[#4c9a66]">
+                        <span className="block text-xs font-normal text-[var(--text-muted)]">
                           {dealState.requestQuantity} pcs
                         </span>
                       ) : null}
@@ -854,28 +858,28 @@ function ChatPageContent() {
                     {canPayAsBuyer ? (
                       <button
                         type="button"
-                        className="mt-2 w-full rounded-lg bg-primary py-2 text-xs font-bold text-black"
+                        className="mt-2 w-full rounded-lg bg-primary py-2 text-xs font-semibold text-white hover:opacity-90"
                         onClick={() => setPayOpen(true)}
                       >
                         Pay now (demo)
                       </button>
                     ) : isSellerOnThread ? (
-                      <p className="mt-2 text-xs text-[#4c9a66]">
+                      <p className="mt-2 text-xs text-[var(--text-muted)]">
                         Waiting for buyer to pay… They will see <span className="font-bold">Pay now</span>{" "}
                         in this chat (or the green bar above messages on phone).
                       </p>
                     ) : (
-                      <p className="mt-2 text-xs text-[#4c9a66]">Waiting for buyer to pay…</p>
+                      <p className="mt-2 text-xs text-[var(--text-muted)]">Waiting for buyer to pay…</p>
                     )}
                   </div>
                 ) : null}
                 <div>
-                  <p className="mb-2 text-xs font-semibold text-[#4c9a66]">
+                  <p className="mb-2 text-xs font-semibold text-[var(--text-muted)]">
                     Recent proposals <span className="font-normal">(order totals)</span>
                   </p>
                   <ul className="max-h-40 space-y-2 overflow-y-auto text-sm">
                     {dealState.proposals.length === 0 ? (
-                      <li className="text-[#4c9a66]">No price proposals yet.</li>
+                      <li className="text-[var(--text-muted)]">No price proposals yet.</li>
                     ) : (
                       dealState.proposals.map((p) => {
                         const mine = p.proposerId === user?.id;
@@ -883,11 +887,11 @@ function ChatPageContent() {
                         return (
                           <li
                             key={p.id}
-                            className="flex items-center justify-between gap-2 rounded-md border border-[#e7f3eb] bg-white px-2 py-1.5"
+                            className="flex items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5"
                           >
                             <span className="truncate">
                               {formatCurrency(p.amount, p.currency)}{" "}
-                              <span className="text-xs text-[#4c9a66]">
+                              <span className="text-xs text-[var(--text-muted)]">
                                 {mine ? "(you)" : ""} · {p.status}
                               </span>
                             </span>
@@ -919,44 +923,44 @@ function ChatPageContent() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-[#4c9a66]">Deal tools unavailable.</p>
+              <p className="text-sm text-[var(--text-muted)]">Deal tools unavailable.</p>
             )}
           </section>
 
           <section className="p-6">
-            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#4c9a66]">
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
               {active.role === "seller" ? "Seller" : "Buyer"}
             </h2>
             <div className="mb-5 flex items-center gap-4">
               <Avatar name={active.name} src={active.avatarUrl} size="lg" />
               <div className="min-w-0">
-                <h3 className="truncate text-lg font-bold text-[#0d1b12]">{active.name}</h3>
-                <p className="text-sm capitalize text-[#4c9a66]">{active.role}</p>
+                <h3 className="truncate text-lg font-bold text-[var(--foreground)]">{active.name}</h3>
+                <p className="text-sm capitalize text-[var(--text-muted)]">{active.role}</p>
               </div>
             </div>
             <div className="space-y-3 text-sm">
               {active.details.businessType && (
-                <div className="flex justify-between gap-3 border-b border-dashed border-[#e7f3eb] pb-2">
-                  <span className="text-[#4c9a66]">Business</span>
-                  <span className="font-medium text-[#0d1b12]">{active.details.businessType}</span>
+                <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
+                  <span className="text-[var(--text-muted)]">Business</span>
+                  <span className="font-medium text-[var(--foreground)]">{active.details.businessType}</span>
                 </div>
               )}
               {active.details.city && (
-                <div className="flex justify-between gap-3 border-b border-dashed border-[#e7f3eb] pb-2">
-                  <span className="text-[#4c9a66]">City</span>
-                  <span className="font-medium text-[#0d1b12]">{active.details.city}</span>
+                <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
+                  <span className="text-[var(--text-muted)]">City</span>
+                  <span className="font-medium text-[var(--foreground)]">{active.details.city}</span>
                 </div>
               )}
               {active.details.ratingAverage && (
-                <div className="flex justify-between gap-3 border-b border-dashed border-[#e7f3eb] pb-2">
-                  <span className="text-[#4c9a66]">Rating</span>
-                  <span className="font-medium text-[#0d1b12]">{Number(active.details.ratingAverage).toFixed(1)}</span>
+                <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
+                  <span className="text-[var(--text-muted)]">Rating</span>
+                  <span className="font-medium text-[var(--foreground)]">{Number(active.details.ratingAverage).toFixed(1)}</span>
                 </div>
               )}
               {typeof active.details.completedDealsCount === "number" && (
-                <div className="flex justify-between gap-3 border-b border-dashed border-[#e7f3eb] pb-2">
-                  <span className="text-[#4c9a66]">Deals</span>
-                  <span className="font-medium text-[#0d1b12]">{active.details.completedDealsCount}</span>
+                <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
+                  <span className="text-[var(--text-muted)]">Deals</span>
+                  <span className="font-medium text-[var(--foreground)]">{active.details.completedDealsCount}</span>
                 </div>
               )}
             </div>
@@ -965,36 +969,36 @@ function ChatPageContent() {
       )}
       {payOpen && active && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#e7f3eb] bg-white p-6 shadow-xl">
-            <h3 className="mb-1 text-lg font-bold text-[#0d1b12]">Demo payment</h3>
+          <div className="app-card w-full max-w-md rounded-xl p-6 shadow-[var(--shadow-card)]">
+            <h3 className="mb-1 text-lg font-bold text-[var(--foreground)]">Demo payment</h3>
             {dealState?.agreedPrice != null && dealState.agreedCurrency && (
-              <p className="mb-2 text-base font-bold text-[#0d1b12]">
+              <p className="mb-2 text-base font-bold text-[var(--foreground)]">
                 {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
                 {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""}
               </p>
             )}
-            <p className="mb-4 text-sm text-[#4c9a66]">
+            <p className="mb-4 text-sm text-[var(--text-muted)]">
               No real charge. Fill the fields below to simulate payment for the agreed request-deal total.
             </p>
-            <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
+            <label className="mb-1 block text-xs font-semibold text-[var(--text-muted)]">Name on card</label>
             <input
               value={cardName}
               onChange={(e) => setCardName(e.target.value)}
-              className="mb-3 w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
+              className={`mb-3 ${panelInputClass}`}
               placeholder="Jane Buyer"
             />
-            <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Last 4 digits</label>
+            <label className="mb-1 block text-xs font-semibold text-[var(--text-muted)]">Last 4 digits</label>
             <input
               value={cardLast4}
               onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm tracking-widest"
+              className={`${panelInputClass} tracking-widest`}
               placeholder="4242"
               inputMode="numeric"
             />
             <div className="mt-6 flex gap-2">
               <button
                 type="button"
-                className="flex-1 rounded-lg border border-[#e7f3eb] py-2.5 text-sm font-bold text-[#0d1b12] hover:bg-[#f5f6f8]"
+                className="flex-1 rounded-lg border border-[var(--border)] py-2.5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
                 onClick={() => {
                   setPayOpen(false);
                   setCardLast4("");
@@ -1006,7 +1010,7 @@ function ChatPageContent() {
               <button
                 type="button"
                 disabled={dealBusy || cardLast4.length !== 4 || !cardName.trim()}
-                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50"
+                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                 onClick={async () => {
                   if (cardLast4.length !== 4) {
                     setError("Enter the last 4 digits of the card.");
@@ -1043,8 +1047,8 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex flex-1 justify-center px-4 py-16">
-          <p className="text-sm text-[#4c9a66]">Loading chat...</p>
+        <main className="app-fill-below-header flex flex-1 items-center justify-center bg-[var(--background)] px-4">
+          <p className="text-sm text-[var(--text-muted)]">Loading chat...</p>
         </main>
       }
     >

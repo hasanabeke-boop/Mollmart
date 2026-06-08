@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiFetch, apiFetchWithRefresh, resolveUploadedAssetUrl } from "@/lib/api";
+import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
+import { firstAttachmentImageUrl } from "@/lib/requestMedia";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -14,6 +15,7 @@ import { computeOfferLineTotal } from "@/lib/offerPricing";
 import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
 import ModalPortal from "@/components/ui/ModalPortal";
 import { SearchField } from "@/components/ui/SearchField";
+import RequestCoverImage from "@/components/request/RequestCoverImage";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -197,20 +199,6 @@ function budgetBarWidthPercent(amount: number, listMax: number): number {
   if (amount <= 0 || listMax <= 0) return 0;
   const pct = (amount / listMax) * 100;
   return Math.min(100, Math.max(4, Math.round(pct)));
-}
-
-function firstAttachmentImageUrl(attachments: unknown): string | undefined {
-  if (!Array.isArray(attachments) || attachments.length === 0) return undefined;
-  const first = attachments[0];
-  let raw: string | undefined;
-  if (typeof first === "string") {
-    raw = first.trim() || undefined;
-  } else if (first && typeof first === "object") {
-    const o = first as Record<string, unknown>;
-    const v = o.fileUrl ?? o.file_url;
-    raw = v != null ? String(v).trim() : undefined;
-  }
-  return resolveUploadedAssetUrl(raw);
 }
 
 function parseOptionalMoney(v: unknown): number | undefined {
@@ -882,16 +870,15 @@ export default function BrowseBuyerRequestsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Featured Card (first request with image) */}
           {featuredRequest && (
-            <div className="lg:col-span-2 bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 flex flex-col md:flex-row group transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-full md:w-2/5 relative h-48 md:h-auto">
-                <img
-                  className="w-full h-full object-cover"
-                  alt={featuredRequest.title}
+            <div className="lg:col-span-2 app-card flex flex-col overflow-hidden rounded-xl md:flex-row">
+              <div className="relative p-4 pb-0 md:p-4 md:pr-0">
+                <RequestCoverImage
+                  variant="featured"
                   src={featuredRequest.image}
-                  loading="lazy"
+                  alt={featuredRequest.title}
                 />
                 {featuredRequest.urgent && (
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute top-6 left-6 md:top-6 md:left-6">
                     <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
                       Urgent Request
                     </span>
@@ -983,16 +970,11 @@ export default function BrowseBuyerRequestsPage() {
               className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col justify-between hover:shadow-lg transition-shadow"
             >
               <div>
-                {req.image ? (
-                  <div className="mb-4 overflow-hidden rounded-2xl h-32 bg-slate-100">
-                    <img
-                      src={req.image}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : null}
+                <RequestCoverImage
+                  className="mb-4"
+                  src={req.image}
+                  alt={req.title}
+                />
                 <div className="flex items-center gap-2 mb-4">
                   <div
                     className={`w-10 h-10 rounded-xl ${req.iconBg} flex items-center justify-center ${req.iconColor}`}
