@@ -227,6 +227,102 @@ export const uiTranslations = {
     "Checking access...": "Проверка доступа...",
     "(optional)": "(необязательно)",
     "click to browse": "нажмите для выбора",
+    "Enable reverse auction": "Включить обратный аукцион",
+    "Optional. After you publish, sellers can join a live auction and compete by lowering price. Platform rules (timing, minimum sellers, price steps) apply automatically — you do not configure them here.":
+      "Необязательно. После публикации продавцы смогут участвовать в живом аукционе и снижать цену. Правила платформы (время, минимум продавцов, шаг цены) применяются автоматически — здесь их настраивать не нужно.",
+    "Enable reverse auction after publish": "Включить обратный аукцион после публикации",
+    "Sellers can join a live price competition. Platform rules apply automatically.":
+      "Продавцы смогут участвовать в живом ценовом соревновании. Правила платформы применяются автоматически.",
+    "Auction": "Аукцион",
+    "Join auction": "Вступить в аукцион",
+    "Joining…": "Подключение…",
+    "Active auctions": "Активные аукционы",
+    "Join reverse auctions on buyer requests. Use tabs when several run at the same time.":
+      "Участвуйте в обратных аукционах по заявкам покупателей. Используйте вкладки, если несколько идут одновременно.",
+    "Browse requests": "Смотреть заявки",
+    "{count} live auction right now": "Сейчас {count} активный аукцион",
+    "{count} live auctions right now": "Сейчас {count} активных аукциона",
+    "No active auctions": "Нет активных аукционов",
+    'Open buyer requests and tap "Join auction" when at least {min} sellers are needed to start trading.':
+      'Откройте заявки покупателей и нажмите «Вступить в аукцион», когда для старта торгов нужно минимум {min} продавцов.',
+    "Active auctions are available in seller mode. Switch to seller workspace or browse buyer requests to join.":
+      "Активные аукционы доступны в режиме продавца. Переключитесь в рабочую область продавца или просмотрите заявки покупателей.",
+    "Log in as a seller to view active auctions.": "Войдите как продавец, чтобы видеть активные аукционы.",
+    "Back": "Назад",
+    "Auction not found for this request yet.": "Аукцион для этой заявки пока не найден.",
+    "Auctions open automatically when a request is published. Sellers must join before trading starts.":
+      "Аукцион открывается автоматически при публикации заявки с включённым аукционом. Продавцы должны присоединиться до начала торгов.",
+    "Auction rules": "Правила аукциона",
+    "How reverse auctions work": "Как работает обратный аукцион",
+    "Loading…": "Загрузка…",
+    "Reverse auction": "Обратный аукцион",
+    "Gathering sellers ({count}/{min})": "Сбор продавцов ({count}/{min})",
+    "Scheduled — starting soon": "Запланировано — скоро начнётся",
+    "Live trading": "Идут торги",
+    "Auction completed": "Аукцион завершён",
+    "No winner": "Победитель не определён",
+    "Round closing — next round starting…": "Раунд завершается — начинается следующий…",
+    "Time running out!": "Время заканчивается!",
+    "Round {round}": "Раунд {round}",
+    " · Pausing…": " · Пауза…",
+    "Price lowered —": "Цена снижена —",
+    "Trading starts at": "Торги начнутся в",
+    "Current best price": "Лучшая цена сейчас",
+    "Current": "Текущая",
+    "Floor": "Минимум",
+    "Lead": "Лидер",
+    "Lower price": "Снизить цену",
+    "Hold": "Удержать",
+    "Withdraw": "Выйти",
+    "Winner secured at": "Победитель определён с ценой",
+    "An offer was created automatically.": "Предложение создано автоматически.",
+    "Open full auction view": "Открыть полный вид аукциона",
+    "Join reverse auction": "Вступить в обратный аукцион",
+    "You're registered!": "Вы зарегистрированы!",
+    "Trading starts automatically when {min} sellers have joined.": "Торги начнутся автоматически, когда присоединятся {min} продавцов.",
+    "Watch progress in Active auctions.": "Следите за ходом во вкладке «Активные аукционы».",
+    "View auction": "Смотреть аукцион",
+    "Platform rules apply: fixed round timer, price steps, and minimum {min} sellers. You can run multiple auctions in separate tabs.":
+      "Действуют правила платформы: фиксированный таймер раунда, шаги цены и минимум {min} продавцов. Можно участвовать в нескольких аукционах в разных вкладках.",
+    "Starting price ({currency})": "Стартовая цена ({currency})",
+    "Floor price ({currency})": "Минимальная цена ({currency})",
+    "Buyer budget up to {amount} · qty {qty}": "Бюджет покупателя до {amount} · кол-во {qty}",
+    "Delivery (days, optional)": "Доставка (дней, необязательно)",
+    "Note (optional)": "Комментарий (необязательно)",
+    "Enter valid starting and floor prices.": "Введите корректные стартовую и минимальную цены.",
+    "Floor cannot exceed starting price.": "Минимальная цена не может быть выше стартовой.",
+    "Could not join auction.": "Не удалось вступить в аукцион.",
+    "Sellers compete by lowering their price. The lowest active bid when trading ends wins the request.":
+      "Продавцы соревнуются, снижая цену. Побеждает самая низкая активная ставка на момент окончания торгов.",
+    "Minimum {min} sellers": "Минимум {min} продавцов",
+    "Trading starts only after at least {min} sellers register. Until then the request stays open for registration.":
+      "Торги начинаются только после регистрации минимум {min} продавцов. До этого заявка остаётся открытой для регистрации.",
+    "Fixed start delay": "Фиксированная задержка старта",
+    "When the {min}th seller joins, live trading is scheduled {minutes} minutes later so everyone can prepare.":
+      "Когда присоединяется {min}-й продавец, живые торги назначаются через {minutes} мин., чтобы все успели подготовиться.",
+    "Round timer": "Таймер раунда",
+    "Each round lasts {seconds} seconds. Lower your price or hold — if you do nothing, your price is held automatically.":
+      "Каждый раунд длится {seconds} сек. Снизьте цену или удержите — если ничего не делать, цена удерживается автоматически.",
+    "Price step": "Шаг цены",
+    'Each "Lower price" action drops your bid by {percent}% (minimum {minStep} in request currency), never below your floor.':
+      'Каждое действие «Снизить цену» уменьшает ставку на {percent}% (минимум {minStep} в валюте заявки), но не ниже вашего минимума.',
+    "Floor price": "Минимальная цена",
+    "Your floor is the lowest price you are willing to offer. You cannot go below it during trading.":
+      "Минимум — самая низкая цена, которую вы готовы предложить. Ниже неё во время торгов опуститься нельзя.",
+    "Inactivity": "Бездействие",
+    "If you take no action for {rounds} rounds in a row, you are withdrawn from this auction only.":
+      "Если {rounds} раунда подряд вы ничего не делаете, вы выбываете только из этого аукциона.",
+    "How trading ends": "Как заканчиваются торги",
+    "Trading ends when no seller lowers for {noBidRounds} consecutive rounds, or after {maxRounds} rounds. The lowest price wins.":
+      "Торги завершаются, если {noBidRounds} раунда подряд никто не снижает цену, или после {maxRounds} раундов. Побеждает самая низкая цена.",
+    "Multiple live auctions": "Несколько аукционов одновременно",
+    "You can join several auctions at once. Use tabs on Active auctions — each runs independently.":
+      "Можно участвовать в нескольких аукционах сразу. Используйте вкладки в «Активные аукционы» — каждый идёт отдельно.",
+    "registered": "зарегистрирован",
+    "active": "активен",
+    "withdrawn": "выбыл",
+    "inactive": "неактивен",
+    "Price is negotiable": "Цена договорная",
   },
   kk: {
     "Log In": "Кіру",
@@ -431,6 +527,102 @@ export const uiTranslations = {
     "Checking access...": "Қолжетімділік тексерілуде...",
     "(optional)": "(міндетті емес)",
     "click to browse": "таңдау үшін басыңыз",
+    "Enable reverse auction": "Кері аукционды қосу",
+    "Optional. After you publish, sellers can join a live auction and compete by lowering price. Platform rules (timing, minimum sellers, price steps) apply automatically — you do not configure them here.":
+      "Міндетті емес. Жариялағаннан кейін сатушылар тікелей аукционға қосылып, бағаны төмендете алады. Платформа ережелері (уақыт, минимал сатушылар, баға қадамы) автоматты түрде қолданылады — мұнда оларды баптау керек емес.",
+    "Enable reverse auction after publish": "Жариялаудан кейін кері аукционды қосу",
+    "Sellers can join a live price competition. Platform rules apply automatically.":
+      "Сатушылар тікелей баға бәсекесіне қосыла алады. Платформа ережелері автоматты түрде қолданылады.",
+    "Auction": "Аукцион",
+    "Join auction": "Аукционға қосылу",
+    "Joining…": "Қосылуда…",
+    "Active auctions": "Белсенді аукциондар",
+    "Join reverse auctions on buyer requests. Use tabs when several run at the same time.":
+      "Сатып алушы сұраныстары бойынша кері аукциондарға қосылыңыз. Бірнеуі бір уақытта болса, вкладкаларды пайдаланыңыз.",
+    "Browse requests": "Сұраныстарды қарау",
+    "{count} live auction right now": "Қазір {count} белсенді аукцион",
+    "{count} live auctions right now": "Қазір {count} белсенді аукцион",
+    "No active auctions": "Белсенді аукциондар жоқ",
+    'Open buyer requests and tap "Join auction" when at least {min} sellers are needed to start trading.':
+      'Сатып алушы сұраныстарын ашып, сауда басталуы үшін кемінде {min} сатушы керек болса «Аукционға қосылу» таңдаңыз.',
+    "Active auctions are available in seller mode. Switch to seller workspace or browse buyer requests to join.":
+      "Белсенді аукциондар сатушы режимінде қолжетімді. Сатушы жұмыс аймағына өтіңіз немесе сұраныстарды қараңыз.",
+    "Log in as a seller to view active auctions.": "Белсенді аукциондарды көру үшін сатушы ретінде кіріңіз.",
+    "Back": "Артқа",
+    "Auction not found for this request yet.": "Бұл сұраныс үшін аукцион әзірге табылмады.",
+    "Auctions open automatically when a request is published. Sellers must join before trading starts.":
+      "Аукцион қосылған сұраныс жарияланғанда автоматты ашылады. Сауда басталмай тұрып сатушылар қосылуы керек.",
+    "Auction rules": "Аукцион ережелері",
+    "How reverse auctions work": "Кері аукцион қалай жұмыс істейді",
+    "Loading…": "Жүктелуде…",
+    "Reverse auction": "Кері аукцион",
+    "Gathering sellers ({count}/{min})": "Сатушылар жиналуда ({count}/{min})",
+    "Scheduled — starting soon": "Жоспарланған — жақында басталады",
+    "Live trading": "Сауда жүріп жатыр",
+    "Auction completed": "Аукцион аяқталды",
+    "No winner": "Жеңімпаз анықталмады",
+    "Round closing — next round starting…": "Раунд аяқталуда — келесі раунд басталуда…",
+    "Time running out!": "Уақыт аяқталуда!",
+    "Round {round}": "{round}-раунд",
+    " · Pausing…": " · Кідіріс…",
+    "Price lowered —": "Баға төмендеуді —",
+    "Trading starts at": "Сауда басталуы",
+    "Current best price": "Қазіргі ең жақсы баға",
+    "Current": "Ағымдағы",
+    "Floor": "Минимум",
+    "Lead": "Лидер",
+    "Lower price": "Бағаны төмендету",
+    "Hold": "Ұстау",
+    "Withdraw": "Шығу",
+    "Winner secured at": "Жеңімпаз бағасы",
+    "An offer was created automatically.": "Ұсыныс автоматты түрде жасалды.",
+    "Open full auction view": "Аукционды толық көру",
+    "Join reverse auction": "Кері аукционға қосылу",
+    "You're registered!": "Сіз тіркелдіңіз!",
+    "Trading starts automatically when {min} sellers have joined.": "Сауда {min} сатушы қосылғанда автоматты басталады.",
+    "Watch progress in Active auctions.": "Белсенді аукциондар вкладкасында бақылаңыз.",
+    "View auction": "Аукционды көру",
+    "Platform rules apply: fixed round timer, price steps, and minimum {min} sellers. You can run multiple auctions in separate tabs.":
+      "Платформа ережелері қолданылады: белгіленген раунд таймері, баға қадамы және минимум {min} сатушы. Бірнеше аукционға әр түрлі вкладкаларда қатысуға болады.",
+    "Starting price ({currency})": "Бастапқы баға ({currency})",
+    "Floor price ({currency})": "Минимал баға ({currency})",
+    "Buyer budget up to {amount} · qty {qty}": "Сатып алушы бюджеті {amount} дейін · саны {qty}",
+    "Delivery (days, optional)": "Жеткізу (күн, міндетті емес)",
+    "Note (optional)": "Ескертпе (міндетті емес)",
+    "Enter valid starting and floor prices.": "Дұрыс бастапқы және минимал бағаны енгізіңіз.",
+    "Floor cannot exceed starting price.": "Минимал баға бастапқыдан жоғары болмауы керек.",
+    "Could not join auction.": "Аукционға қосылу сәтсіз аяқталды.",
+    "Sellers compete by lowering their price. The lowest active bid when trading ends wins the request.":
+      "Сатушылар бағаны төмендетіп бәсекелеседі. Сауда аяқталғандағы ең төмен белсенді ұсыныс жеңеді.",
+    "Minimum {min} sellers": "Минимум {min} сатушы",
+    "Trading starts only after at least {min} sellers register. Until then the request stays open for registration.":
+      "Сауда кемінде {min} сатушы тіркелгеннен кейін ғана басталады. Сол уақытқа дейін тіркелу ашық.",
+    "Fixed start delay": "Белгіленген кідіріс",
+    "When the {min}th seller joins, live trading is scheduled {minutes} minutes later so everyone can prepare.":
+      "{min}-ші сатушы қосылғанда, тікелей сауда {minutes} минуттан кейін жоспарланады.",
+    "Round timer": "Раунд таймері",
+    "Each round lasts {seconds} seconds. Lower your price or hold — if you do nothing, your price is held automatically.":
+      "Әр раунд {seconds} секунд. Бағаны төмендетіңіз немесе ұстаңыз — еш нәрсе істемесеніз, баға автоматты сақталады.",
+    "Price step": "Баға қадамы",
+    'Each "Lower price" action drops your bid by {percent}% (minimum {minStep} in request currency), never below your floor.':
+      '«Бағаны төмендету» әр әрекеті ұсынысты {percent}% төмендетеді (минимум {minStep}), минималдан төмен емес.',
+    "Floor price": "Минимал баға",
+    "Your floor is the lowest price you are willing to offer. You cannot go below it during trading.":
+      "Минимум — сіз ұсынуға дайын ең төмен баға. Сауда кезінде одан төмен түсе алмайсыз.",
+    "Inactivity": "Белсенділіксіздік",
+    "If you take no action for {rounds} rounds in a row, you are withdrawn from this auction only.":
+      "Қатарынан {rounds} раунд еш нәрсе істемесеніз, тек осы аукционнан шығасыз.",
+    "How trading ends": "Сауда қалай аяқталады",
+    "Trading ends when no seller lowers for {noBidRounds} consecutive rounds, or after {maxRounds} rounds. The lowest price wins.":
+      "Егер {noBidRounds} раунд қатарынан ешкім бағаны төмендетпесе, немесе {maxRounds} раундтан кейін сауда аяқталады. Ең төмен баға жеңеді.",
+    "Multiple live auctions": "Бірнеше тікелей аукцион",
+    "You can join several auctions at once. Use tabs on Active auctions — each runs independently.":
+      "Бірнеше аукционға бір уақытта қосыла аласыз. Белсенді аукциондар вкладкаларын пайдаланыңыз — әрқайсысы бөлек.",
+    "registered": "тіркелген",
+    "active": "белсенді",
+    "withdrawn": "шыққан",
+    "inactive": "белсенді емес",
+    "Price is negotiable": "Баға келісілетін",
   },
 } satisfies Record<Exclude<Language, "en">, Record<string, string>>;
 
@@ -438,4 +630,18 @@ export function translateUiText(text: string, language: Language): string {
   if (language === "en") return text;
   const dictionary: Record<string, string> = uiTranslations[language];
   return dictionary[text] ?? text;
+}
+
+export function translateUiTemplate(
+  text: string,
+  language: Language,
+  vars?: Record<string, string | number>,
+): string {
+  let result = translateUiText(text, language);
+  if (vars) {
+    for (const [key, value] of Object.entries(vars)) {
+      result = result.replaceAll(`{${key}}`, String(value));
+    }
+  }
+  return result;
 }

@@ -46,6 +46,7 @@ export class RequestService {
       quantity: input.quantity ?? 1,
       currency: input.currency.toUpperCase(),
       isNegotiable: input.isNegotiable ?? false,
+      auctionEnabled: input.auctionEnabled ?? false,
       attachments: input.attachments ?? [],
       ...(input.budgetMin !== undefined ? { budgetMin: input.budgetMin } : {}),
       ...(input.budgetMax !== undefined ? { budgetMax: input.budgetMax } : {}),
@@ -63,7 +64,7 @@ export class RequestService {
 
     const publishedRequest = await this.requestRepository.publish(requestId, user.id, 'Published by buyer');
     await this.requestEventPublisher.publishRequestPublished(publishedRequest);
-    if (this.onPublished != null) {
+    if (this.onPublished != null && publishedRequest.auctionEnabled) {
       await this.onPublished(publishedRequest.id);
     }
     return publishedRequest;
@@ -316,6 +317,9 @@ export class RequestService {
     }
     if (input.isNegotiable !== undefined) {
       updatePayload.isNegotiable = input.isNegotiable;
+    }
+    if (input.auctionEnabled !== undefined) {
+      updatePayload.auctionEnabled = input.auctionEnabled;
     }
 
     return updatePayload;

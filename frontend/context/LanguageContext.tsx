@@ -9,7 +9,7 @@ import {
   languageNames,
   languages,
   normalizeLanguage,
-  translateUiText,
+  translateUiTemplate,
   type Language,
 } from "@/lib/i18n";
 
@@ -18,7 +18,7 @@ const LANGUAGE_STORAGE_KEY = "mollmart_language";
 type LanguageState = {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (text: string) => string;
+  t: (text: string, vars?: Record<string, string | number>) => string;
 };
 
 const LanguageContext = createContext<LanguageState | null>(null);
@@ -72,7 +72,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [currentUserId, refreshUser, user],
   );
 
-  const t = useCallback((text: string) => translateUiText(text, language), [language]);
+  const t = useCallback(
+    (text: string, vars?: Record<string, string | number>) => translateUiTemplate(text, language, vars),
+    [language],
+  );
   const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
