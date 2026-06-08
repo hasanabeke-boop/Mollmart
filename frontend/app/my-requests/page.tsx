@@ -7,6 +7,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SearchBarRow, SearchField } from "@/components/ui/SearchField";
 import { requestStatusTone, StatusBadge } from "@/components/ui/StatusBadge";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
+import { firstAttachmentImageUrl } from "@/lib/requestMedia";
+import RequestCoverImage from "@/components/request/RequestCoverImage";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { useAuth } from "@/context/AuthContext";
@@ -43,6 +45,7 @@ type RequestItem = {
   deadlineAt?: string | null;
   location?: string | null;
   isNegotiable?: boolean;
+  imageUrl?: string;
 };
 
 type OfferItem = {
@@ -80,6 +83,7 @@ function normalizeRequest(raw: Record<string, unknown>): RequestItem {
     deadlineAt: raw.deadlineAt != null ? String(raw.deadlineAt) : null,
     location: raw.location != null ? String(raw.location) : null,
     isNegotiable: typeof raw.isNegotiable === "boolean" ? raw.isNegotiable : Boolean(raw.isNegotiable),
+    imageUrl: firstAttachmentImageUrl(raw.attachments),
   };
 }
 
@@ -536,6 +540,7 @@ export default function MyRequestsPage() {
                 className="app-card flex h-full min-w-0 flex-col rounded-lg p-4"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
+                  <RequestCoverImage src={request.imageUrl} alt={request.title} />
                   <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge tone={requestStatusTone(request.status)}>
                         {request.status.replace(/_/g, " ")}
