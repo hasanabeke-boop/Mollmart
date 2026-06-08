@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { ToastProvider } from "@/context/ToastContext";
+import AssistantWidget from "@/components/chatbot/AssistantWidget";
 
 export const metadata: Metadata = {
   title: "Mollmart",
@@ -44,6 +45,7 @@ export default function RootLayout({
                       <WorkspaceModeTransition>{children}</WorkspaceModeTransition>
                     </WorkspaceShell>
                   </main>
+                  <AssistantWidget />
                 </div>
               </ToastProvider>
             </WorkspaceProvider>
