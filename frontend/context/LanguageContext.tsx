@@ -23,8 +23,8 @@ type LanguageState = {
 
 const LanguageContext = createContext<LanguageState | null>(null);
 
-function getInitialLanguage(): Language {
-  if (typeof window === "undefined") return defaultLanguage;
+function readStoredLanguage(): Language | null {
+  if (typeof window === "undefined") return null;
 
   try {
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -33,7 +33,11 @@ function getInitialLanguage(): Language {
     // Storage can be blocked in private contexts.
   }
 
-  return normalizeLanguage(window.navigator.language);
+  return null;
+}
+
+function getInitialLanguage(): Language {
+  return readStoredLanguage() ?? normalizeLanguage(typeof window !== "undefined" ? window.navigator.language : defaultLanguage);
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -49,6 +53,27 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
+
+  useEffect(() => {
+    if (!currentUserId || !user) return;
+
+    const stored = readStoredLanguage();
+    setSelection((prev) => {
+      if (prev.userId === currentUserId) return prev;
+      const next = stored ?? serverLanguage ?? prev.language;
+      return { language: next, userId: currentUserId };
+    });
+
+    if (stored && stored !== serverLanguage) {
+      void apiFetchWithRefresh("/api/v1/auth/me/language", {
+        method: "PATCH",
+        service: "auth",
+        body: JSON.stringify({ language: stored }),
+      })
+        .then(() => refreshUser())
+        .catch(() => {});
+    }
+  }, [currentUserId, refreshUser, serverLanguage, user]);
 
   const setLanguage = useCallback(
     (next: Language) => {
