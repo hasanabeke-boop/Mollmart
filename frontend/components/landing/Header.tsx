@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import { Search } from 'lucide-react';
 import Link from "next/link";
+import { SearchField } from "@/components/ui/SearchField";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { MollmartLogoLink } from "@/components/brand/MollmartLogo";
@@ -87,45 +87,39 @@ export function Header() {
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <MollmartLogoLink href="/" size={32} />
 
-          <form className="hidden min-w-0 md:block md:w-[9.5rem] lg:w-[11rem] xl:w-[13rem]" onSubmit={handleSearch}>
-            <label className="group relative flex w-full items-center">
-              <span className="absolute left-2.5 flex items-center text-gray-400 group-focus-within:text-primary">
-                <Search className="h-3.5 w-3.5" />
-              </span>
-              <input
-                className="w-full rounded-lg border-0 bg-gray-50 py-2 pl-8 pr-2.5 text-xs text-[#0d1b12] placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:ring-offset-0 xl:py-2.5 xl:text-sm"
-                placeholder="Search…"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </label>
+          <form
+            className="hidden min-w-0 flex-1 md:block md:max-w-[18rem] lg:max-w-[22rem] xl:max-w-[26rem]"
+            onSubmit={handleSearch}
+          >
+            <SearchField value={search} onChange={setSearch} width="full" placeholder="Search…" />
           </form>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
+        <div className="ml-auto flex min-w-0 shrink items-center gap-0.5 sm:gap-1.5 lg:gap-2">
           <LanguageSwitcher />
           {loading ? (
             <div className="h-8 w-14 animate-pulse rounded-lg bg-gray-100" />
           ) : user ? (
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <WorkspaceModeToggle />
+            <div className="flex items-center gap-0.5 sm:gap-1.5">
+              <div className="hidden md:block">
+                <WorkspaceModeToggle />
+              </div>
               <Link
                 href="/chat"
-                className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
+                className="flex size-10 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100 sm:size-9"
               >
                 <span className="material-symbols-outlined text-[20px]">chat</span>
               </Link>
               <Link
                 href="/chatbot"
-                className="flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
+                className="flex size-10 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100 sm:size-9"
                 aria-label="Assistant chat"
               >
                 <AiMark size="xs" />
               </Link>
               <Link
                 href="/notifications"
-                className="relative flex size-9 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100"
+                className="relative flex size-10 items-center justify-center rounded-full text-[#0d1b12] transition-colors hover:bg-gray-100 sm:size-9"
               >
                 <span className="material-symbols-outlined text-[20px]">notifications</span>
                 {notifCount != null && notifCount > 0 ? (

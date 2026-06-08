@@ -7,7 +7,12 @@ import AssistantChat from "./AssistantChat";
 import AiMark from "./AiMark";
 
 function isHiddenPath(pathname: string) {
-  return pathname === "/chatbot" || pathname.startsWith("/chatbot/");
+  return (
+    pathname === "/chatbot" ||
+    pathname.startsWith("/chatbot/") ||
+    pathname === "/chat" ||
+    pathname.startsWith("/chat/")
+  );
 }
 
 export default function AssistantWidget() {
@@ -24,11 +29,11 @@ export default function AssistantWidget() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-end p-4 sm:p-5">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-end p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:p-5 sm:pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
       <div className="pointer-events-auto flex flex-col items-end gap-3">
         {open && (
           <div
-            className="flex h-[min(520px,calc(100dvh-7rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
+            className="flex h-[min(520px,calc(100dvh-var(--app-header-height)-12.5rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] md:h-[min(520px,calc(100dvh-var(--app-header-height)-5.5rem))]"
             role="dialog"
           aria-label={t("Mollmart Assistant")}
           >

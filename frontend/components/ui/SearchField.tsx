@@ -1,9 +1,9 @@
 "use client";
 
 import type { FormEvent, ReactNode } from "react";
+import { searchInputClassName } from "@/components/ui/fieldStyles";
 
-export const searchInputClassName =
-  "h-11 w-full min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-10 pr-10 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-2 focus:ring-primary/15";
+export { searchInputClassName };
 
 const widthClass = {
   narrow: "max-w-sm",
@@ -41,7 +41,7 @@ export function SearchField({
 }: SearchFieldProps) {
   const field = (
     <div className={`relative min-w-0 w-full ${widthClass[width]} ${className}`}>
-      <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-[var(--text-muted)]">
+      <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[22px] text-[var(--text-muted)]">
         search
       </span>
       <input
@@ -58,7 +58,7 @@ export function SearchField({
         <button
           type="button"
           onClick={() => onChange("")}
-          className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+          className="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
           aria-label="Clear search"
         >
           <span className="material-symbols-outlined text-[18px]">close</span>

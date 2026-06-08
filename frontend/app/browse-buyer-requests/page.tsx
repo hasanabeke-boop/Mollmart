@@ -882,10 +882,10 @@ export default function BrowseBuyerRequestsPage() {
                   </div>
                 )}
               </div>
-              <div className="p-8 flex flex-col justify-between flex-1">
+              <div className="flex flex-1 flex-col justify-between p-4 sm:p-6 lg:p-8">
                 <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
+                  <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
                       <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1 block">
                         Category: {featuredRequest.category}
                       </span>
@@ -893,7 +893,7 @@ export default function BrowseBuyerRequestsPage() {
                         {featuredRequest.title}
                       </h3>
                     </div>
-                    <div className="text-right ml-4 shrink-0">
+                    <div className="shrink-0 sm:text-right">
                       <p className="text-sm text-slate-400 mb-1">
                         Quantity: {formatQuantityLabel(featuredRequest.quantity)}
                       </p>
@@ -920,8 +920,8 @@ export default function BrowseBuyerRequestsPage() {
                     {featuredRequest.description}
                   </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-slate-400 text-sm">
                         calendar_today
@@ -937,11 +937,11 @@ export default function BrowseBuyerRequestsPage() {
                       {featuredRequest.offerCount} Offers
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
                     <button
                       type="button"
                       onClick={() => setOfferTarget(featuredRequest)}
-                      className="bg-[#607afb] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
+                      className="w-full rounded-xl bg-[#607afb] px-6 py-3 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:opacity-90 active:scale-[0.98] sm:w-auto sm:px-8"
                     >
                       Make an Offer
                     </button>
@@ -949,7 +949,7 @@ export default function BrowseBuyerRequestsPage() {
                       <button
                         type="button"
                         onClick={() => setAuctionTarget(featuredRequest)}
-                        className="border-2 border-[#607afb] text-[#607afb] px-8 py-3 rounded-xl font-bold hover:bg-[#607afb]/5 transition-all"
+                        className="w-full rounded-xl border-2 border-[#607afb] px-6 py-3 font-bold text-[#607afb] transition-all hover:bg-[#607afb]/5 sm:w-auto sm:px-8"
                       >
                         {t("Join auction")}
                       </button>

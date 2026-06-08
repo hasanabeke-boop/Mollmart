@@ -18,7 +18,7 @@ export default function WorkspaceModeToggle({ compact = false }: Props) {
     <div
       className={`workspace-toggle relative grid shrink-0 grid-cols-2 rounded-md border border-[var(--border)] bg-[var(--surface-muted)] p-0.5 font-bold ${
         compact
-          ? "min-w-[6.25rem] text-[9px]"
+          ? "min-h-10 min-w-[6.75rem] text-[10px]"
           : "min-w-[7.25rem] text-[10px] sm:min-w-[8rem] sm:text-xs"
       }`}
       role="group"

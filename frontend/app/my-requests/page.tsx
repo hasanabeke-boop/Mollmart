@@ -585,7 +585,7 @@ export default function MyRequestsPage() {
                             type="button"
                             disabled={busy}
                             onClick={() => void publishDraft(request)}
-                            className="rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                            className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
                           >
                             {busy ? "…" : "Publish"}
                           </button>
@@ -593,7 +593,7 @@ export default function MyRequestsPage() {
                         <button
                           type="button"
                           onClick={() => openEdit(request)}
-                          className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-hover)]"
+                          className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-hover)]"
                         >
                           Edit
                         </button>
@@ -602,7 +602,7 @@ export default function MyRequestsPage() {
                             type="button"
                             disabled={busy || confirmDialog != null}
                             onClick={() => setConfirmDialog({ kind: "delete", request })}
-                            className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200"
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200"
                           >
                             {busy ? "…" : "Delete"}
                           </button>
@@ -612,7 +612,7 @@ export default function MyRequestsPage() {
                             type="button"
                             disabled={busy || confirmDialog != null}
                             onClick={() => setConfirmDialog({ kind: "cancel", request })}
-                            className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+                            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
                           >
                             {busy ? "…" : "Cancel"}
                           </button>
@@ -679,7 +679,7 @@ export default function MyRequestsPage() {
                               type="button"
                               disabled={acceptingId === offer.id || offer.status === "accepted"}
                               onClick={() => acceptOffer(offer)}
-                              className="w-full rounded-lg bg-primary py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                              className="w-full rounded-lg bg-primary py-2.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
                             >
                               {offer.status === "accepted"
                                 ? "Accepted"
@@ -725,7 +725,7 @@ export default function MyRequestsPage() {
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="flex size-10 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 aria-label="Close"
               >
                 <span className="material-symbols-outlined text-[22px]">close</span>
@@ -774,7 +774,7 @@ export default function MyRequestsPage() {
                       )}
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-500">Quantity</label>
                       <input

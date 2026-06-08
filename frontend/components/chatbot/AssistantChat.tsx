@@ -35,7 +35,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
           <div className="flex shrink-0 items-center gap-1">
             <Link
               href="/chatbot"
-              className="flex size-8 items-center justify-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+              className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
               aria-label={t("Open full page")}
               title={t("Open full page")}
             >
@@ -45,7 +45,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
               <button
                 type="button"
                 onClick={onClose}
-                className="flex size-8 items-center justify-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+                className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
                 aria-label={t("Close assistant")}
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
@@ -75,7 +75,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
   }
 
   return (
-    <div className="app-page-min-height flex flex-col bg-[var(--background)]">
+    <div className="app-page-min-height flex min-h-0 flex-col bg-[var(--background)]">
       <header className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-5 lg:px-8">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <AiMark size="lg" />

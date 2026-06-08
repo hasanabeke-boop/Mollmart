@@ -5,7 +5,7 @@ import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import BuyerSidebar, { getBuyerActiveNav, type BuyerNavId } from "@/components/buyer/BuyerSidebar";
 import SellerSidebar, { getSellerActiveNav, type SellerNavId } from "@/components/seller/SellerSidebar";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
-import { Search } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState, type ReactNode } from "react";
 
@@ -117,23 +117,26 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             </p>
             <WorkspaceModeToggle compact />
           </div>
-          <form className="border-t border-[var(--border)] px-3 pb-3 pt-2 sm:hidden sm:px-4" onSubmit={handleMobileSearch}>
-            <label className="app-search-form relative mx-auto flex w-full items-center">
-              <span className="absolute left-2.5 text-[var(--text-muted)]">
-                <Search className="h-3.5 w-3.5" />
-              </span>
-              <input
-                type="search"
+          <form className="border-t border-[var(--border)] px-3 pb-3 pt-2 sm:px-4" onSubmit={handleMobileSearch}>
+            <div className="app-search-form mx-auto w-full">
+              <SearchField
                 value={mobileSearch}
-                onChange={(e) => setMobileSearch(e.target.value)}
+                onChange={setMobileSearch}
+                width="full"
                 placeholder="Search…"
-                className="w-full rounded-lg bg-[var(--surface-muted)] py-2 pl-8 pr-3 text-sm text-[var(--foreground)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-primary/30"
+                clearable={false}
               />
-            </label>
+            </div>
           </form>
         </div>
 
-        <div className="app-main-content min-w-0 flex-1">{children}</div>
+        <div
+          className={`app-main-content min-w-0 flex-1${
+            pathname === "/chat" || pathname.startsWith("/chat/") ? " app-main-content--flush-bottom" : ""
+          }`}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

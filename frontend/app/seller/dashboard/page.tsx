@@ -141,14 +141,14 @@ export default function SellerDashboardPage() {
     >
     <div className="app-page-min-height relative w-full bg-[#f5f6f8]">
       <main className="app-page-min-height flex flex-col">
-        <header className="sticky top-[var(--app-header-height)] z-20 flex h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-6 backdrop-blur">
+        <header className="sticky top-[var(--app-header-height)] z-20 hidden h-16 w-full items-center justify-between border-b border-[#e7f3eb] bg-white/90 px-4 backdrop-blur md:flex md:px-6">
           <div className="hidden md:block">
             <SearchField
               value={search}
               onChange={setSearch}
               placeholder="Search live requests…"
               width="narrow"
-              inputClassName="h-10 w-full min-w-0 rounded-lg border-0 bg-gray-100 py-2 pl-10 pr-10 text-sm text-[#0d1b12] outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-primary/30"
+              inputClassName="h-12 w-full min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] py-2.5 pl-11 pr-11 text-base text-[var(--foreground)] outline-none placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
             />
           </div>
           <div className="flex items-center gap-4">

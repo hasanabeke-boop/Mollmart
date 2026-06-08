@@ -68,6 +68,17 @@ export default function BuyerSidebar({ active, open, onClose }: Props) {
         }`}
       >
         <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
+          <div className="mb-2 flex items-center justify-between md:hidden">
+            <span className="text-sm font-semibold text-[var(--foreground)]">Menu</span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
+              aria-label="Close menu"
+            >
+              <span className="material-symbols-outlined text-[22px]">close</span>
+            </button>
+          </div>
           <nav className="flex flex-col gap-2 pt-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.id;

@@ -120,7 +120,7 @@ export function Composer({ input, setInput, suggestions, loading, error, onSend,
               type="button"
               disabled={loading}
               onClick={() => void onSend(suggestion)}
-              className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] text-[var(--foreground)] transition hover:bg-[var(--surface-hover)] disabled:opacity-50"
+              className="min-h-9 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--foreground)] transition hover:bg-[var(--surface-hover)] disabled:opacity-50"
             >
               {suggestion}
             </button>
@@ -133,15 +133,16 @@ export function Composer({ input, setInput, suggestions, loading, error, onSend,
           onChange={(event) => setInput(event.target.value)}
           placeholder={t("Ask Mollmart Assistant...")}
           maxLength={2000}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-base text-[var(--foreground)] outline-none placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="h-10 shrink-0 rounded-lg bg-primary px-3.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40"
+          className="flex h-12 shrink-0 items-center justify-center rounded-xl bg-primary px-4 text-base font-medium text-white transition hover:opacity-90 disabled:opacity-40 sm:px-5"
           aria-label={t("Send message")}
         >
-          {t("Send message")}
+          <span className="material-symbols-outlined text-[22px] sm:hidden">send</span>
+          <span className="hidden sm:inline">{t("Send message")}</span>
         </button>
       </form>
     </div>
