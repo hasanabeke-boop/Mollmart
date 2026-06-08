@@ -7,7 +7,9 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { uploadCatalogImage } from "@/lib/catalog";
 import { resendVerificationEmail } from "@/lib/emailVerification";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import RoleGate from "@/components/auth/RoleGate";
+import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -77,6 +79,7 @@ function CreateProductRequestContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const lastPrefillSlug = useRef<string | null>(null);
@@ -89,6 +92,7 @@ function CreateProductRequestContent() {
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [auctionEnabled, setAuctionEnabled] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -268,6 +272,7 @@ function CreateProductRequestContent() {
         budgetMax: Number(budget),
         currency,
         isNegotiable: false,
+        auctionEnabled,
       };
       if (deadlineLocal.trim()) {
         body.deadlineAt = new Date(deadlineLocal).toISOString();
@@ -310,6 +315,7 @@ function CreateProductRequestContent() {
     setDeadlineLocal("");
     setLocation("");
     setDescription("");
+    setAuctionEnabled(false);
     setErrors({});
     setSubmitted(false);
     setAttachments([]);
@@ -742,6 +748,30 @@ function CreateProductRequestContent() {
                       {errors.budget}
                     </p>
                   )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={auctionEnabled}
+                      onChange={(e) => setAuctionEnabled(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-slate-800">
+                        {t("Enable reverse auction")}
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                        {t(
+                          "Optional. After you publish, sellers can join a live auction and compete by lowering price. Platform rules (timing, minimum sellers, price steps) apply automatically — you do not configure them here.",
+                        )}
+                      </span>
+                    </span>
+                  </label>
+                  <AuctionRulesHelp />
                 </div>
               </div>
 

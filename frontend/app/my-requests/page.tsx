@@ -9,6 +9,7 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
@@ -42,6 +43,7 @@ type RequestItem = {
   deadlineAt?: string | null;
   location?: string | null;
   isNegotiable?: boolean;
+  auctionEnabled?: boolean;
 };
 
 type OfferItem = {
@@ -79,6 +81,8 @@ function normalizeRequest(raw: Record<string, unknown>): RequestItem {
     deadlineAt: raw.deadlineAt != null ? String(raw.deadlineAt) : null,
     location: raw.location != null ? String(raw.location) : null,
     isNegotiable: typeof raw.isNegotiable === "boolean" ? raw.isNegotiable : Boolean(raw.isNegotiable),
+    auctionEnabled:
+      typeof raw.auctionEnabled === "boolean" ? raw.auctionEnabled : Boolean(raw.auctionEnabled),
   };
 }
 
@@ -151,6 +155,7 @@ export default function MyRequestsPage() {
   const router = useRouter();
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const { activeRole } = useWorkspace();
   const buyerWorkspace = canUseBuyerWorkspace(user, activeRole);
   const [requests, setRequests] = useState<RequestItem[]>([]);
@@ -170,6 +175,7 @@ export default function MyRequestsPage() {
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");
   const [isNegotiable, setIsNegotiable] = useState(true);
+  const [auctionEnabled, setAuctionEnabled] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionBusyId, setActionBusyId] = useState("");
@@ -257,6 +263,7 @@ export default function MyRequestsPage() {
     setDeadlineLocal(toDatetimeLocalValue(r.deadlineAt));
     setLocation(r.location ?? "");
     setIsNegotiable(Boolean(r.isNegotiable));
+    setAuctionEnabled(Boolean(r.auctionEnabled));
     setSaveError("");
     setEditOpen(true);
   }, []);
@@ -309,6 +316,9 @@ export default function MyRequestsPage() {
         if (max !== undefined) body.budgetMax = max;
         body.deadlineAt = deadlineLocal ? new Date(deadlineLocal).toISOString() : "";
         body.location = location.trim();
+        if (editRequest.status === "draft") {
+          body.auctionEnabled = auctionEnabled;
+        }
       }
 
       await apiFetchWithRefresh(`/api/v1/requests/${editRequest.id}`, {
@@ -627,14 +637,15 @@ export default function MyRequestsPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--border-muted)] pt-3">
-                  {request.status !== "draft" &&
+                  {request.auctionEnabled &&
+                    request.status !== "draft" &&
                     !["accepted", "closed", "cancelled"].includes(request.status) && (
                       <Link
                         href={`/auctions/${request.id}`}
                         className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:opacity-90 sm:flex-none"
                       >
                         <span className="material-symbols-outlined text-base">gavel</span>
-                        Auction
+                        {t("Auction")}
                       </Link>
                     )}
                   <button
@@ -840,8 +851,24 @@ export default function MyRequestsPage() {
                   onChange={(e) => setIsNegotiable(e.target.checked)}
                   className="rounded border-slate-300"
                 />
-                Price is negotiable
+                {t("Price is negotiable")}
               </label>
+              {editRequest?.status === "draft" && (
+                <label className="flex items-start gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={auctionEnabled}
+                    onChange={(e) => setAuctionEnabled(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300"
+                  />
+                  <span>
+                    {t("Enable reverse auction after publish")}
+                    <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                      {t("Sellers can join a live price competition. Platform rules apply automatically.")}
+                    </span>
+                  </span>
+                </label>
+              )}
             </div>
 
             {saveError && (

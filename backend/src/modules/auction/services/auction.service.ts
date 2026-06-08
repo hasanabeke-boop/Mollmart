@@ -164,10 +164,8 @@ export class AuctionService {
 
     let session = await this.repo.findByRequestId(requestId);
     if (session == null) {
-      await this.ensureSessionForRequest(requestId);
-      session = await this.repo.findByRequestId(requestId);
+      throw notFound('Auction is not enabled for this request');
     }
-    if (session == null) throw notFound('Auction session missing');
 
     if (!['gathering', 'scheduled'].includes(session.status)) {
       throw conflict('Registration is closed for this auction');

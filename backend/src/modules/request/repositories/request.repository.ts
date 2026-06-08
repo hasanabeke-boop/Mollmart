@@ -36,6 +36,7 @@ export interface CreateRequestRecordInput {
   location?: string;
   deadlineAt?: Date;
   isNegotiable: boolean;
+  auctionEnabled?: boolean;
   attachments: Array<{
     fileName: string;
     fileUrl: string;
@@ -54,6 +55,7 @@ export interface UpdateRequestRecordInput {
   location?: string | null;
   deadlineAt?: Date | null;
   isNegotiable?: boolean;
+  auctionEnabled?: boolean;
 }
 
 export interface RequestRepositoryLike {
@@ -80,6 +82,7 @@ export class RequestRepository implements RequestRepositoryLike {
         quantity: data.quantity ?? 1,
         currency: data.currency,
         isNegotiable: data.isNegotiable,
+        auctionEnabled: data.auctionEnabled ?? false,
         ...(data.budgetMin !== undefined ? { budgetMin: data.budgetMin } : {}),
         ...(data.budgetMax !== undefined ? { budgetMax: data.budgetMax } : {}),
         ...(data.location !== undefined ? { location: data.location } : {}),

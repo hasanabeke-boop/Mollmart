@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import AuctionRoom from "@/components/auction/AuctionRoom";
 import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
 import { apiFetchWithRefresh } from "@/lib/api";
@@ -13,6 +14,7 @@ type Props = { params: Promise<{ requestId: string }> };
 export default function AuctionWatchPage({ params }: Props) {
   const { requestId } = use(params);
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [session, setSession] = useState<AuctionSessionView | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,13 +28,13 @@ export default function AuctionWatchPage({ params }: Props) {
         );
         if (!cancelled) setSession(data);
       } catch {
-        if (!cancelled) setError("Auction not found for this request yet.");
+        if (!cancelled) setError(t("Auction not found for this request yet."));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [requestId]);
+  }, [requestId, t]);
 
   const isBuyer = user?.id === session?.request.buyerId;
   const isParticipant = session?.participants.some((p) => p.isMe);
@@ -46,7 +48,7 @@ export default function AuctionWatchPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-primary"
         >
           <span className="material-symbols-outlined text-lg">arrow_back</span>
-          Back
+          {t("Back")}
         </Link>
         <AuctionRulesHelp />
       </div>
@@ -55,8 +57,9 @@ export default function AuctionWatchPage({ params }: Props) {
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
           <p className="text-[var(--foreground)]">{error}</p>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Auctions open automatically when a request is published. Sellers must join before
-            trading starts.
+            {t(
+              "Auctions open automatically when a request is published. Sellers must join before trading starts.",
+            )}
           </p>
         </div>
       ) : session ? (

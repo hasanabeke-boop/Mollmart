@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch, apiFetchWithRefresh, resolveUploadedAssetUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseSellerWorkspace } from "@/lib/workspace";
@@ -35,6 +36,7 @@ type BuyerRequest = {
   urgent?: boolean;
   image?: string;
   isNegotiable?: boolean;
+  auctionEnabled?: boolean;
 };
 
 const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor: string; barColor: string }> = {
@@ -493,6 +495,7 @@ function OfferModal({
 
 export default function BrowseBuyerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [activeTab, setActiveTab] = useState<FilterTab>("published");
@@ -535,6 +538,7 @@ export default function BrowseBuyerRequestsPage() {
           offerCount?: number;
           createdAt: string;
           isNegotiable?: boolean;
+          auctionEnabled?: boolean;
           attachments?: Array<{ fileUrl?: string } | string>;
         }>;
         items?: Array<{
@@ -549,6 +553,7 @@ export default function BrowseBuyerRequestsPage() {
           offerCount?: number;
           createdAt: string;
           isNegotiable?: boolean;
+          auctionEnabled?: boolean;
           attachments?: Array<{ fileUrl?: string } | string>;
         }>;
         hasRecommendationSignals?: boolean;
@@ -573,6 +578,7 @@ export default function BrowseBuyerRequestsPage() {
         offerCount?: number;
         createdAt: string;
         isNegotiable?: boolean;
+        auctionEnabled?: boolean;
         attachments?: Array<{ fileUrl?: string } | string>;
       }>).map((r) => {
         const style = resolveCategoryVisualStyle(catalogCategories, r.categoryId);
@@ -592,6 +598,7 @@ export default function BrowseBuyerRequestsPage() {
           offerCount: r.offerCount || 0,
           status: r.status,
           isNegotiable: Boolean(r.isNegotiable),
+          auctionEnabled: Boolean(r.auctionEnabled),
           image: firstAttachmentImageUrl(r.attachments),
         };
       });
@@ -951,13 +958,15 @@ export default function BrowseBuyerRequestsPage() {
                     >
                       Make an Offer
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuctionTarget(featuredRequest)}
-                      className="border-2 border-[#607afb] text-[#607afb] px-8 py-3 rounded-xl font-bold hover:bg-[#607afb]/5 transition-all"
-                    >
-                      Join auction
-                    </button>
+                    {featuredRequest.auctionEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setAuctionTarget(featuredRequest)}
+                        className="border-2 border-[#607afb] text-[#607afb] px-8 py-3 rounded-xl font-bold hover:bg-[#607afb]/5 transition-all"
+                      >
+                        {t("Join auction")}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1051,13 +1060,15 @@ export default function BrowseBuyerRequestsPage() {
                   >
                     Make an Offer
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setAuctionTarget(req)}
-                    className="w-full flex-1 border-2 border-[#607afb] text-[#607afb] py-3 rounded-xl font-bold hover:bg-[#607afb]/5 active:scale-[0.98] transition-all"
-                  >
-                    Join auction
-                  </button>
+                  {req.auctionEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => setAuctionTarget(req)}
+                      className="w-full flex-1 border-2 border-[#607afb] text-[#607afb] py-3 rounded-xl font-bold hover:bg-[#607afb]/5 active:scale-[0.98] transition-all"
+                    >
+                      {t("Join auction")}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

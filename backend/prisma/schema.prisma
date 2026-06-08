@@ -332,6 +332,7 @@ model Request {
   status        RequestStatus          @default(draft)
   offerCount    Int                    @default(0)
   isNegotiable  Boolean                @default(false)
+  auctionEnabled Boolean               @default(false)
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   publishedAt   DateTime?

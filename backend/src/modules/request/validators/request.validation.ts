@@ -22,6 +22,7 @@ export const createRequestSchema = {
     location: Joi.string().trim().max(150).optional(),
     deadlineAt: isoDate.optional(),
     isNegotiable: Joi.boolean().default(false),
+    auctionEnabled: Joi.boolean().default(false),
     attachments: Joi.array().items(attachmentSchema).max(10).default([])
   })
 };
@@ -40,7 +41,8 @@ export const updateRequestSchema = {
     currency: currency.optional(),
     location: Joi.string().trim().allow('').max(150).optional(),
     deadlineAt: Joi.alternatives().try(isoDate, Joi.string().valid('')).optional(),
-    isNegotiable: Joi.boolean().optional()
+    isNegotiable: Joi.boolean().optional(),
+    auctionEnabled: Joi.boolean().optional()
   }).min(1)
 };
 

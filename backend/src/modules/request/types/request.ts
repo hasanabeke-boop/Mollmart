@@ -17,6 +17,7 @@ export interface CreateRequestInput {
   location?: string;
   deadlineAt?: string;
   isNegotiable?: boolean;
+  auctionEnabled?: boolean;
   attachments?: RequestAttachmentInput[];
 }
 
