@@ -11,15 +11,16 @@ type AssistantChatProps = {
 };
 
 function roleSubtitle(role: string | undefined, t: (text: string) => string) {
-  if (role === "buyer") return t("Context-aware help for buyer workflows and deployment");
-  if (role === "seller") return t("Context-aware help for seller workflows and deployment");
-  if (role === "admin") return t("Context-aware help for admin workflows and deployment");
-  return t("Context-aware help for workflows and deployment");
+  if (role === "buyer") return t("Help with requests, offers, chat, and orders");
+  if (role === "seller") return t("Help with buyer requests, offers, showcase, and auctions");
+  if (role === "admin") return t("Help with users, moderation, categories, and orders");
+  return t("Help with Mollmart buyer and seller workflows");
 }
 
 export default function AssistantChat({ variant = "page", onClose }: AssistantChatProps) {
   const compact = variant === "panel";
-  const { user, t, messages, input, setInput, suggestions, loading, error, sendMessage } = useChatbot();
+  const { user, assistantRole, t, messages, input, setInput, suggestions, loading, error, sendMessage } =
+    useChatbot();
 
   if (variant === "panel") {
     return (
@@ -29,7 +30,9 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
             <AiMark size="md" />
             <div className="min-w-0">
               <h2 className="truncate text-sm font-semibold text-[var(--foreground)]">{t("Mollmart Assistant")}</h2>
-              <p className="truncate text-xs text-[var(--text-muted)]">{t("Need help? Ask anything.")}</p>
+              <p className="truncate text-xs text-[var(--text-muted)]">
+                {roleSubtitle(assistantRole === "guest" ? user?.role : assistantRole, t)}
+              </p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -81,7 +84,9 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
           <AiMark size="lg" />
           <div className="min-w-0">
             <h1 className="text-lg font-semibold text-[var(--foreground)]">{t("Mollmart Assistant")}</h1>
-            <p className="truncate text-sm text-[var(--text-muted)]">{roleSubtitle(user?.role, t)}</p>
+            <p className="truncate text-sm text-[var(--text-muted)]">
+              {roleSubtitle(assistantRole === "guest" ? user?.role : assistantRole, t)}
+            </p>
           </div>
         </div>
       </header>

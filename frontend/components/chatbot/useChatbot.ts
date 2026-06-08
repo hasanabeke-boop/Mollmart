@@ -1,24 +1,43 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import type { ChatbotHistoryItem, ChatbotReply, ChatMessage } from "./types";
 
-const baseStarterPrompts = [
-  "How do I create a request?",
-  "How do sellers send offers?",
-  "How does chat work?",
-  "What do we need to deploy?",
-];
+/** Aligned with backend MOLLMART_FAQ — chips map to FAQ keyword matching */
+const guestStarterPrompts = [
+  "How do I create and publish a buyer request?",
+  "How do sellers find buyer requests?",
+  "How do chat and demo payment work?",
+  "How do I register and log in?",
+] as const;
 
 const promptsByRole = {
-  buyer: ["How do I publish my request?", "How do I accept an offer?", "Why do I have no chat?"],
-  seller: ["How do I find buyer requests?", "How do I send a strong offer?", "Where are my seller metrics?"],
-  admin: ["How do I manage users?", "How does moderation work?", "How do I manage categories?"],
+  buyer: [
+    "How do I accept a seller offer?",
+    "Why does my request have no offers?",
+    "How do chat and demo payment work?",
+    "What happens after I accept an offer?",
+  ],
+  seller: [
+    "How do sellers find buyer requests?",
+    "How do I send a strong seller offer?",
+    "Why can a seller send only one offer per request?",
+    "How do reverse auctions work on Mollmart?",
+  ],
+  admin: [
+    "What can admins do in Mollmart?",
+    "How does moderation work?",
+    "Where are request-deal orders?",
+    "What do notifications cover?",
+  ],
 } as const;
+
+type AssistantRole = keyof typeof promptsByRole | "guest";
 
 function toHistoryItem(item: ChatMessage): ChatbotHistoryItem {
   return {
@@ -29,13 +48,27 @@ function toHistoryItem(item: ChatMessage): ChatbotHistoryItem {
   };
 }
 
-function createWelcomeMessage(t: (text: string) => string): ChatMessage {
+function resolveAssistantRole(
+  userRole: string | undefined,
+  workspaceRole: string | undefined,
+): AssistantRole {
+  const role = workspaceRole ?? userRole;
+  if (role === "buyer" || role === "seller" || role === "admin") return role;
+  return "guest";
+}
+
+function welcomeKeyForRole(role: AssistantRole): string {
+  if (role === "buyer") return "Assistant welcome buyer";
+  if (role === "seller") return "Assistant welcome seller";
+  if (role === "admin") return "Assistant welcome admin";
+  return "Assistant welcome guest";
+}
+
+function createWelcomeMessage(t: (text: string) => string, role: AssistantRole): ChatMessage {
   return {
     id: "welcome",
     role: "assistant",
-    content: t(
-      "Ask about requests, offers, chat, profiles, notifications, admin tools, or deployment. I will keep the thread context as we go.",
-    ),
+    content: t(welcomeKeyForRole(role)),
     createdAt: new Date().toISOString(),
     intent: "greeting",
   };
@@ -43,30 +76,41 @@ function createWelcomeMessage(t: (text: string) => string): ChatMessage {
 
 export function useChatbot() {
   const { user } = useAuth();
+  const workspace = useWorkspaceOptional();
   const { language, t } = useLanguage();
   const pathname = usePathname();
 
-  const starterPrompts = useMemo(
-    () =>
-      user?.role
-        ? [...promptsByRole[user.role], "What do we need to deploy?"].map((prompt) => t(prompt))
-        : baseStarterPrompts.map((prompt) => t(prompt)),
-    [t, user?.role],
-  );
+  const assistantRole = resolveAssistantRole(user?.role, workspace?.activeRole);
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [createWelcomeMessage(t)]);
+  const starterPrompts = useMemo(() => {
+    const prompts =
+      assistantRole === "guest" ? [...guestStarterPrompts] : [...promptsByRole[assistantRole]];
+    return prompts.map((prompt) => t(prompt));
+  }, [assistantRole, t]);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [createWelcomeMessage(t, "guest")]);
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>(starterPrompts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    setMessages((current) => {
+      if (current.length === 1 && current[0]?.id === "welcome") {
+        return [createWelcomeMessage(t, assistantRole)];
+      }
+      return current;
+    });
+    setSuggestions(starterPrompts);
+  }, [assistantRole, starterPrompts, t]);
+
   const reset = useCallback(() => {
-    setMessages([createWelcomeMessage(t)]);
+    setMessages([createWelcomeMessage(t, assistantRole)]);
     setInput("");
     setSuggestions(starterPrompts);
     setError("");
     setLoading(false);
-  }, [starterPrompts, t]);
+  }, [assistantRole, starterPrompts, t]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -96,7 +140,7 @@ export function useChatbot() {
             message,
             history: nextMessages.slice(-12).map((item) => toHistoryItem(item)),
             currentPath: pathname,
-            userRole: user?.role,
+            userRole: assistantRole === "guest" ? user?.role : assistantRole,
             language,
           }),
         });
@@ -131,11 +175,12 @@ export function useChatbot() {
         setLoading(false);
       }
     },
-    [language, loading, messages, pathname, starterPrompts, t, user?.role],
+    [assistantRole, language, loading, messages, pathname, starterPrompts, t, user?.role],
   );
 
   return {
     user,
+    assistantRole,
     t,
     messages,
     input,

@@ -57,13 +57,16 @@ export function MessageList({ messages, loading, t, compact }: MessageListProps)
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 {!mine && message.actions && message.actions.length > 0 && (
-                  <ul className="mt-2 space-y-1 border-t border-[var(--border-muted)] pt-2">
-                    {message.actions.map((action) => (
-                      <li key={action} className="text-xs text-[var(--text-muted)]">
-                        {action}
+                  <ol className="mt-2.5 space-y-1.5 border-t border-[var(--border-muted)] pt-2.5">
+                    {message.actions.map((action, index) => (
+                      <li key={action} className="flex gap-2 text-xs text-[var(--text-muted)]">
+                        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0 pt-0.5">{action}</span>
                       </li>
                     ))}
-                  </ul>
+                  </ol>
                 )}
                 {!mine && message.suggestedRoute && (
                   <Link

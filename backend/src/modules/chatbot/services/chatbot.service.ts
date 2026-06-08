@@ -1,6 +1,24 @@
 import { ChatbotMessageInput, ChatbotReply } from '../types/chatbot';
 import config from '../../../config/config';
 import logger from '../../../middleware/logger';
+import {
+  buildFaqSystemContext,
+  faqAnswerForLanguage,
+  MOLLMART_FAQ,
+  type FaqEntry,
+  type FaqIntent
+} from '../knowledge/mollmartFaq';
+import {
+  enrichReplyWithPageContext,
+  expandUserQuery,
+  intelligentFaqAnalysis,
+  isVagueHelpRequest,
+  buildProactivePageReply,
+  pickContextualSuggestions,
+  summarizeConversation,
+  synthesizePartialFaqReply
+} from '../knowledge/intelligentReply';
+import { pageContextForPrompt, resolvePageContext } from '../knowledge/pageContext';
 
 type ChatbotIntent =
   | 'greeting'
@@ -11,6 +29,9 @@ type ChatbotIntent =
   | 'chat'
   | 'profile'
   | 'notifications'
+  | 'catalog'
+  | 'auction'
+  | 'orders'
   | 'deployment'
   | 'account'
   | 'admin'
@@ -29,6 +50,9 @@ const validIntents = [
   'chat',
   'profile',
   'notifications',
+  'catalog',
+  'auction',
+  'orders',
   'deployment',
   'account',
   'admin',
@@ -48,8 +72,14 @@ const knownRoutes = new Set([
   '/orders',
   '/chatbot',
   '/notifications',
+  '/products',
+  '/cart',
   '/seller/dashboard',
   '/seller/analytics',
+  '/seller/showcase',
+  '/seller/listings',
+  '/seller/products/new',
+  '/seller/auctions',
   '/help',
   '/admin',
   '/admin/categories',
@@ -58,11 +88,34 @@ const knownRoutes = new Set([
   '/admin/users'
 ]);
 
-const defaultSuggestions = [
-  'How do I create a request?',
-  'How do sellers send offers?',
-  'How does chat work?'
-];
+function defaultSuggestionsForRole(role?: ChatbotMessageInput['userRole']): string[] {
+  if (role === 'seller') {
+    return [
+      'How do I find buyer requests?',
+      'How do I send a strong offer?',
+      'How do auctions work?'
+    ];
+  }
+  if (role === 'buyer') {
+    return [
+      'How do I create a request?',
+      'How do I accept an offer?',
+      'How does chat work?'
+    ];
+  }
+  if (role === 'admin') {
+    return [
+      'How do I manage users?',
+      'How does moderation work?',
+      'Where are request-deal orders?'
+    ];
+  }
+  return [
+    'How do I create a request?',
+    'How do sellers send offers?',
+    'How do I register on Mollmart?'
+  ];
+}
 
 const routeByIntent: Partial<Record<ChatbotIntent, string>> = {
   buyer_request: '/create-product-request',
@@ -72,6 +125,9 @@ const routeByIntent: Partial<Record<ChatbotIntent, string>> = {
   chat: '/chat',
   profile: '/profile',
   notifications: '/notifications',
+  catalog: '/products',
+  auction: '/seller/auctions',
+  orders: '/orders',
   deployment: '/help',
   account: '/login',
   admin: '/admin',
@@ -91,6 +147,9 @@ const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
   chat: ['Accept an offer first', 'Open Messages', 'Agree on price, then use demo payment'],
   profile: ['Open Profile', 'Update base details', 'Save changes'],
   notifications: ['Open Notifications', 'Review unread items', 'Open the linked request or chat'],
+  catalog: ['Open Catalog', 'Add items to cart', 'Checkout from cart when ready'],
+  auction: ['Open buyer requests with auction enabled', 'Join auction as a seller', 'Track live bids in the auction room'],
+  orders: ['Open Order history', 'Find the request-deal order', 'Check status and tracking updates'],
   deployment: ['Set production environment variables', 'Run Prisma migrations', 'Build frontend and backend images/services'],
   account: ['Check email and password', 'Confirm account status', 'Check email verification setting'],
   admin: ['Open Admin', 'Review users/categories/moderation/orders', 'Apply changes carefully'],
@@ -100,8 +159,8 @@ const actionsByIntent: Partial<Record<ChatbotIntent, string[]>> = {
 
 const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 'suggestedRoute' | 'actions' | 'confidence'>> = {
   greeting: {
-    reply: 'I can guide buyers, sellers, and admins through Mollmart requests, offers, accepted-offer chat, profiles, notifications, admin tools, and deployment.',
-    suggestions: defaultSuggestions
+    reply: 'I guide buyers, sellers, and admins through Mollmart: publish requests, send offers, chat after acceptance, agree a price, run demo payment, and track request-deal orders.',
+    suggestions: defaultSuggestionsForRole()
   },
   buyer_request: {
     reply: 'Buyer flow: create a request with a clear title, category, budget, optional deadline/location, and useful details. It starts as a draft; publish it from My Requests when you are ready for sellers to send offers.',
@@ -131,6 +190,18 @@ const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 
     reply: 'Notifications surface important events such as new offers, accepted offers, messages, demo payments, order status changes, moderation changes, and account status updates.',
     suggestions: ['Where are notifications?', 'Why no notification appears?', 'How do message notifications work?']
   },
+  catalog: {
+    reply: 'The Catalog lets buyers browse seller showcase products, add items to the cart, and check out. Sellers manage listings from My showcase and can add a new product listing.',
+    suggestions: ['Where is the catalog?', 'How do I add a showcase listing?', 'How does cart checkout work?']
+  },
+  auction: {
+    reply: 'Auctions run on buyer requests with auction enabled. Sellers join from the request board; buyers can open the auction room to watch bids. Use Seller Dashboard analytics for auction activity.',
+    suggestions: ['How do I join an auction?', 'Where are active auctions?', 'How do buyer auctions start?']
+  },
+  orders: {
+    reply: 'Order history shows request-deal orders created after demo payment in chat, plus catalog orders from checkout. Open an order to see status, carrier, and tracking when available.',
+    suggestions: ['Where is my order history?', 'What happens after demo payment?', 'How does tracking work?']
+  },
   deployment: {
     reply: 'Minimum deployment needs production env values, PostgreSQL, backend hosting, frontend hosting, Prisma migrations, and secure JWT/OpenAI/SMTP secrets. Redis can usually be optional if the app is configured that way.',
     suggestions: ['Which env values are required?', 'How do I rebuild Docker?', 'Can Redis be disabled?']
@@ -152,8 +223,8 @@ const responses: Record<ChatbotIntent, Omit<ChatbotReply, 'intent' | 'source' | 
     suggestions: ['Where do I put the API key?', 'Which model should I use?', 'How do I rebuild Docker?']
   },
   fallback: {
-    reply: 'I can help with Mollmart flows: buyer requests, seller offers, accepted-offer chat, profiles, notifications, login, admin, and deployment. Tell me which screen or problem you mean.',
-    suggestions: defaultSuggestions
+    reply: 'I can help with Mollmart: buyer requests, seller offers, chat, catalog, auctions, orders, profiles, and notifications. Tell me what you are trying to do on this screen.',
+    suggestions: defaultSuggestionsForRole()
   }
 };
 
@@ -162,6 +233,32 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'How do I create a request?': 'Как создать запрос?',
     'How do sellers send offers?': 'Как продавцы отправляют предложения?',
     'How does chat work?': 'Как работает чат?',
+    'How do I register on Mollmart?': 'Как зарегистрироваться в Mollmart?',
+    'How do I send a strong offer?': 'Как отправить сильное предложение?',
+    'Can I enable auction on my request?': 'Можно ли включить аукцион в запросе?',
+    'How do I create a request with auction?': 'Как создать запрос с аукционом?',
+    'How do buyer requests work?': 'Как работают запросы покупателей?',
+    'Where is cart?': 'Где корзина?',
+    'Where is my order history?': 'Где история моих заказов?',
+    'How do auctions work?': 'Как работают аукционы?',
+    'Where are request-deal orders?': 'Где заказы по сделкам из запросов?',
+    'Where is the catalog?': 'Где каталог?',
+    'How do I add a showcase listing?': 'Как добавить товар в витрину?',
+    'How does cart checkout work?': 'Как оформить заказ из корзины?',
+    'How do I join an auction?': 'Как присоединиться к аукциону?',
+    'Where are active auctions?': 'Где активные аукционы?',
+    'How do buyer auctions start?': 'Как начинаются аукционы покупателя?',
+    'What happens after demo payment?': 'Что происходит после демо-оплаты?',
+    'How does tracking work?': 'Как работает отслеживание?',
+    'Open Catalog': 'Открыть каталог',
+    'Add items to cart': 'Добавить товары в корзину',
+    'Checkout from cart when ready': 'Оформить заказ из корзины',
+    'Open buyer requests with auction enabled': 'Открыть заявки с включённым аукционом',
+    'Join auction as a seller': 'Присоединиться к аукциону как продавец',
+    'Track live bids in the auction room': 'Следить за ставками в комнате аукциона',
+    'Open Order history': 'Открыть историю заказов',
+    'Find the request-deal order': 'Найти заказ по сделке из запроса',
+    'Check status and tracking updates': 'Проверить статус и обновления трекинга',
     'What should I write in a request?': 'Что написать в запросе?',
     'How do I publish a draft?': 'Как опубликовать черновик?',
     'How do I compare offers?': 'Как сравнить предложения?',
@@ -235,6 +332,32 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
     'How do I create a request?': 'Сұранысты қалай жасаймын?',
     'How do sellers send offers?': 'Сатушылар ұсынысты қалай жібереді?',
     'How does chat work?': 'Чат қалай жұмыс істейді?',
+    'How do I register on Mollmart?': 'Mollmart-та қалай тіркелемін?',
+    'How do I send a strong offer?': 'Күшті ұсынысты қалай жіберемін?',
+    'Can I enable auction on my request?': 'Сұранысқа аукцион қосуға бола ма?',
+    'How do I create a request with auction?': 'Аукционды сұранысқа қалай қосамын?',
+    'How do buyer requests work?': 'Сатып алушы сұраныстары қалай жұмыс істейді?',
+    'Where is cart?': 'Себет қайда?',
+    'Where is my order history?': 'Тапсырыс тарихым қайда?',
+    'How do auctions work?': 'Аукциондар қалай жұмыс істейді?',
+    'Where are request-deal orders?': 'Сұраныс мәмілелерінің тапсырыстары қайда?',
+    'Where is the catalog?': 'Каталог қайда?',
+    'How do I add a showcase listing?': 'Витринаға тауар қалай қосамын?',
+    'How does cart checkout work?': 'Себеттен тапсырыс қалай рәсімделеді?',
+    'How do I join an auction?': 'Аукционға қалай қосыламын?',
+    'Where are active auctions?': 'Белсенді аукциондар қайда?',
+    'How do buyer auctions start?': 'Сатып алушы аукциондары қалай басталады?',
+    'What happens after demo payment?': 'Демо төлемнен кейін не болады?',
+    'How does tracking work?': 'Трекинг қалай жұмыс істейді?',
+    'Open Catalog': 'Каталогты ашу',
+    'Add items to cart': 'Тауарларды себетке қосу',
+    'Checkout from cart when ready': 'Дайын болғанда себеттен тапсырыс беру',
+    'Open buyer requests with auction enabled': 'Аукцион қосылған сұраныстарды ашу',
+    'Join auction as a seller': 'Сатушы ретінде аукционға қосылу',
+    'Track live bids in the auction room': 'Аукцион бөлмесінде ставкаларды бақылау',
+    'Open Order history': 'Тапсырыс тарихын ашу',
+    'Find the request-deal order': 'Сұраныс мәмілесінің тапсырысын табу',
+    'Check status and tracking updates': 'Статус пен трекинг жаңартуларын тексеру',
     'What should I write in a request?': 'Сұранысқа не жазу керек?',
     'How do I publish a draft?': 'Черновикті қалай жариялаймын?',
     'How do I compare offers?': 'Ұсыныстарды қалай салыстырамын?',
@@ -308,7 +431,7 @@ const chatbotTranslations: Record<Exclude<ChatbotLanguage, 'en'>, Record<string,
 
 const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotIntent, string>> = {
   ru: {
-    greeting: 'Я помогу покупателям, продавцам и администраторам с запросами Mollmart, предложениями, чатом после принятия предложения, профилями, уведомлениями, админ-инструментами и деплоем.',
+    greeting: 'Я помогу с Mollmart: запросы покупателей, предложения продавцов, чат после принятия, согласование цены, демо-оплата и заказы по сделкам.',
     buyer_request: 'Процесс покупателя: создайте запрос с понятным названием, категорией, бюджетом, сроком/локацией при необходимости и полезными деталями. Сначала он сохраняется как черновик; опубликуйте его в Моих запросах, когда будете готовы получать предложения продавцов.',
     buyer_offers: 'Чтобы управлять предложениями, откройте Мои запросы, выберите опубликованный запрос и сравните предложения продавцов. Принятие предложения открывает диалог в Сообщениях.',
     seller_board: 'Процесс продавца: откройте Запросы покупателей, найдите или отфильтруйте активные запросы, затем откройте подходящий и отправьте предложение. Покупатель увидит его под своим запросом.',
@@ -316,15 +439,18 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     chat: 'Сообщения создаются после того, как покупатель принимает предложение продавца. Если чат пустой, сначала проверьте, принято ли предложение для этого запроса.',
     profile: 'Профиль нужен для заполнения данных аккаунта. Продавцам важно держать информацию понятной, а покупатели могут использовать предпочтения для будущих запросов.',
     notifications: 'Уведомления показывают важные события: новые предложения, принятые предложения, сообщения, изменения модерации и статус аккаунта.',
+    catalog: 'Каталог позволяет покупателям просматривать товары продавцов, добавлять в корзину и оформлять заказ. Продавцы управляют витриной в My showcase.',
+    auction: 'Аукционы доступны на запросах с включённым auction. Продавцы присоединяются с доски заявок; покупатель открывает комнату аукциона для ставок.',
+    orders: 'История заказов показывает сделки после демо-оплаты в чате и заказы из каталога. Откройте заказ для статуса и трекинга.',
     deployment: 'Минимальный деплой требует production env значения, PostgreSQL, backend hosting, frontend hosting, миграции Prisma и безопасные JWT/OpenAI/SMTP секреты. Redis обычно можно сделать опциональным.',
     account: 'Для проблем с аккаунтом проверьте email/пароль, статус аккаунта, необходимость email-подтверждения, JWT secrets и подключение к базе данных backend.',
     admin: 'Админ-экраны нужны для управления пользователями, категориями и модерацией. Админ-действия должны быть отделены от обычных buyer/seller сценариев.',
     platform_limits: 'Mollmart поддерживает запросы, предложения, чат после принятия, демо-оплату, request-deal заказы и статус отслеживания. Реальная оплата картой, escrow, shipping labels, возвраты и интеграции с перевозчиками не входят в текущий scope.',
     assistant_setup: 'Помощник использует GEMINI_API_KEY и GEMINI_MODEL на backend. OpenAI — опциональный запасной вариант. Если ключ отсутствует или API падает, включается локальная справка Mollmart.',
-    fallback: 'Я могу помочь с процессами Mollmart: запросы покупателей, предложения продавцов, чат после принятия, профили, уведомления, вход, админка и деплой. Уточните, что вы хотите сделать на этом экране.'
+    fallback: 'Могу помочь с Mollmart: запросы, предложения, чат, каталог, аукционы, заказы, профиль и уведомления. Уточните, что вы хотите сделать на этом экране.'
   },
   kk: {
-    greeting: 'Мен сатып алушыларға, сатушыларға және админдерге Mollmart сұраныстары, ұсыныстар, қабылданған ұсыныстан кейінгі чат, профильдер, хабарландырулар, админ құралдары және деплой бойынша көмектесемін.',
+    greeting: 'Mollmart бойынша көмектесемін: сатып алушы сұраныстары, сатушы ұсыныстары, қабылдаудан кейінгі чат, баға келісу, демо төлем және тапсырыстар.',
     buyer_request: 'Сатып алушы процесі: анық атауы, санаты, бюджеті, қажет болса мерзімі/орны және пайдалы мәліметтері бар сұраныс жасаңыз. Ол алдымен черновик болады; ұсыныстар алуға дайын кезде Менің сұраныстарымнан жариялаңыз.',
     buyer_offers: 'Ұсыныстарды басқару үшін Менің сұраныстарымды ашып, жарияланған сұранысты таңдаңыз да, сатушылар ұсыныстарын салыстырыңыз. Ұсынысты қабылдау Хабарламаларда диалог ашады.',
     seller_board: 'Сатушы процесі: Сатып алушы сұраныстарын ашып, белсенді сұраныстарды іздеңіз немесе сүзгіден өткізіңіз, сәйкес сұранысты ашып ұсыныс жіберіңіз.',
@@ -332,12 +458,15 @@ const localizedReplies: Record<Exclude<ChatbotLanguage, 'en'>, Record<ChatbotInt
     chat: 'Хабарламалар сатып алушы сатушы ұсынысын қабылдағаннан кейін жасалады. Чат бос болса, алдымен сол сұраныста ұсыныс қабылданғанын тексеріңіз.',
     profile: 'Профиль аккаунт деректерін толтыруға арналған. Сатушылар ақпаратты түсінікті ұстауы керек, ал сатып алушылар болашақ сұраныстар үшін қалауларды қолдана алады.',
     notifications: 'Хабарландырулар жаңа ұсыныстар, қабылданған ұсыныстар, хабарлар, модерация өзгерістері және аккаунт күйі сияқты маңызды оқиғаларды көрсетеді.',
+    catalog: 'Каталог сатып алушыларға сатушы тауарларын көру, себетке қосу және тапсырыс беруге мүмкіндік береді. Сатушылар витринаны My showcase арқылы басқарады.',
+    auction: 'Аукциондар auction қосылған сұраныстарда жүреді. Сатушылар сұраныс тақтасынан қосылады; сатып алушы ставкаларды бақылау үшін аукцион бөлмесін ашады.',
+    orders: 'Тапсырыс тарихы чаттағы демо төлемнен кейінгі мәмілелер мен каталог тапсырыстарын көрсетеді. Статус пен трекинг үшін тапсырысты ашыңыз.',
     deployment: 'Минималды деплой үшін production env мәндері, PostgreSQL, backend hosting, frontend hosting, Prisma миграциялары және қауіпсіз JWT/OpenAI/SMTP құпиялары керек. Redis көбіне опционалды бола алады.',
     account: 'Аккаунт мәселелері үшін email/құпиясөзді, аккаунт күйін, email растау талабын, JWT secrets және backend дерекқор қосылымын тексеріңіз.',
     admin: 'Админ экрандары пайдаланушыларды, санаттарды және модерацияны басқаруға арналған. Админ әрекеттері buyer/seller сценарийлерінен бөлек болуы керек.',
     platform_limits: 'Mollmart сұраныстарды, ұсыныстарды, қабылдаудан кейінгі чатты, демо төлемді, request-deal тапсырыстарын және бақылау статусын қолдайды. Нақты карта төлемі, escrow, shipping labels, қайтарымдар және тасымалдаушы интеграциялары қазіргі scope-қа кірмейді.',
     assistant_setup: 'Көмекші backend жағында GEMINI_API_KEY және GEMINI_MODEL қолданады. OpenAI — опционалды резерв. Кілт жоқ болса немесе API істемесе, локал Mollmart анықтамасы қосылады.',
-    fallback: 'Мен Mollmart процестерімен көмектесе аламын: сатып алушы сұраныстары, сатушы ұсыныстары, қабылдаудан кейінгі чат, профильдер, хабарландырулар, кіру, админ және деплой. Осы экранда не істегіңіз келетінін нақтылаңыз.'
+    fallback: 'Mollmart бойынша көмектесе аламын: сұраныстар, ұсыныстар, чат, каталог, аукциондар, тапсырыстар, профиль және хабарландырулар. Осы экранда не істегіңіз келетінін нақтылаңыз.'
   }
 };
 
@@ -441,35 +570,139 @@ function hasAnyPhrase(text: string, phrases: string[]): boolean {
 
 export class ChatbotService {
   async createReply(input: ChatbotMessageInput): Promise<ChatbotReply> {
-    if (config.gemini.apiKey.trim().length > 0) {
+    const geminiKey = config.gemini.apiKey.trim();
+    if (geminiKey.length > 0) {
       try {
-        return await this.createGeminiReply(input);
+        const reply = await this.createGeminiReply(input);
+        logger.info(`Chatbot reply via Gemini (intent=${reply.intent})`);
+        return reply;
       } catch (error) {
-        logger.warn(`Gemini chatbot fallback used: ${(error as Error).message}`);
+        const message = (error as Error).message;
+        logger.warn(`Gemini chatbot fallback used: ${message}`);
+        if (/API key not valid|403|401|PERMISSION_DENIED/i.test(message)) {
+          logger.warn(
+            'Gemini key may be invalid. Use a Google AI Studio key (usually starts with AIza) in backend GEMINI_API_KEY.'
+          );
+        }
       }
     }
 
     if (config.openai.apiKey.trim().length > 0) {
       try {
-        return await this.createOpenAIReply(input);
+        const reply = await this.createOpenAIReply(input);
+        logger.info(`Chatbot reply via OpenAI (intent=${reply.intent})`);
+        return reply;
       } catch (error) {
         logger.warn(`OpenAI chatbot fallback used: ${(error as Error).message}`);
       }
     }
 
+    logger.info('Chatbot reply via local Mollmart guidance');
     return this.createLocalReply(input);
   }
 
-  private createLocalReply(input: ChatbotMessageInput): ChatbotReply {
-    const intent = this.detectIntent(input);
-    const response = responses[intent];
+  private faqIntentToChatbot(intent: FaqIntent): ChatbotIntent {
+    if (intent === 'greeting' || intent === 'fallback') return intent;
+    return intent as ChatbotIntent;
+  }
+
+  private createFaqReply(input: ChatbotMessageInput, entry: FaqEntry, pageCtx = resolvePageContext(input.currentPath)): ChatbotReply {
     const language = this.normalizeLanguage(input.language);
-    const reply = language === 'en' ? response.reply : localizedReplies[language][intent];
+    const intent = this.faqIntentToChatbot(entry.intent);
+    const base = faqAnswerForLanguage(entry, language);
+    const reply = enrichReplyWithPageContext(base, input, language, pageCtx);
 
     return {
       intent,
       reply: this.withContext(input, intent, reply),
-      suggestions: this.translateList(response.suggestions, language),
+      suggestions: this.translateList(entry.suggestions, language),
+      source: 'local',
+      suggestedRoute: entry.route && knownRoutes.has(entry.route)
+        ? entry.route
+        : this.routeForIntent(intent, input.userRole),
+      actions: this.translateList(entry.actions, language),
+      confidence: 0.92
+    };
+  }
+
+  private createLocalReply(input: ChatbotMessageInput): ChatbotReply {
+    const language = this.normalizeLanguage(input.language);
+    const pageCtx = resolvePageContext(input.currentPath);
+
+    if (pageCtx && isVagueHelpRequest(input.message)) {
+      logger.info(`Chatbot proactive page help: ${pageCtx.path}`);
+      const proactive = buildProactivePageReply(input, pageCtx, language);
+      const relatedFaq = MOLLMART_FAQ.find((e) => e.intent === pageCtx.primaryIntent);
+      const intent = this.faqIntentToChatbot(proactive.intent);
+      return {
+        intent,
+        reply: this.withContext(input, intent, proactive.reply),
+        suggestions: this.translateList(
+          relatedFaq?.suggestions ?? defaultSuggestionsForRole(input.userRole),
+          language
+        ),
+        source: 'local',
+        suggestedRoute: proactive.route,
+        actions: this.translateList(proactive.actions, language),
+        confidence: proactive.confidence
+      };
+    }
+
+    const { ranked } = intelligentFaqAnalysis(input.message, input.userRole);
+    const top = ranked[0];
+
+    if (top && top.score >= 2.5) {
+      logger.info(`Chatbot FAQ match: ${top.entry.id} (score=${top.score.toFixed(1)})`);
+      return this.createFaqReply(input, top.entry, pageCtx);
+    }
+
+    if (top && top.score >= 1.2) {
+      const synthesized = synthesizePartialFaqReply(
+        ranked.map((r) => r.entry),
+        input,
+        language,
+        pageCtx
+      );
+      if (synthesized) {
+        logger.info(`Chatbot partial FAQ synthesis: ${ranked.map((r) => r.entry.id).join(', ')}`);
+        const intent = this.faqIntentToChatbot(top.entry.intent);
+        return {
+          intent,
+          reply: this.withContext(input, intent, synthesized),
+          suggestions: this.translateList(
+            pickContextualSuggestions(ranked.map((r) => r.entry)),
+            language
+          ),
+          source: 'local',
+          suggestedRoute:
+            top.entry.route && knownRoutes.has(top.entry.route)
+              ? top.entry.route
+              : this.routeForIntent(intent, input.userRole),
+          actions: this.translateList(top.entry.actions, language),
+          confidence: 0.82
+        };
+      }
+    }
+
+    const intent = this.detectIntent(input);
+    const response = responses[intent];
+    const baseReply = language === 'en' ? response.reply : localizedReplies[language][intent];
+    const reply = enrichReplyWithPageContext(
+      this.withContext(input, intent, baseReply),
+      input,
+      language,
+      pageCtx
+    );
+
+    const suggestions =
+      intent === 'greeting' || intent === 'fallback'
+        ? defaultSuggestionsForRole(input.userRole)
+        : response.suggestions;
+
+    return {
+      intent,
+      reply,
+      suggestions: this.translateList(suggestions, language),
       source: 'local',
       suggestedRoute: this.routeForIntent(intent, input.userRole),
       actions: this.translateList(actionsByIntent[intent] ?? [], language),
@@ -478,6 +711,11 @@ export class ChatbotService {
   }
 
   private buildUserPrompt(input: ChatbotMessageInput, intent: ChatbotIntent): string {
+    const language = this.normalizeLanguage(input.language);
+    const pageCtx = resolvePageContext(input.currentPath);
+    const { ranked } = intelligentFaqAnalysis(input.message, input.userRole);
+    const expandedQuery = expandUserQuery(input.message);
+
     const recentHistory = (input.history ?? [])
       .slice(-10)
       .map((item) => {
@@ -489,13 +727,22 @@ export class ChatbotService {
       })
       .join('\n');
 
+    const topicSummary = summarizeConversation(input.history, language);
+
     return [
       recentHistory ? `Recent conversation:\n${recentHistory}` : '',
+      topicSummary ? `Conversation summary: ${topicSummary}` : '',
       this.describeConversationMemory(input),
+      pageCtx ? `Current screen context:\n${pageContextForPrompt(pageCtx)}` : '',
       `Current path: ${input.currentPath || 'unknown'}`,
       `Current user role: ${input.userRole || 'guest'}`,
       `Detected intent hint: ${intent}`,
-      `Current user message: ${input.message}`
+      ranked[0]
+        ? `Closest FAQ: "${ranked[0].entry.question}" (relevance ${ranked[0].score.toFixed(1)}). Use its facts if applicable.`
+        : '',
+      expandedQuery !== input.message ? `Expanded query terms: ${expandedQuery}` : '',
+      `Current user message: ${input.message}`,
+      'Reply like a smart product guide: direct answer first, then numbered next steps when helpful.'
     ].filter(Boolean).join('\n\n');
   }
 
@@ -608,18 +855,22 @@ export class ChatbotService {
 
   private buildSystemPrompt(input: ChatbotMessageInput): string {
     return [
-      'You are Mollmart Assistant, a smart support chatbot inside the Mollmart marketplace app.',
-      'Current Mollmart diploma scope is Option B: buyers publish product/service requests; sellers browse buyer requests and submit offers; when a buyer accepts an offer, a buyer-seller conversation opens in Messages; both sides can agree on a final price; the buyer can run demo payment; a request-deal order is created for tracking.',
-      'Use the current role and path when helpful. If role is buyer, prefer buyer actions. If role is seller, prefer seller board/dashboard actions. If role is admin, mention admin routes only when relevant.',
-      'Use conversation memory logically: if the user asks a short follow-up such as "where", "how", "why", "next", "what about that", or "show me", keep answering about the latest remembered Mollmart topic unless the new message clearly changes topic.',
-      `Current role available to you: ${input.userRole || 'guest'}. Current path: ${input.currentPath || 'unknown'}.`,
+      'You are Mollmart Assistant, the in-app guide for the Mollmart marketplace.',
+      'Mollmart workflow: buyers publish product/service requests; sellers browse buyer requests and submit offers; when a buyer accepts an offer, Messages opens; both sides agree a final price in chat; the buyer runs demo payment; a request-deal order appears in Order history with tracking status.',
+      'Also supported: seller showcase/catalog products, cart checkout, auctions on eligible buyer requests, notifications, profiles, and admin moderation.',
+      `Current role: ${input.userRole || 'guest'}. Current path: ${input.currentPath || 'unknown'}.`,
+      'Role rules: buyer -> My Requests, Post request, Messages, Orders, Catalog, Cart. seller -> Buyer Requests, Seller Dashboard, My showcase, Active auctions, Messages, Analytics. admin -> Admin users/categories/moderation/orders.',
+      'Use conversation memory for short follow-ups ("where", "how", "next", "that") and stay on the latest Mollmart topic unless the user changes subject.',
       `Reply language: ${this.languageName(this.normalizeLanguage(input.language))}. Return reply, suggestions, and actions in that language.`,
-      'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /orders, /chatbot, /notifications, /seller/dashboard, /seller/analytics, /help, /admin, /admin/categories, /admin/moderation, /admin/orders, /admin/users.',
-      'Demo payment, request-deal orders, and tracking status are supported. Do not invent real card charging, escrow, shipping labels, carrier integrations, refunds, file uploads for requests, realtime websocket features, or unsupported social login.',
-      'For deployment: mention production env, secure secrets, PostgreSQL, Prisma migrations, frontend/backend build, Docker rebuild, CORS/SERVER_URL, and optional Redis when relevant.',
-      'For API assistant setup: mention GEMINI_API_KEY and GEMINI_MODEL in backend env (OpenAI is optional fallback), and that local fallback works without a key.',
-      'Be logical: answer the question first, then give 2-4 concrete next actions. If the request is vague, ask one direct clarifying question and still give the safest next step.',
-      'Return only JSON matching the schema. Keep reply under 900 characters. suggestions and actions should be short UI labels.'
+      'Allowed routes only: /register, /login, /profile, /create-product-request, /my-requests, /browse-buyer-requests, /chat, /orders, /chatbot, /notifications, /products, /cart, /seller/dashboard, /seller/analytics, /seller/showcase, /seller/listings, /seller/products/new, /seller/auctions, /help, /admin, /admin/categories, /admin/moderation, /admin/orders, /admin/users.',
+      'Never tell regular buyers/sellers about deployment, Docker, GEMINI_API_KEY, or server setup unless they explicitly ask about deploying or configuring the assistant API.',
+      'Do not invent real card payments, escrow, shipping labels, carrier APIs, refunds, or unsupported features.',
+      'Answer the user question first, then give 2-4 concrete next steps with real Mollmart screen names.',
+      'Use current screen context when the user is vague (e.g. "help", "what now") — explain what this page is for.',
+      'For follow-ups ("where", "next", "why not working"), use conversation summary and stay on the same topic.',
+      'Return only JSON matching the schema. Keep reply under 900 characters.',
+      '',
+      buildFaqSystemContext()
     ].join('\n');
   }
 
@@ -744,7 +995,11 @@ export class ChatbotService {
     };
 
     if (hasAnyPhrase(text, ['hello', 'hey', 'hi']) && text.split(' ').length <= 5) add('greeting', 5);
-    if (hasAnyPhrase(text, ['assistant', 'bot', 'chatbot'])) add('assistant_setup', 3);
+    if (hasAnyPhrase(text, ['gemini', 'openai api', 'api key', 'configure assistant', 'assistant api', 'smart assistant setup'])) add('assistant_setup', 5);
+
+    if (hasAnyPhrase(text, ['catalog', 'showcase', 'product listing', 'my listings', 'cart', 'checkout', 'shop'])) add('catalog', 5);
+    if (hasAnyPhrase(text, ['auction', 'auctions', 'bid', 'bidding', 'join auction'])) add('auction', 5);
+    if (hasAnyPhrase(text, ['order history', 'my orders', 'tracking number', 'carrier', 'shipment', 'delivery status'])) add('orders', 5);
 
     if (hasAnyPhrase(text, ['create request', 'post request', 'publish request', 'new request', 'buyer request', 'my request', 'draft request'])) add('buyer_request', 5);
     if (hasAnyPhrase(text, ['accept offer', 'accept offers', 'compare offers', 'my requests', 'buyer offers', 'see offers', 'offer accepted'])) add('buyer_offers', 5);
@@ -758,8 +1013,8 @@ export class ChatbotService {
     if (hasAnyPhrase(text, ['deploy', 'deployment', 'production', 'hosting', 'docker', 'build image', 'rebuild', 'vercel', 'render', 'railway', 'env'])) add('deployment', 5);
     if (hasAnyPhrase(text, ['login', 'log in', 'signup', 'sign up', 'register', 'password', 'email', 'email verification', 'forgot password'])) add('account', 5);
     if (hasAnyPhrase(text, ['admin', 'moderation', 'category', 'categories', 'users', 'block user'])) add('admin', 5);
-    if (hasAnyPhrase(text, ['payment', 'demo payment', 'checkout', 'cart', 'shipping', 'delivery tracking', 'tracking', 'order', 'orders', 'escrow', 'refund', 'invoice'])) add('platform_limits', 6);
-    if (hasAnyPhrase(text, ['openai', 'api key', 'model', 'smart assistant', 'ai assistant'])) add('assistant_setup', 5);
+    if (hasAnyPhrase(text, ['payment', 'demo payment', 'escrow', 'refund', 'invoice', 'real card', 'credit card'])) add('platform_limits', 6);
+    if (hasAnyPhrase(text, ['order', 'orders']) && !hasAnyPhrase(text, ['admin orders', 'manage orders'])) add('orders', 4);
 
     if (input.userRole === 'buyer') {
       add('buyer_request', 0.4);
@@ -775,6 +1030,11 @@ export class ChatbotService {
     const isFollowUp = this.isFollowUp(text);
     if (contextualIntent && isFollowUp) {
       add(contextualIntent, 3.5);
+    }
+
+    const faqTop = intelligentFaqAnalysis(input.message, input.userRole).ranked[0];
+    if (faqTop && faqTop.score >= 4) {
+      add(this.faqIntentToChatbot(faqTop.entry.intent), faqTop.score);
     }
 
     const [bestIntent, bestScore] = [...scores.entries()].sort((a, b) => b[1] - a[1])[0] ?? ['fallback', 0];
