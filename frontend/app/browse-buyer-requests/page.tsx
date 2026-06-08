@@ -706,16 +706,16 @@ export default function BrowseBuyerRequestsPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="mb-2 text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">
+          <h1 className="mb-2 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">
             Buyer Requests
           </h1>
-          <p className="text-slate-500">
+          <p className="text-[var(--text-muted)]">
             Find your next customer by browsing active buyer requests.
           </p>
         </div>
         <Link
           href="/seller/dashboard"
-          className="flex items-center gap-2 bg-[#607afb] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
+          className="inline-flex items-center gap-2 self-start rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:self-auto"
         >
           <span className="material-symbols-outlined text-[20px]">dashboard</span>
           Seller Dashboard

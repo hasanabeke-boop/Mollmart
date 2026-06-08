@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SearchBarRow, SearchField } from "@/components/ui/SearchField";
+import { requestStatusTone, StatusBadge } from "@/components/ui/StatusBadge";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
@@ -127,28 +128,6 @@ function canEdit(request: RequestItem): boolean {
 
 function canCancelRequest(request: RequestItem): boolean {
   return ["draft", "published", "has_offers", "in_negotiation"].includes(request.status);
-}
-
-const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  draft: { bg: "bg-slate-500/10", text: "text-slate-600 dark:text-slate-300", border: "border-slate-500/20" },
-  published: { bg: "bg-sky-500/10", text: "text-sky-700 dark:text-sky-300", border: "border-sky-500/20" },
-  has_offers: { bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300", border: "border-violet-500/20" },
-  in_negotiation: { bg: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-300", border: "border-amber-500/20" },
-  accepted: { bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-500/20" },
-  closed: { bg: "bg-slate-500/10", text: "text-slate-600 dark:text-slate-400", border: "border-slate-500/20" },
-  cancelled: { bg: "bg-rose-500/10", text: "text-rose-700 dark:text-rose-300", border: "border-rose-500/20" },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const style = STATUS_STYLES[status] ?? STATUS_STYLES.draft;
-  const label = status.replace(/_/g, " ");
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${style.bg} ${style.text} ${style.border}`}
-    >
-      {label}
-    </span>
-  );
 }
 
 export default function MyRequestsPage() {
@@ -484,7 +463,7 @@ export default function MyRequestsPage() {
       <header className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">My Requests</h1>
+            <h1 className="text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">My Requests</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)] sm:text-base">
               Review seller offers and open chats after accepting the right match.
             </p>
@@ -564,11 +543,13 @@ export default function MyRequestsPage() {
             return (
               <article
                 key={request.id}
-                className="flex h-full min-w-0 flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 transition hover:border-primary/25 hover:shadow-sm"
+                className="app-card flex h-full min-w-0 flex-col rounded-lg p-4"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge status={request.status} />
+                      <StatusBadge tone={requestStatusTone(request.status)}>
+                        {request.status.replace(/_/g, " ")}
+                      </StatusBadge>
                     <span className="text-xs text-[var(--text-muted)]">{categoryLabel(request.categoryId)}</span>
                     {request.location ? (
                       <>
