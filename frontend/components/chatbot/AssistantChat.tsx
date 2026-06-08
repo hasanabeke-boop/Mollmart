@@ -23,19 +23,19 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
 
   if (variant === "panel") {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[#f5f6f8]">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[#e7f3eb] bg-white px-4 py-3">
+      <div className="flex h-full min-h-0 flex-col bg-[var(--background)]">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <AiMark size="md" />
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-[#0d1b12]">{t("Mollmart Assistant")}</h2>
-              <p className="truncate text-[11px] text-[#4c9a66]">{t("Need help? Ask anything.")}</p>
+              <h2 className="truncate text-sm font-semibold text-[var(--foreground)]">{t("Mollmart Assistant")}</h2>
+              <p className="truncate text-xs text-[var(--text-muted)]">{t("Need help? Ask anything.")}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Link
               href="/chatbot"
-              className="flex size-8 items-center justify-center rounded-lg text-[#4c9a66] transition hover:bg-[#f5f6f8] hover:text-[#0d1b12]"
+              className="flex size-8 items-center justify-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
               aria-label={t("Open full page")}
               title={t("Open full page")}
             >
@@ -45,7 +45,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
               <button
                 type="button"
                 onClick={onClose}
-                className="flex size-8 items-center justify-center rounded-lg text-[#4c9a66] transition hover:bg-[#f5f6f8] hover:text-[#0d1b12]"
+                className="flex size-8 items-center justify-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
                 aria-label={t("Close assistant")}
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
@@ -58,7 +58,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
           <MessageList messages={messages} loading={loading} t={t} compact />
         </div>
 
-        <footer className="shrink-0 border-t border-[#e7f3eb] bg-white px-4 py-3">
+        <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <Composer
             input={input}
             setInput={setInput}
@@ -75,13 +75,13 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
   }
 
   return (
-    <div className="app-page-min-height flex flex-col bg-[#f5f6f8]">
-      <header className="shrink-0 border-b border-[#e7f3eb] bg-white px-4 py-5 lg:px-8">
+    <div className="app-page-min-height flex flex-col bg-[var(--background)]">
+      <header className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-5 lg:px-8">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <AiMark size="lg" />
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-[#0d1b12]">{t("Mollmart Assistant")}</h1>
-            <p className="truncate text-sm text-[#4c9a66]">{roleSubtitle(user?.role, t)}</p>
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">{t("Mollmart Assistant")}</h1>
+            <p className="truncate text-sm text-[var(--text-muted)]">{roleSubtitle(user?.role, t)}</p>
           </div>
         </div>
       </header>
@@ -92,7 +92,7 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
         </div>
       </div>
 
-      <section className="shrink-0 border-t border-[#e7f3eb] bg-white px-4 py-4 lg:px-8">
+      <section className="shrink-0 border-b border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <Composer
             input={input}

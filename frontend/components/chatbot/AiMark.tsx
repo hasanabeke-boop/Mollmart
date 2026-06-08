@@ -17,7 +17,7 @@ export default function AiMark({ size = "md", variant = "badge", className = "" 
   if (variant === "plain") {
     return (
       <span
-        className={`inline-flex items-center justify-center font-black tracking-tighter ${s.plain} ${className}`}
+        className={`inline-flex items-center justify-center font-semibold tracking-tight ${s.plain} ${className}`}
         aria-hidden
       >
         AI
@@ -27,7 +27,7 @@ export default function AiMark({ size = "md", variant = "badge", className = "" 
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center bg-primary/10 font-black tracking-tighter text-primary ${s.badge} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center border border-primary/20 bg-primary/8 font-semibold tracking-tight text-primary ${s.badge} ${className}`}
       aria-hidden
     >
       AI

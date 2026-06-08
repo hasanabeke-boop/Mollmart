@@ -8,6 +8,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrders, type ShopOrder } from "@/lib/shop";
+import { orderStatusTone, StatusBadge } from "@/components/ui/StatusBadge";
 
 const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
   { id: "all", label: "All orders" },
@@ -19,51 +20,12 @@ const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
-const STATUS_STYLES: Record<
-  ShopOrder["status"],
-  { label: string; dot: string; bg: string; text: string; border: string }
-> = {
-  delivered: {
-    label: "Delivered",
-    dot: "bg-emerald-500",
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-500/20",
-  },
-  shipped: {
-    label: "Shipped",
-    dot: "bg-sky-500",
-    bg: "bg-sky-500/10",
-    text: "text-sky-700 dark:text-sky-300",
-    border: "border-sky-500/20",
-  },
-  processing: {
-    label: "Processing",
-    dot: "bg-amber-500",
-    bg: "bg-amber-500/10",
-    text: "text-amber-700 dark:text-amber-300",
-    border: "border-amber-500/20",
-  },
-  cancelled: {
-    label: "Cancelled",
-    dot: "bg-rose-500",
-    bg: "bg-rose-500/10",
-    text: "text-rose-700 dark:text-rose-300",
-    border: "border-rose-500/20",
-  },
+const STATUS_LABELS: Record<ShopOrder["status"], string> = {
+  delivered: "Delivered",
+  shipped: "Shipped",
+  processing: "Processing",
+  cancelled: "Cancelled",
 };
-
-function StatusBadge({ status }: { status: ShopOrder["status"] }) {
-  const style = STATUS_STYLES[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${style.bg} ${style.text} ${style.border}`}
-    >
-      <span className={`size-1.5 rounded-full ${style.dot}`} />
-      {style.label}
-    </span>
-  );
-}
 
 function formatOrderDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, {
@@ -142,7 +104,7 @@ export default function OrdersPage() {
   return (
     <div className="app-page flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">
           {isSellerView ? "Order history" : "My orders"}
         </h1>
         <p className="max-w-2xl text-sm text-[var(--text-muted)] sm:text-base">
@@ -208,7 +170,7 @@ export default function OrdersPage() {
             return (
               <article
                 key={order.id}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 transition hover:border-primary/25 hover:shadow-sm sm:p-5"
+                className="app-card rounded-lg p-4 sm:p-5"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
                   <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
@@ -223,7 +185,7 @@ export default function OrdersPage() {
                         <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug text-[var(--foreground)] sm:text-lg">
                           {title}
                         </h2>
-                        <StatusBadge status={order.status} />
+                        <StatusBadge tone={orderStatusTone(order.status)}>{STATUS_LABELS[order.status]}</StatusBadge>
                       </div>
                       <p className="mt-1.5 text-xs text-[var(--text-muted)] sm:text-sm">
                         {counterpartyLabel}: <span className="text-[var(--foreground)]">{counterparty}</span>

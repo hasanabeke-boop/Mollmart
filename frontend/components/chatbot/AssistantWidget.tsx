@@ -28,7 +28,7 @@ export default function AssistantWidget() {
       <div className="pointer-events-auto flex flex-col items-end gap-3">
         {open && (
           <div
-            className="flex h-[min(520px,calc(100dvh-7rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#e7f3eb] bg-white shadow-xl shadow-black/10"
+            className="flex h-[min(520px,calc(100dvh-7rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
             role="dialog"
           aria-label={t("Mollmart Assistant")}
           >
@@ -39,10 +39,10 @@ export default function AssistantWidget() {
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className={`flex size-14 items-center justify-center rounded-full shadow-lg transition ${
+          className={`flex size-12 items-center justify-center rounded-full border transition ${
             open
-              ? "bg-[#0d1b12] text-white hover:bg-[#1a2e22]"
-              : "bg-primary text-white hover:bg-[#4b63e8] shadow-primary/25"
+              ? "border-[var(--border)] bg-[var(--foreground)] text-[var(--background)]"
+              : "border-transparent bg-primary text-white hover:opacity-90"
           }`}
           aria-label={open ? t("Close assistant") : t("Assistant")}
           aria-expanded={open}
