@@ -1,20 +1,14 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useAuth, type ApiError, type User } from "@/context/AuthContext";
+import { useAuth, type ApiError } from "@/context/AuthContext";
+import { getAuthenticatedHomePath } from "@/lib/authRoutes";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch } from "@/lib/api";
 import { resendVerificationEmail } from "@/lib/emailVerification";
 import Link from "next/link";
 import { MollmartLogo } from "@/components/brand/MollmartLogo";
 import { useRouter } from "next/navigation";
-
-function postLoginPath(role: User["role"]): string {
-  if (role === "admin") return "/admin";
-  if (role === "seller") return "/browse-buyer-requests";
-  if (role === "buyer") return "/my-requests";
-  return "/";
-}
 
 function safeReturnUrl(value: string | null): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
@@ -63,7 +57,7 @@ export default function LoginPage() {
   }, [router]);
 
   if (user) {
-    router.replace(returnUrl || postLoginPath(user.role));
+    router.replace(returnUrl || getAuthenticatedHomePath(user));
     return null;
   }
 
@@ -85,7 +79,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const loggedIn = await login(email, password);
-      router.push(returnUrl || postLoginPath(loggedIn.role));
+      router.push(returnUrl || getAuthenticatedHomePath(loggedIn));
     } catch (err: unknown) {
       const apiErr = err as Error & { status?: number; data?: ApiError };
       if (apiErr.data?.errors) {

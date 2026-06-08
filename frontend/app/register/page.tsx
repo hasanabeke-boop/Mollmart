@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth, type ApiError } from "@/context/AuthContext";
+import { getAuthenticatedHomePath } from "@/lib/authRoutes";
 import Link from "next/link";
 import { MollmartLogo } from "@/components/brand/MollmartLogo";
 import { useRouter } from "next/navigation";
@@ -30,7 +31,7 @@ export default function RegisterPage() {
   }, []);
 
   if (user) {
-    router.replace("/");
+    router.replace(getAuthenticatedHomePath(user));
     return null;
   }
 
