@@ -124,6 +124,28 @@ function canCancelRequest(request: RequestItem): boolean {
   return ["draft", "published", "has_offers", "in_negotiation"].includes(request.status);
 }
 
+const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  draft: { bg: "bg-slate-500/10", text: "text-slate-600 dark:text-slate-300", border: "border-slate-500/20" },
+  published: { bg: "bg-sky-500/10", text: "text-sky-700 dark:text-sky-300", border: "border-sky-500/20" },
+  has_offers: { bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300", border: "border-violet-500/20" },
+  in_negotiation: { bg: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-300", border: "border-amber-500/20" },
+  accepted: { bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-500/20" },
+  closed: { bg: "bg-slate-500/10", text: "text-slate-600 dark:text-slate-400", border: "border-slate-500/20" },
+  cancelled: { bg: "bg-rose-500/10", text: "text-rose-700 dark:text-rose-300", border: "border-rose-500/20" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const style = STATUS_STYLES[status] ?? STATUS_STYLES.draft;
+  const label = status.replace(/_/g, " ");
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${style.bg} ${style.text} ${style.border}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function MyRequestsPage() {
   const router = useRouter();
   const toast = useToast();
@@ -447,59 +469,96 @@ export default function MyRequestsPage() {
       ctaLabel="Open seller dashboard"
       unauthenticatedDescription="Log in as a buyer to manage requests and accept offers."
     >
-    <main className="app-page">
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">My Requests</h1>
-          <p className="mt-1 text-slate-500">Review seller offers and open chats after accepting the right match.</p>
+    <main className="app-page flex flex-col gap-6">
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">My Requests</h1>
+            <p className="mt-1 text-sm text-[var(--text-muted)] sm:text-base">
+              Review seller offers and open chats after accepting the right match.
+            </p>
+          </div>
+          <Link
+            href="/create-product-request"
+            className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:px-5 sm:py-3"
+          >
+            <span className="material-symbols-outlined text-[20px]">add</span>
+            Post Request
+          </Link>
         </div>
-        <Link
-          href="/create-product-request"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#607afb] px-5 py-3 text-sm font-bold text-white"
-        >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          Post Request
-        </Link>
-      </div>
 
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="my-requests-search">
-          Search requests
-        </label>
-        <input
-          id="my-requests-search"
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by title, description, category, status, or location..."
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-primary focus:ring-primary"
-        />
-      </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="relative min-w-0 flex-1">
+            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-[var(--text-muted)]">
+              search
+            </span>
+            <input
+              id="my-requests-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search title, category, status, location…"
+              className="h-11 w-full min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-10 pr-10 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+            />
+            {search.trim().length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+                aria-label="Clear search"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            )}
+          </div>
+          {!loading && requests.length > 0 && (
+            <p className="shrink-0 text-xs text-[var(--text-muted)] sm:text-sm">
+              {filteredRequests.length} of {requests.length} requests
+            </p>
+          )}
+        </div>
+      </header>
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-36 animate-pulse rounded-xl bg-[var(--surface-muted)]" />
           ))}
         </div>
       ) : requests.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-          <h2 className="text-lg font-bold text-slate-900">No requests yet</h2>
-          <p className="mt-2 text-sm text-slate-500">Create a request so sellers can respond with offers.</p>
+        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-12 text-center">
+          <span className="material-symbols-outlined mb-3 text-4xl text-[var(--text-muted)]">inventory_2</span>
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">No requests yet</h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">Create a request so sellers can respond with offers.</p>
+          <Link
+            href="/create-product-request"
+            className="mt-4 inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Post Request
+            <span className="material-symbols-outlined text-base">arrow_forward</span>
+          </Link>
         </div>
       ) : filteredRequests.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-          <h2 className="text-lg font-bold text-slate-900">No matching requests</h2>
-          <p className="mt-2 text-sm text-slate-500">Try another search or clear the field.</p>
+        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-12 text-center">
+          <span className="material-symbols-outlined mb-3 text-4xl text-[var(--text-muted)]">search_off</span>
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">No matching requests</h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">Try another search or clear the field.</p>
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            className="mt-4 text-sm font-semibold text-primary hover:underline"
+          >
+            Clear search
+          </button>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="flex flex-col gap-3">
           {filteredRequests.map((request) => {
             const offers = offersByRequest[request.id] || [];
             const editable = canEdit(request);
@@ -508,37 +567,45 @@ export default function MyRequestsPage() {
             const busy = actionBusyId === request.id;
 
             return (
-              <section key={request.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase text-slate-500">
-                        {request.status}
-                      </span>
-                      <span className="text-xs font-medium text-slate-400">{categoryLabel(request.categoryId)}</span>
+              <article
+                key={request.id}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 transition hover:border-primary/25 hover:shadow-sm sm:p-5"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={request.status} />
+                      <span className="text-xs text-[var(--text-muted)]">{categoryLabel(request.categoryId)}</span>
+                      {request.location ? (
+                        <>
+                          <span className="text-[var(--border)]">·</span>
+                          <span className="text-xs text-[var(--text-muted)]">{request.location}</span>
+                        </>
+                      ) : null}
                     </div>
-                    <h2 className="text-xl font-bold text-slate-900">{request.title}</h2>
-                    <p className="mt-2 line-clamp-2 max-w-3xl text-sm text-slate-500">{request.description}</p>
+                    <h2 className="text-base font-semibold leading-snug text-[var(--foreground)] sm:text-lg">
+                      {request.title}
+                    </h2>
+                    <p className="line-clamp-2 text-sm text-[var(--text-muted)]">{request.description}</p>
                   </div>
-                  <div className="flex shrink-0 flex-col gap-3 md:items-end">
-                    <div className="text-left md:text-right">
-                      <p className="text-xs font-semibold uppercase text-slate-400">Quantity</p>
-                      <p className="text-sm font-bold text-slate-800">
-                        {Math.max(1, request.quantity ?? 1)} item
-                        {(request.quantity ?? 1) !== 1 ? "s" : ""}
-                      </p>
-                      <p className="mt-2 text-xs font-semibold uppercase text-slate-400">Price (per unit)</p>
-                      <p className="text-lg font-black text-slate-900">{formatBudget(request)}</p>
-                      <p className="mt-1 text-xs text-slate-400">{request.offerCount || 0} offers</p>
+
+                  <aside className="flex w-full shrink-0 flex-col gap-3 border-t border-[var(--border-muted)] pt-4 lg:w-auto lg:min-w-[11rem] lg:border-t-0 lg:pt-0 lg:items-end">
+                    <div className="flex flex-wrap items-end justify-between gap-3 lg:flex-col lg:items-end lg:gap-1">
+                      <div className="text-left lg:text-right">
+                        <p className="text-lg font-semibold tabular-nums text-[var(--foreground)]">
+                          {formatBudget(request)}
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)]">{request.offerCount || 0} offers</p>
+                      </div>
                     </div>
                     {editable && (
-                      <div className="flex flex-wrap gap-2 md:justify-end">
+                      <div className="flex flex-wrap gap-2 lg:justify-end">
                         {request.status === "draft" && (
                           <button
                             type="button"
                             disabled={busy}
                             onClick={() => void publishDraft(request)}
-                            className="rounded-lg bg-[#607afb] px-3 py-2 text-xs font-bold text-white hover:bg-blue-600 disabled:opacity-50"
+                            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
                           >
                             {busy ? "…" : "Publish"}
                           </button>
@@ -546,7 +613,7 @@ export default function MyRequestsPage() {
                         <button
                           type="button"
                           onClick={() => openEdit(request)}
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                          className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-hover)]"
                         >
                           Edit
                         </button>
@@ -554,10 +621,8 @@ export default function MyRequestsPage() {
                           <button
                             type="button"
                             disabled={busy || confirmDialog != null}
-                            onClick={() =>
-                              setConfirmDialog({ kind: "delete", request })
-                            }
-                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                            onClick={() => setConfirmDialog({ kind: "delete", request })}
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200"
                           >
                             {busy ? "…" : "Delete draft"}
                           </button>
@@ -566,83 +631,93 @@ export default function MyRequestsPage() {
                           <button
                             type="button"
                             disabled={busy || confirmDialog != null}
-                            onClick={() =>
-                              setConfirmDialog({ kind: "cancel", request })
-                            }
-                            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                            onClick={() => setConfirmDialog({ kind: "cancel", request })}
+                            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
                           >
                             {busy ? "…" : "Cancel request"}
                           </button>
                         )}
                       </div>
                     )}
-                  </div>
+                  </aside>
                 </div>
 
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--border-muted)] pt-4">
                   {request.status !== "draft" &&
                     !["accepted", "closed", "cancelled"].includes(request.status) && (
                       <Link
                         href={`/auctions/${request.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-[#0d1b12] hover:opacity-90"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 sm:text-sm sm:px-4 sm:py-2"
                       >
-                        <span className="material-symbols-outlined text-lg">gavel</span>
+                        <span className="material-symbols-outlined text-base">gavel</span>
                         Watch auction
                       </Link>
                     )}
                   <button
                     type="button"
                     onClick={() => loadOffers(request.id)}
-                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:bg-[var(--surface-hover)] sm:text-sm sm:px-4 sm:py-2"
                   >
+                    <span className="material-symbols-outlined text-base">local_offer</span>
                     {offersByRequest[request.id] ? "Refresh offers" : "View offers"}
                   </button>
                 </div>
 
                 {offersByRequest[request.id] && (
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-3 flex flex-col gap-2">
                     {offers.length === 0 ? (
-                      <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No offers for this request yet.</p>
-                    ) : offers.map((offer) => {
-                      const qty = Math.max(1, request.quantity ?? 1);
-                      const unit = Number(offer.price);
-                      const total = computeOfferLineTotal(unit, qty);
-                      return (
-                      <div key={offer.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                              Per unit · qty {qty}
-                            </p>
-                            <p className="text-lg font-black text-slate-900">
-                              {formatMoney(unit, offer.currency)}
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-700">
-                              Total: {formatMoney(total, offer.currency)}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-600">{offer.message}</p>
-                            <p className="mt-2 text-xs text-slate-400">
-                              Seller:{" "}
-                              <span className="font-medium text-slate-600">
-                                {offer.seller?.name?.trim() || offer.sellerId}
-                              </span>
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={acceptingId === offer.id || offer.status === "accepted"}
-                            onClick={() => acceptOffer(offer)}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-[#0d1b12] disabled:opacity-50"
+                      <p className="rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                        No offers for this request yet.
+                      </p>
+                    ) : (
+                      offers.map((offer) => {
+                        const qty = Math.max(1, request.quantity ?? 1);
+                        const unit = Number(offer.price);
+                        const total = computeOfferLineTotal(unit, qty);
+                        return (
+                          <div
+                            key={offer.id}
+                            className="flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] bg-[var(--surface-muted)] p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                           >
-                            {offer.status === "accepted" ? "Accepted" : acceptingId === offer.id ? "Accepting..." : "Accept Offer"}
-                          </button>
-                        </div>
-                      </div>
-                      );
-                    })}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                <p className="text-base font-semibold tabular-nums text-[var(--foreground)]">
+                                  {formatMoney(unit, offer.currency)}
+                                  <span className="ml-1 text-xs font-normal text-[var(--text-muted)]">/ unit</span>
+                                </p>
+                                <p className="text-sm text-[var(--text-muted)]">
+                                  Total {formatMoney(total, offer.currency)} · qty {qty}
+                                </p>
+                              </div>
+                              {offer.message ? (
+                                <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">{offer.message}</p>
+                              ) : null}
+                              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                Seller:{" "}
+                                <span className="font-medium text-[var(--foreground)]">
+                                  {offer.seller?.name?.trim() || offer.sellerId}
+                                </span>
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={acceptingId === offer.id || offer.status === "accepted"}
+                              onClick={() => acceptOffer(offer)}
+                              className="shrink-0 self-start rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:self-center sm:text-sm"
+                            >
+                              {offer.status === "accepted"
+                                ? "Accepted"
+                                : acceptingId === offer.id
+                                  ? "Accepting…"
+                                  : "Accept offer"}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 )}
-              </section>
+              </article>
             );
           })}
         </div>
