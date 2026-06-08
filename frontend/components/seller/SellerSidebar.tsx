@@ -5,9 +5,10 @@ import { useAuth } from "@/context/AuthContext";
 
 export type SellerNavId =
   | "dashboard"
-  | "my_showcase"
-  | "new_showcase"
+  | "my_listings"
+  | "new_listing"
   | "requests"
+  | "auctions"
   | "offers"
   | "messages"
   | "assistant"
@@ -17,9 +18,10 @@ export type SellerNavId =
 
 export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/orders")) return "orders";
+  if (pathname.startsWith("/seller/auctions")) return "auctions";
   if (pathname.startsWith("/seller/analytics")) return "analytics";
-  if (pathname.startsWith("/seller/showcase")) return "my_showcase";
-  if (pathname.startsWith("/seller/products/new")) return "new_showcase";
+  if (pathname.startsWith("/seller/listings") || pathname.startsWith("/seller/showcase")) return "my_listings";
+  if (pathname.startsWith("/seller/products/new")) return "new_listing";
   if (pathname.startsWith("/seller/dashboard")) return "dashboard";
   if (pathname.startsWith("/seller")) return "dashboard";
   if (pathname.startsWith("/admin")) return "admin";
@@ -39,9 +41,10 @@ const NAV_ITEMS: {
   badge?: number;
 }[] = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
-  { id: "my_showcase", icon: "grid_view", label: "My showcase", href: "/seller/showcase" },
-  { id: "new_showcase", icon: "add_box", label: "New listing", href: "/seller/products/new" },
+  { id: "my_listings", icon: "grid_view", label: "My listings", href: "/seller/listings" },
+  { id: "new_listing", icon: "add_box", label: "New product", href: "/seller/products/new" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
+  { id: "auctions", icon: "gavel", label: "Active auctions", href: "/seller/auctions" },
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
@@ -61,7 +64,7 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
     <>
       {open && (
         <div
-          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/30 lg:hidden"
+          className="app-sidebar-backdrop fixed inset-x-0 bottom-0 z-30 bg-black/40 md:hidden"
           style={{ top: "var(--app-header-height)" }}
           onClick={onClose}
           aria-hidden
@@ -69,11 +72,11 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
       )}
 
       <aside
-        className={`app-sidebar flex w-64 flex-col border-r border-[#e7f3eb] bg-white shadow-xl transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`app-sidebar app-sidebar-panel flex w-64 flex-col border-r shadow-xl transition-transform duration-300 ${
+          open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="flex h-full flex-col justify-between p-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
           <nav className="flex flex-col gap-2 pt-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active === item.id;
@@ -84,8 +87,8 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
                   onClick={onClose}
                   className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
                     isActive
-                      ? "bg-primary/10 text-black"
-                      : "text-gray-600 hover:bg-gray-50"
+                      ? "bg-primary/10 text-[var(--foreground)]"
+                      : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
                   }`}
                 >
                   <span
@@ -142,20 +145,20 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
             <Link
               href="/profile"
               onClick={onClose}
-              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-gray-600 hover:bg-gray-50 transition-all"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[var(--text-muted)] transition-all hover:bg-[var(--surface-hover)]"
             >
               <span className="material-symbols-outlined">settings</span>
               <span className="text-sm font-medium">Settings</span>
             </Link>
-            <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
                 {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-1 flex-col overflow-hidden">
-                <p className="truncate text-sm font-bold text-[#0d1b12]">
+                <p className="truncate text-sm font-bold text-[var(--foreground)]">
                   {user?.name || user?.email || "Seller"}
                 </p>
-                <p className="truncate text-xs text-gray-500">Seller Account</p>
+                <p className="truncate text-xs text-[var(--text-muted)]">Seller account</p>
               </div>
             </div>
           </div>

@@ -43,6 +43,9 @@ export default function NewCatalogProductPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [galleryUrlLines, setGalleryUrlLines] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [quantity, setQuantity] = useState("1");
   const [status, setStatus] = useState<"draft" | "published" | "archived">("published");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -160,16 +163,25 @@ export default function NewCatalogProductPage() {
           .filter(Boolean);
         const mergedGallery = [...galleryUrls, ...fromLines];
 
+        const parsedPrice = Number(price);
+        const parsedQty = Number.parseInt(quantity, 10);
+        if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+          throw new Error("Enter a price greater than 0.");
+        }
+        if (!Number.isFinite(parsedQty) || parsedQty < 0) {
+          throw new Error("Quantity must be 0 or more.");
+        }
+
         const body: Record<string, unknown> = {
           title: title.trim(),
           description: description.trim(),
           categoryId,
-          price: 0.01,
-          currency: "USD",
+          price: parsedPrice,
+          currency: currency.trim().toUpperCase(),
           imageUrl: imageUrl.trim(),
           status,
           galleryUrls: mergedGallery,
-          quantity: 0,
+          quantity: parsedQty,
           compareAtPrice: null,
         };
 
@@ -193,6 +205,9 @@ export default function NewCatalogProductPage() {
       title,
       description,
       categoryId,
+      price,
+      currency,
+      quantity,
       imageUrl,
       galleryUrls,
       galleryUrlLines,
@@ -205,50 +220,95 @@ export default function NewCatalogProductPage() {
     <RoleGate
       allowedRoles={["seller", "admin"]}
       title="Seller workspace"
-      description="Showcase listings are created in seller mode. Switch to seller using the toggle in the navbar."
-      ctaHref="/seller/showcase"
-      ctaLabel="My showcase"
-      unauthenticatedDescription="Log in to add showcase listings."
+      description="Catalog products are created in seller mode. Switch to seller using the toggle in the navbar."
+      ctaHref="/seller/listings"
+      ctaLabel="My listings"
+      unauthenticatedDescription="Log in to add products to the catalog."
     >
-    <div className="mx-auto max-w-2xl px-4 py-8 pb-16">
+    <div className="app-page app-page-narrow pb-16 sm:pb-20">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#0d1b12]">New showcase listing</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Show buyers what you can deliver — photos and story only. Buyers post requests with their own budget; this
-          page is for inspiration, not fixed prices. Buyers still create requests and agree on deals in chat.
+        <h1 className="text-xl font-bold text-[var(--foreground)] sm:text-2xl">New product</h1>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          List a product with price and stock. Buyers can add it to the cart and checkout like on a marketplace.
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-5 rounded-xl border border-[#e7f3eb] bg-white p-6 shadow-sm">
+      <form onSubmit={onSubmit} className="app-card space-y-5 rounded-xl p-4 shadow-sm sm:p-6">
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Title</label>
           <input
             required
             minLength={2}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
           />
         </div>
 
+        <fieldset className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-4">
+          <legend className="px-1 text-sm font-bold text-[var(--foreground)]">Price &amp; stock (required)</legend>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Price</label>
+              <input
+                required
+                type="number"
+                min={0.01}
+                step="0.01"
+                placeholder="e.g. 29.99"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
+              >
+                {["USD", "EUR", "RUB", "KZT"].map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Quantity in stock</label>
+            <input
+              required
+              type="number"
+              min={0}
+              step={1}
+              placeholder="e.g. 10"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
+            />
+          </div>
+        </fieldset>
+
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Description</label>
           <textarea
             required
             minLength={10}
             rows={5}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Category</label>
           <select
             required
             value={categoryId}
@@ -477,7 +537,7 @@ export default function NewCatalogProductPage() {
             onChange={(e) => setStatus(e.target.value as typeof status)}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
           >
-            <option value="published">Published (visible in showcase)</option>
+            <option value="published">Published (visible in catalog)</option>
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </select>

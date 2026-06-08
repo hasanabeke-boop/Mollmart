@@ -357,7 +357,7 @@ export default function UserProfilePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 md:px-10 py-8 min-h-[calc(100vh-80px)]">
+    <div className="app-page app-page-wide flex min-h-0 flex-col gap-6 lg:flex-row">
       {user && (
         <EditProfileModal
           open={editOpen}
@@ -369,12 +369,12 @@ export default function UserProfilePage() {
       )}
 
       {/* Sidebar */}
-      <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-6">
-        <nav className="flex flex-col gap-1 bg-white p-2 rounded-xl border border-[#e7f3eb] shadow-sm">
+      <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-64 lg:gap-6">
+        <nav className="app-card flex gap-1 overflow-x-auto rounded-xl p-1.5 lg:flex-col lg:overflow-visible lg:p-2">
           <button
             type="button"
             onClick={() => setMainTab("overview")}
-            className={navButtonClass(mainTab === "overview")}
+            className={`${navButtonClass(mainTab === "overview")} shrink-0 whitespace-nowrap lg:w-full`}
           >
             <span className="material-symbols-outlined">person</span>
             Profile
@@ -382,7 +382,7 @@ export default function UserProfilePage() {
           {activeRole !== "seller" && user?.role !== "admin" && (
             <Link
               href="/my-requests"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
+              className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] lg:w-full"
             >
               <span className="material-symbols-outlined">playlist_add</span>
               My Requests
@@ -392,14 +392,14 @@ export default function UserProfilePage() {
             <>
               <Link
                 href="/seller/dashboard"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
+                className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] lg:w-full"
               >
                 <span className="material-symbols-outlined">dashboard</span>
                 Seller Dashboard
               </Link>
               <Link
                 href="/browse-buyer-requests"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f5f6f8] text-sm transition-colors text-[#0d1b12]"
+                className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] lg:w-full"
               >
                 <span className="material-symbols-outlined">travel_explore</span>
                 Buyer Requests
@@ -409,7 +409,7 @@ export default function UserProfilePage() {
           <button
             type="button"
             onClick={() => setMainTab("preferences")}
-            className={navButtonClass(mainTab === "preferences")}
+            className={`${navButtonClass(mainTab === "preferences")} shrink-0 whitespace-nowrap lg:w-full`}
           >
             <span className="material-symbols-outlined">tune</span>
             Preferences
@@ -418,7 +418,7 @@ export default function UserProfilePage() {
             <button
               type="button"
               onClick={() => setMainTab("balance")}
-              className={navButtonClass(mainTab === "balance")}
+              className={`${navButtonClass(mainTab === "balance")} shrink-0 whitespace-nowrap lg:w-full`}
             >
               <span className="material-symbols-outlined">account_balance_wallet</span>
               Balance
@@ -617,7 +617,7 @@ export default function UserProfilePage() {
                     </Link>
                   ) : (
                     <Link href="/products" className="hover:underline">
-                      Browse showcase
+                      Browse catalog
                     </Link>
                   )}
                 </div>
@@ -741,7 +741,7 @@ export default function UserProfilePage() {
                     href={prefsMode === "seller" ? "/browse-buyer-requests" : "/products"}
                     className="text-sm font-bold text-[#4c9a66] hover:underline"
                   >
-                    {prefsMode === "seller" ? "Open buyer requests" : "Open showcase"}
+                    {prefsMode === "seller" ? "Open buyer requests" : "Open catalog"}
                   </Link>
                 </div>
               </>

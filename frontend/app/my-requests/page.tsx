@@ -447,10 +447,10 @@ export default function MyRequestsPage() {
       ctaLabel="Open seller dashboard"
       unauthenticatedDescription="Log in as a buyer to manage requests and accept offers."
     >
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">My Requests</h1>
+    <main className="app-page">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">My Requests</h1>
           <p className="mt-1 text-slate-500">Review seller offers and open chats after accepting the right match.</p>
         </div>
         <Link
@@ -579,7 +579,17 @@ export default function MyRequestsPage() {
                   </div>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {request.status !== "draft" &&
+                    !["accepted", "closed", "cancelled"].includes(request.status) && (
+                      <Link
+                        href={`/auctions/${request.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-[#0d1b12] hover:opacity-90"
+                      >
+                        <span className="material-symbols-outlined text-lg">gavel</span>
+                        Watch auction
+                      </Link>
+                    )}
                   <button
                     type="button"
                     onClick={() => loadOffers(request.id)}

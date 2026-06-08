@@ -13,6 +13,8 @@ export type ListPublishedRepoParams = {
   categoryIds?: string[];
   /** Native-currency price bands (OR across USD/EUR/RUB/KZT) matching display-currency slider bounds */
   andPriceFilter?: Prisma.CatalogProductWhereInput;
+  /** Hide listings from this seller (buyer browsing own catalog in buyer workspace). */
+  excludeSellerId?: string;
 };
 
 export const catalogListInclude = {
@@ -117,6 +119,9 @@ export class CatalogRepository {
     }
     if (query.andPriceFilter != null) {
       andParts.push(query.andPriceFilter);
+    }
+    if (query.excludeSellerId != null && query.excludeSellerId.length > 0) {
+      andParts.push({ sellerId: { not: query.excludeSellerId } });
     }
     const where: Prisma.CatalogProductWhereInput = andParts.length === 1 ? andParts[0]! : { AND: andParts };
 

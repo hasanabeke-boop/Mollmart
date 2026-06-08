@@ -10,6 +10,7 @@ import { canUseSellerWorkspace } from "@/lib/workspace";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
+import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -217,7 +218,7 @@ function parseOptionalMoney(v: unknown): number | undefined {
 type FilterTab = "recommendations" | "all" | "published" | "has_offers";
 
 const SELLER_REC_HINT =
-  "To see recommended buyer requests, publish showcase listings in your categories or choose selling preferences in your profile settings.";
+  "To see recommended buyer requests, publish catalog products in your categories or choose selling preferences in your profile settings.";
 
 const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "recommendations", label: "Recommendations" },
@@ -225,6 +226,17 @@ const FILTER_TABS: { id: FilterTab; label: string }[] = [
   { id: "published", label: "Published" },
   { id: "has_offers", label: "Has Offers" },
 ];
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(timeout);
+  }, [value, delayMs]);
+
+  return debounced;
+}
 
 function OfferModal({
   request,
@@ -312,7 +324,7 @@ function OfferModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
       onClick={onClose}
     >
       <div
@@ -483,16 +495,19 @@ export default function BrowseBuyerRequestsPage() {
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [activeTab, setActiveTab] = useState<FilterTab>("published");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
+  const [auctionTarget, setAuctionTarget] = useState<BuyerRequest | null>(null);
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
+  const userId = user?.id ?? null;
 
   const loadRequests = useCallback(async () => {
-    if (!user || !sellerWorkspace) return;
+    if (!userId || !sellerWorkspace) return;
     setLoadingData(true);
     setRequests([]);
     try {
@@ -502,7 +517,7 @@ export default function BrowseBuyerRequestsPage() {
       } else {
         setHasRecommendationSignals(null);
       }
-      if (search.trim().length >= 2) params.set("q", search.trim());
+      if (debouncedSearch.trim().length >= 2) params.set("q", debouncedSearch.trim());
       if (selectedCategory) params.set("categoryId", selectedCategory);
 
       const data = await apiFetchWithRefresh<{
@@ -586,7 +601,7 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab, search, selectedCategory, user, sellerWorkspace, catalogCategories]);
+  }, [activeTab, debouncedSearch, selectedCategory, userId, sellerWorkspace, catalogCategories]);
 
   useEffect(() => {
     let cancelled = false;
@@ -617,12 +632,12 @@ export default function BrowseBuyerRequestsPage() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user || !sellerWorkspace) {
+    if (authLoading || !userId || !sellerWorkspace) {
       setLoadingData(false);
       return;
     }
     loadRequests();
-  }, [loadRequests, authLoading, user, sellerWorkspace]);
+  }, [loadRequests, authLoading, userId, sellerWorkspace]);
 
   const filteredRequests = useMemo(() => {
     let data = requests;
@@ -678,11 +693,11 @@ export default function BrowseBuyerRequestsPage() {
       ctaLabel="Open my requests"
       unauthenticatedDescription="Log in as a seller to browse buyer requests and submit offers."
     >
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="app-page app-page-wide">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-2">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="mb-2 text-2xl font-black tracking-tight text-[var(--foreground)] sm:text-3xl">
             Buyer Requests
           </h1>
           <p className="text-slate-500">
@@ -724,14 +739,15 @@ export default function BrowseBuyerRequestsPage() {
       </div>
 
       {/* Filter Tabs + Filters */}
-      <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2 scrollbar-hide gap-4">
-        <div className="flex p-1 bg-slate-200/50 rounded-xl backdrop-blur-sm">
+      <div className="mb-6 flex flex-col gap-3 sm:mb-8 md:flex-row md:items-center md:justify-between md:gap-4">
+        <div className="min-w-0 overflow-x-auto pb-1">
+        <div className="inline-flex min-w-min p-1 rounded-xl bg-[var(--surface-muted)]">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+              className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:px-5 sm:text-sm ${
                 activeTab === tab.id
                   ? "bg-white text-blue-600 shadow-sm font-bold"
                   : "text-slate-600 hover:text-slate-900"
@@ -741,7 +757,8 @@ export default function BrowseBuyerRequestsPage() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+        </div>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setShowFilters(!showFilters)}
@@ -833,7 +850,7 @@ export default function BrowseBuyerRequestsPage() {
           <p className="text-slate-600 text-sm mb-4">{SELLER_REC_HINT}</p>
           <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
             <Link href="/seller/products/new" className="text-blue-600 hover:underline">
-              Add a showcase listing
+              Add a product listing
             </Link>
             <Link href="/profile" className="text-blue-600 hover:underline">
               Profile settings
@@ -940,13 +957,22 @@ export default function BrowseBuyerRequestsPage() {
                       {featuredRequest.offerCount} Offers
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setOfferTarget(featuredRequest)}
-                    className="bg-[#607afb] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
-                  >
-                    Make an Offer
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOfferTarget(featuredRequest)}
+                      className="bg-[#607afb] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                      Make an Offer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuctionTarget(featuredRequest)}
+                      className="border-2 border-[#607afb] text-[#607afb] px-8 py-3 rounded-xl font-bold hover:bg-[#607afb]/5 transition-all"
+                    >
+                      Join auction
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1031,13 +1057,22 @@ export default function BrowseBuyerRequestsPage() {
                     {req.offerCount} Offers
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setOfferTarget(req)}
-                  className="w-full bg-[#607afb] text-white py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all"
-                >
-                  Make an Offer
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setOfferTarget(req)}
+                    className="w-full flex-1 bg-[#607afb] text-white py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Make an Offer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuctionTarget(req)}
+                    className="w-full flex-1 border-2 border-[#607afb] text-[#607afb] py-3 rounded-xl font-bold hover:bg-[#607afb]/5 active:scale-[0.98] transition-all"
+                  >
+                    Join auction
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1086,6 +1121,12 @@ export default function BrowseBuyerRequestsPage() {
         <OfferModal
           request={offerTarget}
           onClose={() => setOfferTarget(null)}
+        />
+      )}
+      {auctionTarget && (
+        <AuctionJoinModal
+          request={auctionTarget}
+          onClose={() => setAuctionTarget(null)}
         />
       )}
     </div>

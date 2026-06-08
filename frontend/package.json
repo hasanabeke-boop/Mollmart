@@ -10,16 +10,20 @@
     "check:pages": "node scripts/check-main-pages.js"
   },
   "dependencies": {
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.23",
+    "lucide-react": "^0.479.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "lucide-react": "^0.479.0"
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.184.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
