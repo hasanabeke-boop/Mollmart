@@ -6,7 +6,7 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { firstAttachmentImageUrl } from "@/lib/requestMedia";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { translateCategoryName } from "@/lib/categoryI18n";
+import { translateCategoryName, isOtherCategorySlug } from "@/lib/categoryI18n";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseSellerWorkspace } from "@/lib/workspace";
@@ -642,7 +642,13 @@ export default function BrowseBuyerRequestsPage() {
         id,
         name: categoryLabel(id),
       }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => {
+        const slugA = lookupCategory(catalogCategories, a.id)?.slug;
+        const slugB = lookupCategory(catalogCategories, b.id)?.slug;
+        if (isOtherCategorySlug(slugA)) return 1;
+        if (isOtherCategorySlug(slugB)) return -1;
+        return a.name.localeCompare(b.name);
+      });
   }, [requests, catalogCategories, categoryLabel]);
 
   const boardBudgetMax = useMemo(() => {

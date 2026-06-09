@@ -1,5 +1,6 @@
 import { CatalogProductStatus, Prisma, PrismaClient } from '@prisma/client';
 import prisma from '../../../config/prisma';
+import { sortCategoriesWithOtherLast } from '../../../shared/categorySort';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import type { CatalogListQuery } from '../types/catalog';
 
@@ -44,11 +45,11 @@ export class CatalogRepository {
   }
 
   async listActiveCategories() {
-    return this.client.category.findMany({
+    const rows = await this.client.category.findMany({
       where: { isActive: true },
-      orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true, parentId: true }
     });
+    return sortCategoriesWithOtherLast(rows);
   }
 
   async create(data: Prisma.CatalogProductCreateInput): Promise<CatalogListRow> {

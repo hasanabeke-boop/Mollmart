@@ -159,7 +159,6 @@ export default function MyRequestsPage() {
   const [budgetMax, setBudgetMax] = useState("");
   const [deadlineLocal, setDeadlineLocal] = useState("");
   const [location, setLocation] = useState("");
-  const [isNegotiable, setIsNegotiable] = useState(true);
   const [auctionEnabled, setAuctionEnabled] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -247,7 +246,6 @@ export default function MyRequestsPage() {
     setBudgetMax(r.budgetMax != null ? String(r.budgetMax) : "");
     setDeadlineLocal(toDatetimeLocalValue(r.deadlineAt));
     setLocation(r.location ?? "");
-    setIsNegotiable(Boolean(r.isNegotiable));
     setAuctionEnabled(Boolean(r.auctionEnabled));
     setSaveError("");
     setEditOpen(true);
@@ -266,7 +264,6 @@ export default function MyRequestsPage() {
       if (restricted) {
         body.deadlineAt = deadlineLocal ? new Date(deadlineLocal).toISOString() : "";
         body.location = location.trim();
-        body.isNegotiable = isNegotiable;
       } else {
         const t = title.trim();
         const d = description.trim();
@@ -284,7 +281,6 @@ export default function MyRequestsPage() {
         body.description = d;
         body.categoryId = categoryId;
         body.currency = editRequest.currency || DEFAULT_CURRENCY;
-        body.isNegotiable = isNegotiable;
         const qty = Math.floor(Number(quantity));
         if (!Number.isFinite(qty) || qty < 1) {
           setSaveError("Quantity must be at least 1.");
@@ -740,7 +736,7 @@ export default function MyRequestsPage() {
 
             {restricted && (
               <p className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
-                This request already has offers. You can only update deadline, location, and negotiable flag.
+                This request already has offers. You can only update deadline and location.
               </p>
             )}
 
@@ -836,15 +832,6 @@ export default function MyRequestsPage() {
                   placeholder="City or region"
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={isNegotiable}
-                  onChange={(e) => setIsNegotiable(e.target.checked)}
-                  className="rounded border-slate-300"
-                />
-                {t("Price is negotiable")}
-              </label>
               {editRequest?.status === "draft" && (
                 <label className="flex items-start gap-2 text-sm text-slate-700">
                   <input

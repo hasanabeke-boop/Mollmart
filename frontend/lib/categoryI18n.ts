@@ -98,3 +98,16 @@ export function translateCategoryName(
 export function translateCategoryRef(category: CategoryRef, language: Language): string {
   return translateCategoryName(category.name, language, category.slug);
 }
+
+const OTHER_CATEGORY_SLUG = "other";
+
+export function isOtherCategorySlug(slug: string | undefined): boolean {
+  return normalizeSlug(slug) === OTHER_CATEGORY_SLUG;
+}
+
+/** Keep "Other" / "Другое" last regardless of alphabetical order. */
+export function sortCategoriesWithOtherLast<T extends { slug: string }>(categories: T[]): T[] {
+  const rest = categories.filter((c) => !isOtherCategorySlug(c.slug));
+  const other = categories.filter((c) => isOtherCategorySlug(c.slug));
+  return [...rest, ...other];
+}

@@ -38,8 +38,7 @@ type UpdateableRequestFields = {
 
 const limitedEditableFieldsAfterOffers = new Set<keyof UpdateableRequestFields>([
   'deadlineAt',
-  'location',
-  'isNegotiable'
+  'location'
 ]);
 
 export function ensureTransitionAllowed(fromStatus: RequestStatus, toStatus: RequestStatus): void {

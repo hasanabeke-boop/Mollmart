@@ -12,6 +12,7 @@ import {
   PrismaClient
 } from '@prisma/client';
 import prisma from '../../../config/prisma';
+import { sortCategoriesWithOtherLast } from '../../../shared/categorySort';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import { AdminDashboardSummary, ContentFlagUpsertInput, ModerationCaseListQuery } from '../types/admin';
 
@@ -97,9 +98,10 @@ export class AdminRepository implements AdminRepositoryLike {
   }
 
   async listCategories(): Promise<Category[]> {
-    return this.client.category.findMany({
+    const rows = await this.client.category.findMany({
       orderBy: [{ parentId: 'asc' }, { name: 'asc' }]
     });
+    return sortCategoriesWithOtherLast(rows);
   }
 
   async updateCategory(

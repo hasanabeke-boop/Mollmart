@@ -265,7 +265,6 @@ function CreateProductRequestContent() {
         quantity: Math.floor(Number(quantity)),
         budgetMax: Number(budget),
         currency: DEFAULT_CURRENCY,
-        isNegotiable: false,
         auctionEnabled,
       };
       if (deadlineLocal.trim()) {
