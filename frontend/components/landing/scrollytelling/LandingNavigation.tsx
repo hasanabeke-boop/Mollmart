@@ -48,8 +48,14 @@ export default function LandingNavigation() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 top-0 z-[999] h-[72px] border-b border-transparent bg-transparent md:h-[88px]">
-        <div className="relative mx-auto flex h-full w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:px-10">
+      <nav
+        className={`app-site-header ${
+          onLanding
+            ? "z-[60] border-b border-transparent bg-transparent"
+            : "z-50 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md"
+        }`}
+      >
+        <div className="relative mx-auto grid h-full w-full max-w-[1600px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-4 lg:px-6">
           <MollmartLogoLink
             href="/"
             size={32}
@@ -59,9 +65,7 @@ export default function LandingNavigation() {
             imageClassName="shadow-none transition-transform group-hover:scale-105"
           />
 
-          <div
-            className={`absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex ${navSectionPill}`}
-          >
+          <div className={`hidden justify-center lg:flex ${navSectionPill}`}>
             <div className="flex flex-nowrap items-center gap-0.5">
               {NAV_HREFS.map(({ href, key }) => (
                 <button
@@ -76,7 +80,7 @@ export default function LandingNavigation() {
             </div>
           </div>
 
-          <div className="relative z-[1] flex shrink-0 items-center gap-2 sm:gap-2.5">
+          <div className="relative z-[1] flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
             <ThemeToggle />
             <LanguageSwitcher />
             <Link

@@ -13,9 +13,8 @@
   --text-muted: #64748b;
   --primary-color: #607afb;
   --primary-hover: #4b63e8;
-  /* Matches Header: h-14, xl:h-16 */
+  /* Matches app-site-header: h-14, xl:h-16 */
   --app-header-height: 3.5rem;
-  --landing-nav-height: 4.5rem;
 }
 
 .dark {
@@ -31,22 +30,31 @@
   --primary-hover: #607afb;
 }
 
-@media (min-width: 768px) {
-  :root {
-    --landing-nav-height: 5.5rem;
-  }
-}
-
 @media (min-width: 1280px) {
   :root {
     --app-header-height: 4rem;
   }
 }
 
+/* Fixed site header — same height on app, auth, and landing overlay nav */
+.app-site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  box-sizing: border-box;
+  height: var(--app-header-height);
+}
+
+.app-header-spacer {
+  flex-shrink: 0;
+  height: var(--app-header-height);
+}
+
 .auth-below-landing-nav {
   box-sizing: border-box;
-  min-height: 100dvh;
-  padding-top: var(--landing-nav-height);
+  min-height: calc(100dvh - var(--app-header-height));
 }
 
 /* Full-height app sidebar (buyer / seller) — fixed to viewport, not transformed parents */
