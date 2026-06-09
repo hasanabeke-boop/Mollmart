@@ -1,15 +1,17 @@
 'use client';
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { confirmPasswordChangeToken } from "@/lib/passwordChange";
-import { setAccessToken } from "@/lib/api";
 
 type Status = "loading" | "success" | "error";
 
 export default function ConfirmPasswordChangePage() {
   const params = useParams<{ token: string }>();
+  const router = useRouter();
+  const { refreshUser } = useAuth();
   const token = useMemo(() => {
     const raw = params?.token;
     return Array.isArray(raw) ? raw[0] : raw;
@@ -23,28 +25,31 @@ export default function ConfirmPasswordChangePage() {
     if (!token) return;
 
     let cancelled = false;
-    confirmPasswordChangeToken(token)
-      .then((res) => {
+    (async () => {
+      try {
+        const res = await confirmPasswordChangeToken(token);
         if (cancelled) return;
-        setAccessToken(null);
-        setResult({
-          status: "success",
-          message: res.message || "Your password has been updated.",
-        });
-      })
-      .catch((err: unknown) => {
+
+        // Keep the current session when the link is opened in the same browser.
+        await refreshUser();
+
+        if (cancelled) return;
+
+        router.replace("/profile?passwordUpdated=1");
+      } catch (err: unknown) {
         if (cancelled) return;
         const e = err as Error;
         setResult({
           status: "error",
           message: e.message || "Invalid or expired confirmation link.",
         });
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, refreshUser, router]);
 
   const status = token ? result.status : "error";
   const message = token ? result.message : "Confirmation token is missing.";
@@ -72,16 +77,25 @@ export default function ConfirmPasswordChangePage() {
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">{message}</p>
         <div className="mt-8 flex flex-col gap-3">
-          <Link
-            href="/login"
-            className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90"
-          >
-            Go to login
-          </Link>
           {status === "error" ? (
+            <>
+              <Link
+                href="/profile"
+                className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90"
+              >
+                Back to profile
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Go to login
+              </Link>
+            </>
+          ) : status === "success" ? (
             <Link
               href="/profile"
-              className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               Back to profile
             </Link>

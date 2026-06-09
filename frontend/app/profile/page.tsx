@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -63,6 +63,7 @@ export default function UserProfilePage() {
   const { activeRole, hasDualWorkspace, enableMixedMode, mixedModeBusy } = useWorkspace();
   const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const categoryLabel = useCategoryLabel();
   const { t } = useLanguage();
 
@@ -121,6 +122,14 @@ export default function UserProfilePage() {
       router.replace("/login");
     }
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (searchParams.get("passwordUpdated") !== "1") return;
+    setPasswordStatus("");
+    setPasswordError("");
+    toastSuccess("Password updated successfully.");
+    router.replace("/profile");
+  }, [searchParams, router, toastSuccess]);
 
   const applyProfileToDisplay = useCallback((data: ProfileMeResponse) => {
     setLocation((data.city ?? "").trim());
