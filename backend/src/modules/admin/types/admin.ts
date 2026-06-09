@@ -32,6 +32,12 @@ export interface ModerationCaseListQuery {
   targetType?: ModerationTargetType;
 }
 
+export interface SubmitContentReportInput {
+  targetType: 'request' | 'catalog_product';
+  targetId: string;
+  reason: string;
+}
+
 export interface BlockUserInput {
   reason: string;
 }

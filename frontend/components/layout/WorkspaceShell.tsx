@@ -44,7 +44,6 @@ const SELLER_PAGE_TITLES: Partial<Record<SellerNavId, string>> = {
   orders: "Orders",
   messages: "Messages",
   assistant: "Assistant",
-  analytics: "Analytics",
 };
 
 export default function WorkspaceShell({ children }: { children: ReactNode }) {

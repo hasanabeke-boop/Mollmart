@@ -21,3 +21,6 @@ export const forbidden = (message: string): ApiError =>
 
 export const badRequest = (message: string, details?: unknown): ApiError =>
   new ApiError(httpStatus.BAD_REQUEST, message, details);
+
+export const conflict = (message: string, details?: unknown): ApiError =>
+  new ApiError(httpStatus.CONFLICT, message, details);

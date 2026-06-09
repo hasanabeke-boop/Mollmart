@@ -33,6 +33,11 @@ export class AdminController {
     res.status(httpStatus.CREATED).json(moderationCase);
   };
 
+  submitContentReport = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.adminService.submitContentReport(req.user!, req.body);
+    res.status(httpStatus.CREATED).json(result);
+  };
+
   listModerationCases = async (req: Request, res: Response): Promise<void> => {
     const cases = await this.adminService.listModerationCases(req.query as unknown as ModerationCaseListQuery);
     res.status(httpStatus.OK).json(cases);

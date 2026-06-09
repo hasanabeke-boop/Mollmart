@@ -13,7 +13,7 @@ type ModerationAction = {
 
 type ModerationCase = {
   id: string;
-  targetType: "request" | "offer" | "user";
+  targetType: "request" | "offer" | "user" | "catalog_product";
   targetId: string;
   reason: string;
   status: "open" | "in_review" | "resolved" | "dismissed";
@@ -26,7 +26,7 @@ type ModerationCase = {
 };
 
 type CaseStatus = "open" | "in_review" | "resolved" | "dismissed";
-type TargetType = "request" | "offer" | "user";
+type TargetType = "request" | "offer" | "user" | "catalog_product";
 
 const STATUS_STYLES: Record<CaseStatus, string> = {
   open: "bg-yellow-100 text-yellow-700",
@@ -122,6 +122,7 @@ export default function ModerationPage() {
           <option value="request">Request</option>
           <option value="offer">Offer</option>
           <option value="user">User</option>
+          <option value="catalog_product">Catalog product</option>
         </select>
       </div>
 
@@ -160,7 +161,13 @@ export default function ModerationPage() {
                   <td className="px-5 py-3.5">
                     <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0d1b12] capitalize">
                       <span className="material-symbols-outlined text-[16px] text-gray-400">
-                        {c.targetType === "request" ? "description" : c.targetType === "offer" ? "local_offer" : "person"}
+                        {c.targetType === "request"
+                          ? "description"
+                          : c.targetType === "offer"
+                            ? "local_offer"
+                            : c.targetType === "catalog_product"
+                              ? "inventory_2"
+                              : "person"}
                       </span>
                       {c.targetType}
                     </span>
@@ -262,6 +269,7 @@ function CreateCaseModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
               <option value="request">Request</option>
               <option value="offer">Offer</option>
               <option value="user">User</option>
+              <option value="catalog_product">Catalog product</option>
             </select>
           </div>
           <div className="space-y-2">

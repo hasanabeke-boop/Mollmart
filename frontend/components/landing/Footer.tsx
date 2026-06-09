@@ -13,7 +13,7 @@ const footerGroups = [
   {
     title: "Sell",
     links: [
-      { label: "Seller Dashboard", href: "/seller/dashboard" },
+      { label: "Seller Dashboard", href: "/seller/analytics" },
       { label: "Check Demand", href: "/browse-buyer-requests" },
       { label: "Seller Handbook", href: "/help" },
     ],

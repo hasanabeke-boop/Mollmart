@@ -89,7 +89,7 @@ function resolveHref(
     case "request":
       return role === "seller" ? "/browse-buyer-requests" : "/my-requests";
     case "offer":
-      if (item.backendType === "offer_accepted") return "/seller/dashboard";
+      if (item.backendType === "offer_accepted") return "/seller/analytics";
       return "/my-requests";
     case "conversation":
       return `/chat?c=${encodeURIComponent(refId)}`;

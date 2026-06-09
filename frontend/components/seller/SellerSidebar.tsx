@@ -12,17 +12,15 @@ export type SellerNavId =
   | "offers"
   | "messages"
   | "assistant"
-  | "analytics"
   | "orders"
   | "admin";
 
 export function getSellerActiveNav(pathname: string): SellerNavId {
   if (pathname.startsWith("/orders")) return "orders";
   if (pathname.startsWith("/seller/auctions")) return "auctions";
-  if (pathname.startsWith("/seller/analytics")) return "analytics";
+  if (pathname.startsWith("/seller/analytics") || pathname.startsWith("/seller/dashboard")) return "dashboard";
   if (pathname.startsWith("/seller/listings") || pathname.startsWith("/seller/showcase")) return "my_listings";
   if (pathname.startsWith("/seller/products/new")) return "new_listing";
-  if (pathname.startsWith("/seller/dashboard")) return "dashboard";
   if (pathname.startsWith("/seller")) return "dashboard";
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/browse-buyer-requests")) return "requests";
@@ -40,7 +38,7 @@ const NAV_ITEMS: {
   href: string;
   badge?: number;
 }[] = [
-  { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/dashboard" },
+  { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/seller/analytics" },
   { id: "my_listings", icon: "grid_view", label: "My listings", href: "/seller/listings" },
   { id: "new_listing", icon: "add_box", label: "New product", href: "/seller/products/new" },
   { id: "requests", icon: "travel_explore", label: "Requests", href: "/browse-buyer-requests" },
@@ -48,7 +46,6 @@ const NAV_ITEMS: {
   { id: "orders", icon: "receipt_long", label: "Order history", href: "/orders" },
   { id: "messages", icon: "mail", label: "Messages", href: "/chat" },
   { id: "assistant", icon: "chat_bubble", label: "Assistant", href: "/chatbot" },
-  { id: "analytics", icon: "analytics", label: "Analytics", href: "/seller/analytics" },
 ];
 
 type Props = {

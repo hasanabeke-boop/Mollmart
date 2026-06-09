@@ -24,7 +24,7 @@ export const categoryUpdateSchema = {
 
 export const moderationCaseCreateSchema = {
   body: Joi.object({
-    targetType: Joi.string().valid('request', 'offer', 'user').required(),
+    targetType: Joi.string().valid('request', 'offer', 'user', 'catalog_product').required(),
     targetId: Joi.string().trim().required(),
     reason: Joi.string().trim().min(5).max(3000).required(),
     assignedTo: Joi.string().trim().optional()
@@ -34,7 +34,15 @@ export const moderationCaseCreateSchema = {
 export const moderationCaseListSchema = {
   query: Joi.object({
     status: Joi.string().valid('open', 'in_review', 'resolved', 'dismissed').optional(),
-    targetType: Joi.string().valid('request', 'offer', 'user').optional()
+    targetType: Joi.string().valid('request', 'offer', 'user', 'catalog_product').optional()
+  })
+};
+
+export const contentReportSchema = {
+  body: Joi.object({
+    targetType: Joi.string().valid('request', 'catalog_product').required(),
+    targetId: Joi.string().trim().required(),
+    reason: Joi.string().trim().min(5).max(3000).required()
   })
 };
 

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import KpiCard from "../../../components/KpiCard";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -99,8 +98,7 @@ export default function SellerAnalyticsPage() {
   }, [loadData, authLoading, sellerWorkspace]);
 
   const acceptedOffers = offers.filter((offer) => offer.status === "accepted").length;
-  const activeConversations = conversations.filter((conversation) => conversation.status !== "closed").length;
-  const acceptanceRate = offers.length > 0 ? Math.round((acceptedOffers / offers.length) * 100) : 0;
+  const responseRate = offers.length > 0 ? Math.round((acceptedOffers / offers.length) * 100) : 0;
 
   const offersByDay = useMemo(() => {
     const days = Array.from({ length: 7 }).map((_, index) => {
@@ -165,8 +163,8 @@ export default function SellerAnalyticsPage() {
   return (
     <RoleGate
       allowedRoles={["seller", "admin"]}
-      title="Seller analytics"
-      description="Seller Analytics is for sellers tracking offers, accepted matches, and conversations. Buyers should use My Requests to compare offers."
+      title="Seller Dashboard"
+      description="Track offers, request board visibility, and conversations. Buyers should use My Requests to compare offers."
       ctaHref="/my-requests"
       ctaLabel="Open my requests"
       unauthenticatedDescription="Log in as a seller to view analytics."
@@ -176,10 +174,10 @@ export default function SellerAnalyticsPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#0d1b12]">
-              Seller Analytics
+              {t("Seller Dashboard")}
             </h2>
             <p className="text-[#4c9a66] text-base">
-              Real metrics from offers, request board visibility, and conversations.
+              {t("Offers, request board visibility, and conversation metrics from the backend.")}
             </p>
           </div>
           <div className="flex gap-3">
@@ -207,11 +205,11 @@ export default function SellerAnalyticsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard icon="travel_explore" title="Visible Requests" value={loading ? "..." : String(requests.length)} delta="live" positive />
-          <KpiCard icon="local_offer" title="Offers Sent" value={loading ? "..." : String(offers.length)} delta="from API" positive />
-          <KpiCard icon="chat" title="Chats Opened" value={loading ? "..." : String(activeConversations)} delta="active" positive />
-          <KpiCard icon="speed" title="Offer Acceptance" value={loading ? "..." : `${acceptanceRate}%`} delta={t("{count} accepted", { count: acceptedOffers })} positive />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard icon="travel_explore" iconBg="bg-green-50 text-green-700" label={t("Visible Requests")} value={loading ? "…" : String(requests.length)} />
+          <StatCard icon="local_offer" iconBg="bg-blue-50 text-blue-700" label={t("Offers Sent")} value={loading ? "…" : String(offers.length)} />
+          <StatCard icon="chat" iconBg="bg-purple-50 text-purple-700" label={t("Active Chats")} value={loading ? "…" : String(conversations.length)} />
+          <StatCard icon="speed" iconBg="bg-orange-50 text-orange-700" label={t("Accepted Offers")} value={loading ? "…" : `${responseRate}%`} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -312,8 +310,8 @@ export default function SellerAnalyticsPage() {
           <div className="rounded-xl bg-white border border-[#e7f3eb] shadow-sm p-6">
             <h3 className="text-lg font-bold text-[#0d1b12] mb-6">Conversation Outcomes</h3>
             <div className="space-y-4 text-sm">
-              <InsightRow label="Offers leading to accepted match" value={`${acceptanceRate}%`} colorClass="bg-primary" />
-              <InsightRow label="Active conversations" value={String(activeConversations)} colorClass="bg-[#053f18]" />
+              <InsightRow label={t("Offers leading to accepted match")} value={`${responseRate}%`} colorClass="bg-primary" />
+              <InsightRow label={t("Active conversations")} value={String(conversations.length)} colorClass="bg-[#053f18]" />
               <InsightRow label="Requests currently visible" value={String(requests.length)} colorClass="bg-[#e7f3eb]" />
               <div className="pt-4 border-t border-[#e7f3eb] mt-4 text-xs text-[#4c9a66]">
                 <span className="font-bold text-primary">Insight:</span> These numbers update from the database when you refresh.
@@ -324,6 +322,32 @@ export default function SellerAnalyticsPage() {
       </main>
     </div>
     </RoleGate>
+  );
+}
+
+function StatCard({
+  icon,
+  iconBg,
+  label,
+  value,
+}: {
+  icon: string;
+  iconBg: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-col rounded-xl border border-[#e7f3eb] bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
+          <span className="material-symbols-outlined">{icon}</span>
+        </div>
+      </div>
+      <div className="mt-4">
+        <p className="text-sm font-medium text-gray-500">{label}</p>
+        <h3 className="mt-1 text-2xl font-bold text-[#0d1b12]">{value}</h3>
+      </div>
+    </div>
   );
 }
 

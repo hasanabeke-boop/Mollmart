@@ -10,10 +10,11 @@ import {
   CreateCategoryInput,
   CreateModerationCaseInput,
   ModerationCaseListQuery,
+  SubmitContentReportInput,
   UpdateCategoryInput,
   UpdateModerationCaseInput
 } from '../types/admin';
-import { badRequest, notFound } from '../utils/apiError';
+import { badRequest, conflict, notFound } from '../utils/apiError';
 import {
   AdminRepositoryLike,
   ModerationCaseWithActions
@@ -77,6 +78,38 @@ export class AdminService {
     return moderationCase;
   }
 
+  async submitContentReport(
+    user: AuthUser,
+    input: SubmitContentReportInput
+  ): Promise<{ id: string; status: ModerationCaseStatus }> {
+    const targetId = input.targetId.trim();
+    const targetType = input.targetType as ModerationTargetType;
+    const target = await this.adminRepository.findReportTarget(targetType, targetId);
+    if (target == null) {
+      throw notFound('Content not found');
+    }
+    if (target.ownerId === user.id) {
+      throw badRequest('You cannot report your own content');
+    }
+
+    const existing = await this.adminRepository.findOpenModerationCaseByReporter(
+      targetType,
+      targetId,
+      user.id
+    );
+    if (existing != null) {
+      throw conflict('You already reported this content');
+    }
+
+    const moderationCase = await this.createModerationCase(user, {
+      targetType,
+      targetId,
+      reason: input.reason.trim()
+    });
+
+    return { id: moderationCase.id, status: moderationCase.status };
+  }
+
   async listModerationCases(query: ModerationCaseListQuery): Promise<ModerationCaseWithActions[]> {
     return this.adminRepository.listModerationCases(query);
   }
@@ -132,6 +165,11 @@ export class AdminService {
         hiddenBy: input.actionType === 'hide_content' ? user.id : null,
         hiddenAt: input.actionType === 'hide_content' ? new Date() : null
       });
+      await this.adminRepository.applyContentVisibilityChange(
+        existing.targetType,
+        existing.targetId,
+        input.actionType === 'hide_content'
+      );
     }
 
     if (isResolving) {

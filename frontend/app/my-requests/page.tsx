@@ -461,7 +461,7 @@ export default function MyRequestsPage() {
       allowedRoles={["buyer", "admin"]}
       title="Buyer request area"
       description="My Requests is for buyers who publish demand and compare seller offers. Sellers should use the seller dashboard and request board."
-      ctaHref="/seller/dashboard"
+      ctaHref="/seller/analytics"
       ctaLabel="Open seller dashboard"
       unauthenticatedDescription="Log in as a buyer to manage requests and accept offers."
     >

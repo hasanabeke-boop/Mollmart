@@ -56,6 +56,20 @@ export interface AdminRepositoryLike {
     }
   ): Promise<ModerationCaseWithActions>;
   upsertContentFlag(input: ContentFlagUpsertInput): Promise<ContentFlag>;
+  findOpenModerationCaseByReporter(
+    targetType: ModerationTargetType,
+    targetId: string,
+    createdBy: string
+  ): Promise<ModerationCase | null>;
+  findReportTarget(
+    targetType: ModerationTargetType,
+    targetId: string
+  ): Promise<{ id: string; ownerId: string } | null>;
+  applyContentVisibilityChange(
+    targetType: ModerationTargetType,
+    targetId: string,
+    hidden: boolean
+  ): Promise<void>;
   blockUser(userId: string, reason: string, blockedBy: string): Promise<BlockedUser>;
   unblockUser(userId: string): Promise<BlockedUser | null>;
   getDashboardSummary(): Promise<AdminDashboardSummary>;
@@ -230,6 +244,75 @@ export class AdminRepository implements AdminRepositoryLike {
         ...(input.hiddenAt !== undefined ? { hiddenAt: input.hiddenAt } : {})
       }
     });
+  }
+
+  async findOpenModerationCaseByReporter(
+    targetType: ModerationTargetType,
+    targetId: string,
+    createdBy: string
+  ): Promise<ModerationCase | null> {
+    return this.client.moderationCase.findFirst({
+      where: {
+        targetType,
+        targetId,
+        createdBy,
+        status: { in: ['open', 'in_review'] }
+      }
+    });
+  }
+
+  async findReportTarget(
+    targetType: ModerationTargetType,
+    targetId: string
+  ): Promise<{ id: string; ownerId: string } | null> {
+    if (targetType === ModerationTargetType.request) {
+      const row = await this.client.request.findUnique({
+        where: { id: targetId },
+        select: { id: true, buyerId: true, status: true }
+      });
+      if (row == null || row.status === 'draft' || row.status === 'cancelled') {
+        return null;
+      }
+      return { id: row.id, ownerId: row.buyerId };
+    }
+
+    if (targetType === ModerationTargetType.catalog_product) {
+      const row = await this.client.catalogProduct.findUnique({
+        where: { id: targetId },
+        select: { id: true, sellerId: true, status: true }
+      });
+      if (row == null || row.status === 'archived') {
+        return null;
+      }
+      return { id: row.id, ownerId: row.sellerId };
+    }
+
+    return null;
+  }
+
+  async applyContentVisibilityChange(
+    targetType: ModerationTargetType,
+    targetId: string,
+    hidden: boolean
+  ): Promise<void> {
+    if (targetType === ModerationTargetType.request) {
+      await this.client.request
+        .update({
+          where: { id: targetId },
+          data: { status: hidden ? 'cancelled' : 'published' }
+        })
+        .catch(() => undefined);
+      return;
+    }
+
+    if (targetType === ModerationTargetType.catalog_product) {
+      await this.client.catalogProduct
+        .update({
+          where: { id: targetId },
+          data: { status: hidden ? 'archived' : 'published' }
+        })
+        .catch(() => undefined);
+    }
   }
 
   async blockUser(userId: string, reason: string, blockedBy: string): Promise<BlockedUser> {

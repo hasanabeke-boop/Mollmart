@@ -57,7 +57,7 @@ export function HeroSection() {
               />
 
               <Link
-                href="/seller/dashboard"
+                href="/seller/analytics"
                 className="absolute top-8 left-8 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-xl border border-white/20 z-20 max-w-[240px] animate-[bounce_3s_infinite] hover:scale-105 transition-transform"
               >
                 <div className="flex gap-3 items-center">

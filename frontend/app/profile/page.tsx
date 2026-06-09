@@ -426,7 +426,7 @@ function UserProfilePageContent() {
           {activeRole === "seller" && (
             <>
               <Link
-                href="/seller/dashboard"
+                href="/seller/analytics"
                 className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] lg:w-full"
               >
                 <span className="material-symbols-outlined">dashboard</span>

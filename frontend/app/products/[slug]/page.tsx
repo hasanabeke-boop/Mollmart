@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
+import ReportContentModal from "@/components/moderation/ReportContentModal";
 import { apiFetch } from "@/lib/api";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { addCartItem } from "@/lib/shop";
@@ -39,6 +40,7 @@ export default function ShowcaseDetailPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [adding, setAdding] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -260,9 +262,28 @@ export default function ShowcaseDetailPage() {
             >
               {t("← More products")}
             </button>
+            {!isOwnListing && user && (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="font-semibold text-red-600 hover:underline"
+              >
+                {t("Report")}
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {product && (
+        <ReportContentModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          targetType="catalog_product"
+          targetId={product.id}
+          targetLabel={product.title}
+        />
+      )}
     </div>
   );
 }

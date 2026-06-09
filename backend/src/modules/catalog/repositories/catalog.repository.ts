@@ -1,6 +1,7 @@
 import { CatalogProductStatus, Prisma, PrismaClient } from '@prisma/client';
 import prisma from '../../../config/prisma';
 import { sortCategoriesWithOtherLast } from '../../../shared/categorySort';
+import { isContentHidden, listHiddenContentTargetIds } from '../../../shared/contentFlags';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import type { CatalogListQuery } from '../types/catalog';
 
@@ -94,16 +95,27 @@ export class CatalogRepository {
   }
 
   async findPublishedBySlug(slug: string): Promise<CatalogDetailRow | null> {
-    return this.client.catalogProduct.findFirst({
+    const row = await this.client.catalogProduct.findFirst({
       where: { slug, status: CatalogProductStatus.published },
       include: catalogDetailInclude
     });
+    if (row == null) {
+      return null;
+    }
+    if (await isContentHidden(this.client, 'catalog_product', row.id)) {
+      return null;
+    }
+    return row;
   }
 
   async listPublished(query: ListPublishedRepoParams): Promise<CatalogListResult> {
     const page = normalizePage(query.page);
     const limit = normalizeLimit(query.limit);
+    const hiddenProductIds = await listHiddenContentTargetIds(this.client, 'catalog_product');
     const andParts: Prisma.CatalogProductWhereInput[] = [{ status: CatalogProductStatus.published }];
+    if (hiddenProductIds.length > 0) {
+      andParts.push({ id: { notIn: hiddenProductIds } });
+    }
     if (query.categoryIds != null && query.categoryIds.length > 0) {
       andParts.push({ categoryId: { in: query.categoryIds } });
     } else if (query.categoryId != null && query.categoryId.length > 0) {

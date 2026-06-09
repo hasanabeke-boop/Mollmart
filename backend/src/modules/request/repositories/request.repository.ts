@@ -7,6 +7,7 @@ import {
   RequestStatusHistory
 } from '@prisma/client';
 import prisma from '../../../config/prisma';
+import { listHiddenContentTargetIds } from '../../../shared/contentFlags';
 import { buildPageMeta } from '../utils/pagination';
 import { OwnerRequestQuery, RequestBoardQuery, RequestListResult, StatusHistoryRecordInput } from '../types/request';
 
@@ -264,6 +265,7 @@ export class RequestRepository implements RequestRepositoryLike {
 
   async listSellerBoard(query: RequestBoardQuery): Promise<RequestListResult<RequestWithRelations>> {
     const now = new Date();
+    const hiddenRequestIds = await listHiddenContentTargetIds(this.client, 'request');
     const andFilters: Prisma.RequestWhereInput[] = [{ OR: [{ deadlineAt: null }, { deadlineAt: { gte: now } }] }];
 
     if (query.q != null) {
@@ -273,6 +275,10 @@ export class RequestRepository implements RequestRepositoryLike {
           { description: { contains: query.q, mode: 'insensitive' } }
         ]
       });
+    }
+
+    if (hiddenRequestIds.length > 0) {
+      andFilters.push({ id: { notIn: hiddenRequestIds } });
     }
 
     const where: Prisma.RequestWhereInput = {

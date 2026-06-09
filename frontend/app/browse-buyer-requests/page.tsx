@@ -13,6 +13,7 @@ import { canUseSellerWorkspace } from "@/lib/workspace";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
 import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
+import ReportContentModal from "@/components/moderation/ReportContentModal";
 import ModalPortal from "@/components/ui/ModalPortal";
 import { SearchField } from "@/components/ui/SearchField";
 import RequestCoverImage from "@/components/request/RequestCoverImage";
@@ -453,6 +454,7 @@ export default function BrowseBuyerRequestsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [offerTarget, setOfferTarget] = useState<BuyerRequest | null>(null);
   const [auctionTarget, setAuctionTarget] = useState<BuyerRequest | null>(null);
+  const [reportTarget, setReportTarget] = useState<BuyerRequest | null>(null);
   const [requests, setRequests] = useState<BuyerRequest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
@@ -677,7 +679,7 @@ export default function BrowseBuyerRequestsPage() {
           </p>
         </div>
         <Link
-          href="/seller/dashboard"
+          href="/seller/analytics"
           className="inline-flex items-center gap-2 self-start rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:self-auto"
         >
           <span className="material-symbols-outlined text-[20px]">dashboard</span>
@@ -929,6 +931,13 @@ export default function BrowseBuyerRequestsPage() {
                         {t("Join auction")}
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setReportTarget(featuredRequest)}
+                      className="w-full rounded-xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:w-auto"
+                    >
+                      {t("Report")}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1026,6 +1035,13 @@ export default function BrowseBuyerRequestsPage() {
                       {t("Join auction")}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setReportTarget(req)}
+                    className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    {t("Report")}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1081,6 +1097,15 @@ export default function BrowseBuyerRequestsPage() {
         <AuctionJoinModal
           request={auctionTarget}
           onClose={() => setAuctionTarget(null)}
+        />
+      )}
+      {reportTarget && (
+        <ReportContentModal
+          open
+          onClose={() => setReportTarget(null)}
+          targetType="request"
+          targetId={reportTarget.id}
+          targetLabel={reportTarget.title}
         />
       )}
     </div>

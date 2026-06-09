@@ -182,7 +182,7 @@ export function Header() {
                     )}
                     {(navRole === "seller" || navRole === "admin") && (
                       <Link
-                        href="/seller/dashboard"
+                        href="/seller/analytics"
                         onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"
                       >

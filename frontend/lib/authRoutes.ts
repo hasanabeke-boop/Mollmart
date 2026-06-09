@@ -6,7 +6,7 @@ export function getAuthenticatedHomePath(
 ): string {
   if (user.role === "admin") return "/admin";
   if (user.hasDualWorkspace && user.activeWorkspaceMode === "seller") {
-    return "/seller/dashboard";
+    return "/seller/analytics";
   }
   if (user.role === "seller" || (user.canSell && user.canBuy === false)) {
     return "/browse-buyer-requests";

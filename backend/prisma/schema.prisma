@@ -114,6 +114,7 @@ enum ModerationTargetType {
   request
   offer
   user
+  catalog_product
 }
 
 enum ModerationCaseStatus {
