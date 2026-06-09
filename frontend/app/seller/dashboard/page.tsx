@@ -8,6 +8,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { SearchField } from "@/components/ui/SearchField";
 import { canUseSellerWorkspace } from "@/lib/workspace";
+import { useLanguage } from "@/context/LanguageContext";
 import { formatMoney, normalizeCurrency } from "@/lib/currency";
 
 type RequestLead = {
@@ -42,28 +43,31 @@ function listFrom<T>(value: { items?: T[]; data?: T[] } | T[]): T[] {
   return value.items || value.data || [];
 }
 
-function formatBudget(lead: RequestLead) {
+type UiTranslate = (text: string, vars?: Record<string, string | number>) => string;
+
+function formatBudget(lead: RequestLead, t: UiTranslate) {
   const currency = normalizeCurrency(lead.currency);
   const fmt = (n: number) => formatMoney(n, currency);
-  const unitSuffix = " / unit";
+  const unitSuffix = t(" / unit");
 
   if (lead.budgetMin != null && lead.budgetMax != null) {
     return `${fmt(lead.budgetMin)} - ${fmt(lead.budgetMax)}${unitSuffix}`;
   }
   if (lead.budgetMax != null) return `${fmt(lead.budgetMax)}${unitSuffix}`;
   if (lead.budgetMin != null) return `${fmt(lead.budgetMin)}+${unitSuffix}`;
-  return "Negotiable";
+  return t("Negotiable");
 }
 
-function formatQty(lead: RequestLead) {
+function formatQty(lead: RequestLead, t: UiTranslate) {
   const q = Math.max(1, Math.floor(Number(lead.quantity) || 1));
-  return q === 1 ? "1 item" : `${q} items`;
+  return q === 1 ? t("1 item") : t("{count} items", { count: q });
 }
 
 export default function SellerDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<RequestLead[]>([]);
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -218,7 +222,7 @@ export default function SellerDashboardPage() {
                           </div>
                           <span className="text-sm font-medium text-[#0d1b12]">{name}</span>
                         </div>
-                        <span className="text-xs font-bold text-green-600">{count} live</span>
+                        <span className="text-xs font-bold text-green-600">{t("{count} live", { count })}</span>
                       </Link>
                     ))}
                   </div>
@@ -272,8 +276,8 @@ export default function SellerDashboardPage() {
                           <p className="text-xs text-gray-500">{lead.id}</p>
                         </td>
                         <td className="px-6 py-4 text-gray-600">{lead.categoryId}</td>
-                        <td className="px-6 py-4 text-gray-600">{formatQty(lead)}</td>
-                        <td className="px-6 py-4 font-medium text-[#0d1b12]">{formatBudget(lead)}</td>
+                        <td className="px-6 py-4 text-gray-600">{formatQty(lead, t)}</td>
+                        <td className="px-6 py-4 font-medium text-[#0d1b12]">{formatBudget(lead, t)}</td>
                         <td className="px-6 py-4 text-gray-600">{lead.offerCount || 0}</td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">

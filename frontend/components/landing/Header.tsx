@@ -83,20 +83,22 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 box-border flex h-14 w-full shrink-0 border-b border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md transition-colors xl:h-16">
-      <div className="mx-auto flex h-full min-w-0 max-w-[1600px] flex-1 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
-        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+    <header className="app-site-header border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md transition-colors">
+      <div className="mx-auto grid h-full min-w-0 max-w-[1600px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
+        <div className="flex min-w-0 items-center">
           <MollmartLogoLink href="/" size={32} />
-
-          <form
-            className="hidden min-w-0 flex-1 md:block md:max-w-[18rem] lg:max-w-[22rem] xl:max-w-[26rem]"
-            onSubmit={handleSearch}
-          >
-            <SearchField value={search} onChange={setSearch} width="full" placeholder="Search…" />
-          </form>
         </div>
 
-        <div className="ml-auto flex min-w-0 shrink items-center gap-0.5 sm:gap-1.5 lg:gap-2">
+        <form
+          className="hidden min-w-0 justify-center px-2 md:flex"
+          onSubmit={handleSearch}
+        >
+          <div className="w-full max-w-md lg:max-w-xl">
+            <SearchField value={search} onChange={setSearch} width="full" placeholder="Search…" />
+          </div>
+        </form>
+
+        <div className="flex min-w-0 items-center justify-end gap-0.5 sm:gap-1.5 lg:gap-2">
           <ThemeToggle />
           <LanguageSwitcher />
           {loading ? (

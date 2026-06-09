@@ -9,6 +9,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { canUseSellerWorkspace } from "@/lib/workspace";
+import { useLanguage } from "@/context/LanguageContext";
 
 type OfferItem = {
   id: string;
@@ -45,6 +46,7 @@ export default function SellerAnalyticsPage() {
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const categoryLabel = useCategoryLabel();
+  const { t, language } = useLanguage();
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -78,7 +80,7 @@ export default function SellerAnalyticsPage() {
       setConversations(listFrom(conversationData));
       setCatalogCategories(Array.isArray(categoryData) ? categoryData : []);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to load analytics.");
+      setError((err as Error).message || t("Failed to load analytics."));
       setOffers([]);
       setRequests([]);
       setConversations([]);
@@ -86,7 +88,7 @@ export default function SellerAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [sellerWorkspace]);
+  }, [sellerWorkspace, t]);
 
   useEffect(() => {
     if (authLoading || !sellerWorkspace) {
@@ -107,7 +109,10 @@ export default function SellerAnalyticsPage() {
       const key = date.toISOString().slice(0, 10);
       return {
         key,
-        label: date.toLocaleDateString("en-US", { weekday: "short" }),
+        label: date.toLocaleDateString(
+          language === "ru" ? "ru-RU" : language === "kk" ? "kk-KZ" : "en-US",
+          { weekday: "short" },
+        ),
         value: 0,
       };
     });
@@ -119,7 +124,7 @@ export default function SellerAnalyticsPage() {
       if (day) day.value += 1;
     });
     return days;
-  }, [offers]);
+  }, [offers, language]);
 
   const categoryRows = useMemo(() => {
     const ORPHAN_KEY = "__orphan__";
@@ -206,7 +211,7 @@ export default function SellerAnalyticsPage() {
           <KpiCard icon="travel_explore" title="Visible Requests" value={loading ? "..." : String(requests.length)} delta="live" positive />
           <KpiCard icon="local_offer" title="Offers Sent" value={loading ? "..." : String(offers.length)} delta="from API" positive />
           <KpiCard icon="chat" title="Chats Opened" value={loading ? "..." : String(activeConversations)} delta="active" positive />
-          <KpiCard icon="speed" title="Offer Acceptance" value={loading ? "..." : `${acceptanceRate}%`} delta={`${acceptedOffers} accepted`} positive />
+          <KpiCard icon="speed" title="Offer Acceptance" value={loading ? "..." : `${acceptanceRate}%`} delta={t("{count} accepted", { count: acceptedOffers })} positive />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -248,7 +253,9 @@ export default function SellerAnalyticsPage() {
                 </span>
               </div>
               <h4 className="text-xl font-bold mb-2">
-                {requests.length > 0 ? `${requests.length} open requests are available` : "No live request signal yet"}
+                {requests.length > 0
+                  ? t("{count} open requests are available", { count: requests.length })
+                  : t("No live request signal yet")}
               </h4>
               <p className="text-gray-300 text-sm mb-6 leading-relaxed">
                 This card is derived from the request board and your offer history, not mock analytics.

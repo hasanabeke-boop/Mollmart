@@ -48,8 +48,14 @@ export default function LandingNavigation() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 top-0 z-[999] h-[72px] border-b border-transparent bg-transparent md:h-[88px]">
-        <div className="relative mx-auto flex h-full w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:px-10">
+      <nav
+        className={`app-site-header ${
+          onLanding
+            ? "z-[60] border-b border-transparent bg-transparent"
+            : "z-50 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md"
+        }`}
+      >
+        <div className="relative mx-auto grid h-full w-full max-w-[1600px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:px-4 lg:px-6">
           <MollmartLogoLink
             href="/"
             size={32}
@@ -59,10 +65,8 @@ export default function LandingNavigation() {
             imageClassName="shadow-none transition-transform group-hover:scale-105"
           />
 
-          <div
-            className={`pointer-events-none absolute left-1/2 top-1/2 hidden max-w-[calc(100%-17rem)] -translate-x-1/2 -translate-y-1/2 lg:flex lg:max-w-[calc(100%-26rem)] xl:max-w-[calc(100%-30rem)] ${navSectionPill}`}
-          >
-            <div className="pointer-events-auto flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className={`hidden min-w-0 justify-center lg:flex ${navSectionPill}`}>
+            <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_HREFS.map(({ href, key }) => (
                 <button
                   key={href}
@@ -76,7 +80,7 @@ export default function LandingNavigation() {
             </div>
           </div>
 
-          <div className="relative z-[2] flex shrink-0 translate-x-1 items-center gap-2 sm:translate-x-1.5 sm:gap-2.5 lg:translate-x-2">
+          <div className="relative z-[2] flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
             <ThemeToggle />
             <LanguageSwitcher />
             <Link
