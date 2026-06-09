@@ -157,20 +157,23 @@ function styleSlugForCategory(list: ApiCategory[], categoryId: string): string {
   return lookupCategory(list, categoryId)?.slug ?? categoryId;
 }
 
-function timeAgo(dateStr: string): string {
+type UiTranslate = (text: string, vars?: Record<string, string | number>) => string;
+
+function timeAgo(dateStr: string, t: UiTranslate): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "Just now";
-  if (hours < 24) return `Posted ${hours}h ago`;
+  if (hours < 1) return t("Just now");
+  if (hours < 24) return t("Posted {hours}h ago", { hours });
   const days = Math.floor(hours / 24);
-  return `Posted ${days}d ago`;
+  return t("Posted {days}d ago", { days });
 }
 
 function formatBudget(
-  min?: unknown,
-  max?: unknown,
-  currency?: string,
-  quantity?: unknown,
+  min: unknown,
+  max: unknown,
+  currency: string | undefined,
+  quantity: unknown,
+  t: UiTranslate,
 ): string {
   const cur = normalizeCurrency(currency);
   const toNum = (v: unknown): number | undefined => {
@@ -181,8 +184,8 @@ function formatBudget(
   const minN = toNum(min);
   const maxN = toNum(max);
   const qty = Math.floor(toNum(quantity) ?? 1);
-  const unitSuffix = " / unit";
-  let price = "Negotiable";
+  const unitSuffix = t(" / unit");
+  let price = t("Negotiable");
   if (minN != null && maxN != null) {
     price = `${formatMoney(minN, cur)} – ${formatMoney(maxN, cur)}${unitSuffix}`;
   } else if (maxN != null) {
@@ -193,9 +196,9 @@ function formatBudget(
   return `${qty}× · ${price}`;
 }
 
-function formatQuantityLabel(quantity?: unknown): string {
+function formatQuantityLabel(quantity: unknown, t: UiTranslate): string {
   const qty = Math.max(1, Math.floor(Number(quantity) || 1));
-  return qty === 1 ? "1 item" : `${qty} items`;
+  return qty === 1 ? t("1 item") : t("{count} items", { count: qty });
 }
 
 /** Width % for budget bar vs max budget on the current board (same list). */
@@ -545,12 +548,12 @@ export default function BrowseBuyerRequestsPage() {
           title: r.title,
           categoryId: r.categoryId,
           ...style,
-          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency, r.quantity),
+          budget: formatBudget(r.budgetMin, r.budgetMax, r.currency, r.quantity, t),
           quantity: Math.max(1, Math.floor(Number(r.quantity) || 1)),
           budgetMax: maxVal,
           currency: normalizeCurrency(r.currency),
           description: r.description,
-          postedAgo: timeAgo(r.createdAt),
+          postedAgo: timeAgo(r.createdAt, t),
           offerCount: r.offerCount || 0,
           status: r.status,
           isNegotiable: Boolean(r.isNegotiable),
@@ -566,7 +569,7 @@ export default function BrowseBuyerRequestsPage() {
     } finally {
       setLoadingData(false);
     }
-  }, [activeTab, debouncedSearch, selectedCategory, userId, sellerWorkspace, catalogCategories]);
+  }, [activeTab, debouncedSearch, selectedCategory, userId, sellerWorkspace, catalogCategories, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -700,7 +703,7 @@ export default function BrowseBuyerRequestsPage() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              {tab.label}
+              {t(tab.label)}
             </button>
           ))}
         </div>
@@ -794,7 +797,7 @@ export default function BrowseBuyerRequestsPage() {
             <span className="material-symbols-outlined text-amber-700 text-3xl">tune</span>
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">No recommendation data yet</h3>
-          <p className="text-slate-600 text-sm mb-4">{SELLER_REC_HINT}</p>
+          <p className="text-slate-600 text-sm mb-4">{t(SELLER_REC_HINT)}</p>
           <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
             <Link href="/seller/products/new" className="text-blue-600 hover:underline">
               Add a product listing
@@ -853,7 +856,7 @@ export default function BrowseBuyerRequestsPage() {
                   <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1 block">
-                        Category: {categoryLabel(featuredRequest.categoryId)}
+                        {t("Category:")} {categoryLabel(featuredRequest.categoryId)}
                       </span>
                       <h3 className="text-2xl font-bold leading-tight">
                         {featuredRequest.title}
@@ -861,7 +864,7 @@ export default function BrowseBuyerRequestsPage() {
                     </div>
                     <div className="shrink-0 sm:text-right">
                       <p className="text-sm text-slate-400 mb-1">
-                        Quantity: {formatQuantityLabel(featuredRequest.quantity)}
+                        {t("Quantity")}: {formatQuantityLabel(featuredRequest.quantity, t)}
                       </p>
                       <p className="text-xs text-slate-400 mb-1">Price (per unit)</p>
                       <p className="text-xl font-black text-slate-900">
@@ -962,7 +965,7 @@ export default function BrowseBuyerRequestsPage() {
                   <div className="flex justify-between items-center mb-1 text-xs text-slate-500">
                     <span>Quantity</span>
                     <span className="font-semibold text-slate-700">
-                      {formatQuantityLabel(req.quantity)}
+                      {formatQuantityLabel(req.quantity, t)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mb-1">
@@ -997,7 +1000,7 @@ export default function BrowseBuyerRequestsPage() {
                     <span className="material-symbols-outlined text-xs">
                       group
                     </span>{" "}
-                    {req.offerCount} Offers
+                    {t("{count} Offers", { count: req.offerCount })}
                   </span>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">

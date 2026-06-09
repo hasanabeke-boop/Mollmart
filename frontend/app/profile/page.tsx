@@ -16,6 +16,7 @@ import { EMPTY_DEMO_CARD, validateDemoCard } from "@/lib/demoPayment";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { resolveAccountDisplayName } from "@/lib/profileDisplay";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ProfileStats = {
   primary: number;
@@ -23,10 +24,15 @@ type ProfileStats = {
   conversations: number;
 };
 
-function roleLabel(role: string | undefined) {
-  if (role === "seller") return "Seller";
-  if (role === "admin") return "Admin";
-  return "Buyer";
+function accountTypeLabel(
+  role: string | undefined,
+  dual: boolean,
+  t: (text: string) => string,
+): string {
+  if (dual) return t("Buyer & seller account");
+  if (role === "seller") return t("Seller account");
+  if (role === "admin") return t("Admin account");
+  return t("Buyer account");
 }
 
 function readRecommendedCategoryIds(prefs: unknown): string[] {
@@ -62,6 +68,7 @@ export default function UserProfilePage() {
   const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
   const categoryLabel = useCategoryLabel();
+  const { t } = useLanguage();
 
   const canEnableMixedMode =
     Boolean(user) &&
@@ -514,10 +521,10 @@ export default function UserProfilePage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66] mb-1">
                   {mainTab === "preferences"
-                    ? "Preferences"
+                    ? t("Preferences")
                     : mainTab === "balance"
-                      ? "Balance"
-                      : "Overview"}
+                      ? t("Balance")
+                      : t("Overview")}
                 </p>
                 <h1 className="text-2xl md:text-3xl font-bold mb-1 text-[#0d1b12]">
                   {displayName}
@@ -530,7 +537,7 @@ export default function UserProfilePage() {
                     <span className="material-symbols-outlined text-[18px]">
                       verified_user
                     </span>
-                    {hasDualWorkspace ? "Buyer & seller" : roleLabel(activeRole)} account
+                    {accountTypeLabel(activeRole, hasDualWorkspace, t)}
                   </span>
                   {location ? (
                     <span className="flex items-center gap-1">
