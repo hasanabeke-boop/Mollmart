@@ -18,7 +18,7 @@ const NAV_HREFS = [
 ];
 
 const navSectionPill =
-  "max-w-full rounded-full bg-[#242424] px-1 py-1 shadow-sm";
+  "w-fit max-w-full rounded-full bg-[#242424] px-1 py-1 shadow-sm";
 const navSectionLink =
   "shrink-0 whitespace-nowrap rounded-full px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10 lg:px-2 lg:text-[10px] xl:px-3 xl:text-[11px] xl:tracking-[0.1em]";
 
@@ -65,8 +65,8 @@ export default function LandingNavigation() {
             imageClassName="shadow-none transition-transform group-hover:scale-105"
           />
 
-          <div className={`hidden min-w-0 justify-center lg:flex ${navSectionPill}`}>
-            <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className={`hidden justify-self-center lg:flex ${navSectionPill}`}>
+            <div className="flex flex-nowrap items-center gap-0.5">
               {NAV_HREFS.map(({ href, key }) => (
                 <button
                   key={href}
