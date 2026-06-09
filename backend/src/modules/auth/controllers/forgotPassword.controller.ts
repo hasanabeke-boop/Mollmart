@@ -388,10 +388,6 @@ export const handleConfirmPasswordChange = async (
     where: { userId: passwordChangeToken.userId }
   });
 
-  await prismaClient.refreshToken.deleteMany({
-    where: { userId: passwordChangeToken.userId }
-  });
-
   return res
     .status(httpStatus.OK)
     .json({ message: 'Password change confirmed' });
