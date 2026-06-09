@@ -8,6 +8,7 @@ import { uploadCatalogImage } from "@/lib/catalog";
 import { resendVerificationEmail } from "@/lib/emailVerification";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import RoleGate from "@/components/auth/RoleGate";
 import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
 
@@ -80,6 +81,7 @@ function CreateProductRequestContent() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const lastPrefillSlug = useRef<string | null>(null);
@@ -368,7 +370,10 @@ function CreateProductRequestContent() {
             <div className="flex justify-between">
               <span className="text-sm text-slate-500">Category</span>
               <span className="text-sm font-semibold text-slate-900">
-                {catalogCategories.find((c) => c.id === category)?.name ?? "—"}
+                {(() => {
+                  const row = catalogCategories.find((c) => c.id === category);
+                  return row ? categoryLabel(row) : "—";
+                })()}
               </span>
             </div>
             <div className="flex justify-between">
@@ -646,7 +651,7 @@ function CreateProductRequestContent() {
                       <option value="">{categoriesLoading ? "Loading categories…" : "Select a category"}</option>
                       {catalogCategories.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.name}
+                          {categoryLabel(c)}
                         </option>
                       ))}
                     </select>

@@ -9,23 +9,19 @@ import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrders, type ShopOrder } from "@/lib/shop";
 import { orderStatusTone, StatusBadge } from "@/components/ui/StatusBadge";
+import { useLanguage } from "@/context/LanguageContext";
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
 
-const STATUS_TABS: { id: "all" | ShopOrder["status"]; label: string }[] = [
-  { id: "all", label: "All orders" },
-  { id: "processing", label: "Processing" },
-  { id: "shipped", label: "Shipped" },
-  { id: "delivered", label: "Delivered" },
-  { id: "cancelled", label: "Cancelled" },
+const STATUS_TABS: { id: "all" | OrderStatus; labelKey: string }[] = [
+  { id: "all", labelKey: "All orders" },
+  { id: "paid", labelKey: "Paid (Created)" },
+  { id: "in_progress", labelKey: "In progress" },
+  { id: "awaiting_confirmation", labelKey: "Awaiting confirmation" },
+  { id: "completed", labelKey: "Completed" },
+  { id: "cancelled", labelKey: "Cancelled" },
 ];
 
 const PAGE_SIZE = 10;
-
-const STATUS_LABELS: Record<ShopOrder["status"], string> = {
-  delivered: "Delivered",
-  shipped: "Shipped",
-  processing: "Processing",
-  cancelled: "Cancelled",
-};
 
 function formatOrderDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, {
@@ -38,6 +34,7 @@ function formatOrderDate(value: string) {
 export default function OrdersPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useWorkspace();
+  const { t } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<(typeof STATUS_TABS)[number]["id"]>("all");
   const [page, setPage] = useState(1);
@@ -134,7 +131,7 @@ export default function OrdersPage() {
                   : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-primary/30 hover:text-[var(--foreground)]"
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           );
         })}
@@ -163,9 +160,10 @@ export default function OrdersPage() {
           </div>
         ) : (
           rows.map(({ order, thumb, title, counterparty, counterpartyLabel }) => {
-            const canTrack = order.status === "shipped" || order.status === "delivered";
+            const canTrack =
+              order.status !== "paid" && order.status !== "cancelled";
             const href = canTrack ? `/orders/${order.id}/tracking` : `/orders/${order.id}`;
-            const actionLabel = canTrack ? "Track" : "Details";
+            const actionLabel = canTrack ? t("Track") : t("Details");
 
             return (
               <article
@@ -185,7 +183,9 @@ export default function OrdersPage() {
                         <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug text-[var(--foreground)] sm:text-lg">
                           {title}
                         </h2>
-                        <StatusBadge tone={orderStatusTone(order.status)}>{STATUS_LABELS[order.status]}</StatusBadge>
+                        <StatusBadge tone={orderStatusTone(order.status)}>
+                          {t(ORDER_STATUS_LABELS[order.status as OrderStatus])}
+                        </StatusBadge>
                       </div>
                       <p className="mt-1.5 text-xs text-[var(--text-muted)] sm:text-sm">
                         {counterpartyLabel}: <span className="text-[var(--foreground)]">{counterparty}</span>

@@ -29,7 +29,7 @@ export type ShopOrder = {
   id: string;
   buyerId: string;
   sellerId: string;
-  status: "processing" | "shipped" | "delivered" | "cancelled";
+  status: "paid" | "in_progress" | "awaiting_confirmation" | "completed" | "cancelled";
   currency: string;
   subtotal: number;
   shippingAmount: number;
@@ -145,6 +145,41 @@ export async function fetchMyOrders(
       totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   };
+}
+
+export async function patchShopOrderStatus(
+  id: string,
+  body: {
+    status: "in_progress" | "awaiting_confirmation" | "completed";
+    trackingNumber?: string | null;
+    carrier?: string | null;
+  },
+): Promise<ShopOrder> {
+  return apiFetchWithRefresh<ShopOrder>(`/api/v1/shop/orders/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    service: "shop",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function patchOrderStatus(
+  id: string,
+  body: {
+    status: "in_progress" | "awaiting_confirmation" | "completed";
+    trackingNumber?: string | null;
+    carrier?: string | null;
+  },
+): Promise<ShopOrder> {
+  try {
+    return await apiFetchWithRefresh<ShopOrder>(`/api/v1/request-orders/${encodeURIComponent(id)}/status`, {
+      method: "PATCH",
+      service: "deal",
+      body: JSON.stringify(body),
+    });
+  } catch (err: unknown) {
+    if ((err as { status?: number }).status !== 404) throw err;
+    return patchShopOrderStatus(id, body);
+  }
 }
 
 export async function fetchMyOrder(id: string): Promise<ShopOrder> {

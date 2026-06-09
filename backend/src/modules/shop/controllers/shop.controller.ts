@@ -49,6 +49,16 @@ export class ShopController {
     const data = await this.shopService.getMyOrder(req.user as AuthUser, req.params.id);
     res.status(httpStatus.OK).json(data);
   };
+
+  patchOrderStatus = async (req: Request, res: Response): Promise<void> => {
+    const body = req.body as {
+      status: 'in_progress' | 'awaiting_confirmation' | 'completed';
+      trackingNumber?: string | null;
+      carrier?: string | null;
+    };
+    const data = await this.shopService.patchMyOrderStatus(req.user as AuthUser, req.params.id, body);
+    res.status(httpStatus.OK).json(data);
+  };
 }
 
 export default ShopController;

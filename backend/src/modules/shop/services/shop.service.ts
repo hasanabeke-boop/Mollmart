@@ -4,6 +4,11 @@ import { badRequest, forbidden, notFound } from '../../request/utils/apiError';
 import { convertUsdQuoted, getUsdQuoteRates, roundCatalogMoney } from '../../catalog/services/exchangeRates';
 import ShopRepository, { type CartRow, type OrderRow } from '../repositories/shop.repository';
 import ShopEventPublisher, { type ShopEventPublisherLike } from './shop-event.service';
+import {
+  assertOrderStatusTransition,
+  parseCatalogOrderStatus,
+  resolveOrderActor
+} from '../../../shared/catalogOrderStatus';
 
 const CHECKOUT_CURRENCIES = new Set(['USD', 'EUR', 'RUB', 'KZT']);
 
@@ -240,6 +245,79 @@ export class ShopService {
     return this.serializeOrder(row);
   }
 
+  async patchMyOrderStatus(
+    user: AuthUser,
+    orderId: string,
+    input: {
+      status: CatalogOrderStatus;
+      trackingNumber?: string | null;
+      carrier?: string | null;
+    }
+  ) {
+    const current =
+      user.role === 'seller'
+        ? await this.repo.getOrderForSeller(orderId, user.id)
+        : await this.repo.getOrderForBuyer(orderId, user.id);
+    if (current == null) {
+      throw notFound('Order not found');
+    }
+
+    const actor = resolveOrderActor(user, current);
+    if (actor == null) {
+      throw forbidden('You cannot update this order');
+    }
+
+    assertOrderStatusTransition(actor, current.status, input.status);
+
+    if (actor !== 'seller' && (input.trackingNumber !== undefined || input.carrier !== undefined)) {
+      throw forbidden('Only the seller can update tracking details');
+    }
+
+    const previousStatus = current.status;
+    const data: {
+      status: CatalogOrderStatus;
+      trackingNumber?: string | null;
+      carrier?: string | null;
+      sellerCreditedAt?: Date;
+    } = { status: input.status };
+
+    if (input.trackingNumber !== undefined) {
+      data.trackingNumber = input.trackingNumber;
+    }
+    if (input.carrier !== undefined) {
+      data.carrier = input.carrier;
+    }
+
+    if (
+      input.status === CatalogOrderStatus.completed &&
+      current.sellerCreditedAt == null
+    ) {
+      await this.repo.creditSellerAndUpdateOrder(orderId, current.sellerId, current.total, data);
+    } else {
+      const updated = await this.repo.updateOrder(orderId, data);
+      if (updated == null) {
+        throw notFound('Order not found');
+      }
+    }
+
+    const updated = await this.repo.getOrderById(orderId);
+    if (updated == null) {
+      throw notFound('Order not found');
+    }
+
+    if (updated.status !== previousStatus) {
+      await this.events.publishOrderStatusChanged({
+        orderId: updated.id,
+        buyerId: updated.buyerId,
+        sellerId: updated.sellerId,
+        previousStatus,
+        newStatus: updated.status
+      });
+    }
+
+    return this.serializeOrder(updated);
+  }
+
   async listOrdersAdmin(page: number, limit: number, status?: string) {
     const st = this.parseOrderStatus(status);
     const result = await this.repo.listOrdersAdmin(page, limit, st);
@@ -264,6 +342,10 @@ export class ShopService {
     } = {};
 
     if (input.status !== undefined) {
+      if (input.status !== CatalogOrderStatus.cancelled) {
+        throw forbidden('Admins can only cancel orders or update tracking details');
+      }
+      assertOrderStatusTransition('admin', current.status, input.status);
       data.status = input.status;
     }
     if (input.trackingNumber !== undefined) {
@@ -303,14 +385,7 @@ export class ShopService {
   }
 
   private parseOrderStatus(status?: string): CatalogOrderStatus | undefined {
-    if (status == null || status.trim().length === 0) {
-      return undefined;
-    }
-    const s = status.trim() as CatalogOrderStatus;
-    if (!['processing', 'shipped', 'delivered', 'cancelled'].includes(s)) {
-      return undefined;
-    }
-    return s;
+    return parseCatalogOrderStatus(status);
   }
 
   private assertBuyerCapability(user: AuthUser, action: string): void {

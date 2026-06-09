@@ -503,7 +503,7 @@ const ru: LandingCopy = {
     links: {
       home: "Главная",
       problem: "Проблема",
-      features: "Как работает",
+      features: "Как",
       buyers: "Покупателям",
       sellers: "Продавцам",
       faq: "FAQ",
@@ -710,11 +710,11 @@ const kk: LandingCopy = {
   },
   nav: {
     links: {
-      home: "Басты бет",
+      home: "Басты",
       problem: "Мәселе",
-      features: "Қалай жұмыс істейді",
-      buyers: "Сатып алушыларға",
-      sellers: "Сатушыларға",
+      features: "Қалай",
+      buyers: "Сатып алушы",
+      sellers: "Сатушы",
       faq: "FAQ",
     },
     cta: "Концептті көру",

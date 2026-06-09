@@ -18,9 +18,9 @@ const NAV_HREFS = [
 ];
 
 const navSectionPill =
-  "rounded-full bg-[#242424] px-1 py-1 shadow-sm";
+  "max-w-full rounded-full bg-[#242424] px-1 py-1 shadow-sm";
 const navSectionLink =
-  "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-white/10 xl:px-3 xl:text-[11px] xl:tracking-[0.1em]";
+  "shrink-0 whitespace-nowrap rounded-full px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10 lg:px-2 lg:text-[10px] xl:px-3 xl:text-[11px] xl:tracking-[0.1em]";
 
 export default function LandingNavigation() {
   const copy = useLandingCopy();
@@ -60,9 +60,9 @@ export default function LandingNavigation() {
           />
 
           <div
-            className={`absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex ${navSectionPill}`}
+            className={`pointer-events-none absolute left-1/2 top-1/2 hidden max-w-[calc(100%-17rem)] -translate-x-1/2 -translate-y-1/2 lg:flex lg:max-w-[calc(100%-26rem)] xl:max-w-[calc(100%-30rem)] ${navSectionPill}`}
           >
-            <div className="flex flex-nowrap items-center gap-0.5">
+            <div className="pointer-events-auto flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_HREFS.map(({ href, key }) => (
                 <button
                   key={href}
@@ -76,7 +76,7 @@ export default function LandingNavigation() {
             </div>
           </div>
 
-          <div className="relative z-[1] flex shrink-0 items-center gap-2 sm:gap-2.5">
+          <div className="relative z-[2] flex shrink-0 translate-x-1 items-center gap-2 sm:translate-x-1.5 sm:gap-2.5 lg:translate-x-2">
             <ThemeToggle />
             <LanguageSwitcher />
             <Link
@@ -139,30 +139,12 @@ export default function LandingNavigation() {
           menuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <div className={`w-full max-w-sm ${navSectionPill}`}>
-          <div className="flex flex-col gap-0.5 p-1">
-            {NAV_HREFS.map(({ href, key }, i) => (
-              <button
-                key={href}
-                type="button"
-                onClick={() => goToSection(href)}
-                className={`${navSectionLink} w-full py-3 text-sm tracking-wide`}
-                style={{
-                  transitionDelay: menuOpen ? `${i * 40}ms` : "0ms",
-                  opacity: menuOpen ? 1 : 0,
-                  transform: menuOpen ? "translateY(0)" : "translateY(12px)",
-                }}
-              >
-                {copy.nav.links[key]}
-              </button>
-            ))}
-          </div>
-        </div>
         <div
-          className="mt-2 flex w-full max-w-sm flex-col gap-2.5 sm:flex-row"
+          className="flex w-full max-w-sm flex-col gap-2.5 sm:flex-row"
           style={{
-            transitionDelay: menuOpen ? `${NAV_HREFS.length * 40}ms` : "0ms",
             opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.5s, transform 0.5s",
           }}
         >
           <Link

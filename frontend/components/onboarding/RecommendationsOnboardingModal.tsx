@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
 export default function RecommendationsOnboardingModal({ onDone }: { onDone: () => void }) {
   const { activeMode } = useWorkspace();
+  const categoryLabel = useCategoryLabel();
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -80,7 +82,7 @@ export default function RecommendationsOnboardingModal({ onDone }: { onDone: () 
                   onChange={() => toggle(c.id)}
                   className="rounded border-[#e7f3eb] text-primary"
                 />
-                {c.name}
+                {categoryLabel(c)}
               </label>
             ))
           )}

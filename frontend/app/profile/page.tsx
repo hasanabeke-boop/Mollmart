@@ -12,6 +12,7 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
 import { demoWithdrawWallet, fetchWalletMe } from "@/lib/requestDeals";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { resolveAccountDisplayName } from "@/lib/profileDisplay";
 
 type ProfileStats = {
@@ -58,6 +59,7 @@ export default function UserProfilePage() {
   const { activeRole, hasDualWorkspace, enableMixedMode, mixedModeBusy } = useWorkspace();
   const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
+  const categoryLabel = useCategoryLabel();
 
   const canEnableMixedMode =
     Boolean(user) &&
@@ -283,9 +285,12 @@ export default function UserProfilePage() {
         : profileData.buyerProfile?.preferencesJson;
     const ids = readRecommendedCategoryIds(prefs);
     return ids
-      .map((id) => catalogCategories.find((c) => c.id === id)?.name)
+      .map((id) => {
+        const row = catalogCategories.find((c) => c.id === id);
+        return row ? categoryLabel(row) : null;
+      })
       .filter((x): x is string => Boolean(x));
-  }, [profileData, prefsMode, catalogCategories]);
+  }, [profileData, prefsMode, catalogCategories, categoryLabel]);
 
   useEffect(() => {
     if (mainTab !== "preferences" || prefsMode == null || !profileData) return;
@@ -820,7 +825,7 @@ export default function UserProfilePage() {
                           checked={prefCategoryIds.includes(c.id)}
                           onChange={() => togglePrefCategory(c.id)}
                         />
-                        {c.name}
+                        {categoryLabel(c)}
                       </label>
                     ))
                   )}

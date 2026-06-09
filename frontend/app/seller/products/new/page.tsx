@@ -9,6 +9,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { canUseSellerWorkspace } from "@/lib/workspace";
 import { uploadCatalogImage } from "@/lib/catalog";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 
 type Category = {
   id: string;
@@ -35,6 +36,7 @@ export default function NewCatalogProductPage() {
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const router = useRouter();
+  const categoryLabel = useCategoryLabel();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState("");
@@ -318,7 +320,7 @@ export default function NewCatalogProductPage() {
             <option value="">Select category…</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {categoryLabel(c)}
               </option>
             ))}
           </select>

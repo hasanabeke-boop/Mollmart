@@ -58,6 +58,16 @@ export class DealController {
     res.status(httpStatus.OK).json(data);
   };
 
+  patchMyOrderStatus = async (req: Request, res: Response): Promise<void> => {
+    const body = req.body as {
+      status: 'in_progress' | 'awaiting_confirmation' | 'completed';
+      trackingNumber?: string | null;
+      carrier?: string | null;
+    };
+    const data = await this.dealService.patchMyRequestOrderStatus(req.user as AuthUser, req.params.id, body);
+    res.status(httpStatus.OK).json(data);
+  };
+
   getWallet = async (req: Request, res: Response): Promise<void> => {
     const data = await this.dealService.getWallet(req.user as AuthUser);
     res.status(httpStatus.OK).json(data);

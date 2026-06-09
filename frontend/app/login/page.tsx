@@ -280,7 +280,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className={`block w-full pl-11 pr-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 placeholder:text-slate-400 duration-300 ${fieldErrors.email ? "border-red-400" : "border-slate-200"}`}
+                  className={`block w-full pl-11 pr-4 py-3.5 bg-white border rounded-xl focus:border-primary focus:ring-primary transition-all text-slate-900 placeholder:text-slate-400 duration-300 ${fieldErrors.email ? "border-red-400" : "border-slate-200"}`}
                 />
               </div>
               {fieldErrors.email && (
@@ -316,7 +316,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
-                  className={`block w-full pl-11 pr-12 py-3.5 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 placeholder:text-slate-400 duration-300 ${fieldErrors.password ? "border-red-400" : "border-slate-200"}`}
+                  className={`block w-full pl-11 pr-12 py-3.5 bg-white border rounded-xl focus:border-primary focus:ring-primary transition-all text-slate-900 placeholder:text-slate-400 duration-300 ${fieldErrors.password ? "border-red-400" : "border-slate-200"}`}
                 />
                 <button
                   type="button"
@@ -452,7 +452,7 @@ export default function LoginPage() {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="block w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 transition-all focus:border-primary focus:ring-primary"
                   />
                 </div>
               </div>

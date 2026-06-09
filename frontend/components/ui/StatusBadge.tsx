@@ -32,6 +32,6 @@ export function requestStatusTone(status: string): StatusTone {
 
 export function orderStatusTone(status: string): StatusTone {
   if (status === "cancelled") return "danger";
-  if (status === "shipped" || status === "delivered") return "emphasis";
+  if (status === "in_progress" || status === "awaiting_confirmation" || status === "completed") return "emphasis";
   return "default";
 }

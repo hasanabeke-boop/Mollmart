@@ -13,20 +13,22 @@ import { useToast } from "@/context/ToastContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
 
-/** Legacy slug keys from older drafts; DB uses Category.id (cuid). */
-const LEGACY_CATEGORY_SLUG_LABELS: Record<string, string> = {
+const LEGACY_CATEGORY_SLUG_NAMES: Record<string, string> = {
+  home: "Home",
   "home-furniture": "Home & Furniture",
   electronics: "Electronics",
   fashion: "Fashion & Apparel",
   collectibles: "Collectibles",
   services: "Services",
   sustainability: "Sustainability",
+  other: "Other",
 };
 
 type ApiCategory = { id: string; name: string; slug: string };
@@ -430,14 +432,18 @@ export default function MyRequestsPage() {
     }
   };
 
-  const categoryLabel = useMemo(() => {
-    const byId: Record<string, string> = { ...LEGACY_CATEGORY_SLUG_LABELS };
-    for (const c of catalogCategories) {
-      byId[c.id] = c.name;
-      byId[c.slug] = c.name;
-    }
-    return (id: string) => byId[id] || "Category";
-  }, [catalogCategories]);
+  const categoryLabel = useCategoryLabel();
+  const resolveCategoryLabel = useCallback(
+    (id: string) => {
+      const row = catalogCategories.find((c) => c.id === id || c.slug === id);
+      if (row) return categoryLabel(row);
+      if (LEGACY_CATEGORY_SLUG_NAMES[id]) {
+        return categoryLabel({ name: LEGACY_CATEGORY_SLUG_NAMES[id], slug: id });
+      }
+      return categoryLabel(id);
+    },
+    [catalogCategories, categoryLabel],
+  );
 
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -446,13 +452,13 @@ export default function MyRequestsPage() {
       const haystack = [
         request.title,
         request.description,
-        categoryLabel(request.categoryId),
+        resolveCategoryLabel(request.categoryId),
         request.status,
         request.location || "",
       ].join(" ").toLowerCase();
       return haystack.includes(q);
     });
-  }, [requests, search, categoryLabel]);
+  }, [requests, search, resolveCategoryLabel]);
 
   return (
     <RoleGate
@@ -555,7 +561,7 @@ export default function MyRequestsPage() {
                       <StatusBadge tone={requestStatusTone(request.status)}>
                         {request.status.replace(/_/g, " ")}
                       </StatusBadge>
-                    <span className="text-xs text-[var(--text-muted)]">{categoryLabel(request.categoryId)}</span>
+                    <span className="text-xs text-[var(--text-muted)]">{resolveCategoryLabel(request.categoryId)}</span>
                     {request.location ? (
                       <>
                         <span className="hidden text-[var(--border)] sm:inline">·</span>
@@ -763,12 +769,12 @@ export default function MyRequestsPage() {
                         <>
                           {catalogCategories.map((c) => (
                             <option key={c.id} value={c.id}>
-                              {c.name}
+                              {categoryLabel(c)}
                             </option>
                           ))}
                           {categoryId &&
                             !catalogCategories.some((c) => c.id === categoryId) && (
-                              <option value={categoryId}>{categoryLabel(categoryId)}</option>
+                              <option value={categoryId}>{resolveCategoryLabel(categoryId)}</option>
                             )}
                         </>
                       )}

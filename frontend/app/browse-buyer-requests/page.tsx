@@ -6,6 +6,7 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { firstAttachmentImageUrl } from "@/lib/requestMedia";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { translateCategoryName } from "@/lib/categoryI18n";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseSellerWorkspace } from "@/lib/workspace";
@@ -22,7 +23,6 @@ type ApiCategory = { id: string; name: string; slug: string };
 type BuyerRequest = {
   id: string;
   title: string;
-  category: string;
   categoryId: string;
   icon: string;
   iconBg: string;
@@ -48,6 +48,12 @@ const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor:
     iconBg: "bg-gradient-to-br from-blue-100 to-sky-100",
     iconColor: "text-blue-700",
     barColor: "bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400",
+  },
+  home: {
+    icon: "home",
+    iconBg: "bg-gradient-to-br from-amber-100 to-orange-100",
+    iconColor: "text-amber-800",
+    barColor: "bg-gradient-to-r from-amber-600 via-orange-500 to-yellow-400",
   },
   "home-furniture": {
     icon: "chair",
@@ -78,6 +84,12 @@ const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor:
     iconBg: "bg-gradient-to-br from-cyan-100 to-blue-100",
     iconColor: "text-cyan-700",
     barColor: "bg-gradient-to-r from-cyan-600 via-blue-500 to-indigo-500",
+  },
+  other: {
+    icon: "more_horiz",
+    iconBg: "bg-gradient-to-br from-slate-100 to-gray-100",
+    iconColor: "text-slate-700",
+    barColor: "bg-gradient-to-r from-slate-600 via-gray-500 to-zinc-400",
   },
 };
 
@@ -144,13 +156,6 @@ function lookupCategory(list: ApiCategory[], categoryId: string): ApiCategory | 
 
 function styleSlugForCategory(list: ApiCategory[], categoryId: string): string {
   return lookupCategory(list, categoryId)?.slug ?? categoryId;
-}
-
-function categoryLabelFromId(list: ApiCategory[], categoryId: string): string {
-  const row = lookupCategory(list, categoryId);
-  const name = row?.name?.trim();
-  if (name) return name;
-  return categoryId.trim() || "Uncategorized";
 }
 
 function timeAgo(dateStr: string): string {
@@ -485,7 +490,7 @@ function OfferModal({
 
 export default function BrowseBuyerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
@@ -500,6 +505,18 @@ export default function BrowseBuyerRequestsPage() {
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
   const userId = user?.id ?? null;
+
+  const categoryLabel = useCallback(
+    (categoryId: string) => {
+      const row = lookupCategory(catalogCategories, categoryId);
+      return translateCategoryName(
+        row?.name?.trim() || categoryId.trim() || "Uncategorized",
+        language,
+        row?.slug,
+      );
+    },
+    [catalogCategories, language],
+  );
 
   const loadRequests = useCallback(async () => {
     if (!userId || !sellerWorkspace) return;
@@ -576,7 +593,6 @@ export default function BrowseBuyerRequestsPage() {
         return {
           id: r.id,
           title: r.title,
-          category: categoryLabelFromId(catalogCategories, r.categoryId),
           categoryId: r.categoryId,
           ...style,
           budget: formatBudget(r.budgetMin, r.budgetMax, r.currency, r.quantity),
@@ -655,13 +671,13 @@ export default function BrowseBuyerRequestsPage() {
         (r) =>
           r.title.toLowerCase().includes(q) ||
           r.description.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q) ||
+          categoryLabel(r.categoryId).toLowerCase().includes(q) ||
           r.categoryId.toLowerCase().includes(q),
       );
     }
 
     return data;
-  }, [requests, search, selectedCategory, activeTab]);
+  }, [requests, search, selectedCategory, activeTab, categoryLabel]);
 
   const featuredRequest = filteredRequests.find((r) => r.image);
   const regularRequests = filteredRequests.filter((r) => r !== featuredRequest);
@@ -671,10 +687,10 @@ export default function BrowseBuyerRequestsPage() {
     return ids
       .map((id) => ({
         id,
-        name: categoryLabelFromId(catalogCategories, id),
+        name: categoryLabel(id),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [requests, catalogCategories]);
+  }, [requests, catalogCategories, categoryLabel]);
 
   const boardBudgetMax = useMemo(() => {
     const nums = filteredRequests.map((r) => r.budgetMax).filter((n) => n > 0);
@@ -887,7 +903,7 @@ export default function BrowseBuyerRequestsPage() {
                   <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1 block">
-                        Category: {featuredRequest.category}
+                        Category: {categoryLabel(featuredRequest.categoryId)}
                       </span>
                       <h3 className="text-2xl font-bold leading-tight">
                         {featuredRequest.title}
@@ -982,7 +998,7 @@ export default function BrowseBuyerRequestsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                      {req.category}
+                      {categoryLabel(req.categoryId)}
                     </span>
                     <h3 className="font-bold text-lg truncate">{req.title}</h3>
                   </div>

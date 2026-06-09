@@ -16,7 +16,7 @@ export type RequestDealOrder = {
   id: string;
   buyerId: string;
   sellerId: string;
-  status: "processing" | "shipped" | "delivered" | "cancelled";
+  status: "paid" | "in_progress" | "awaiting_confirmation" | "completed" | "cancelled";
   currency: string;
   subtotal: number;
   shippingAmount: number;

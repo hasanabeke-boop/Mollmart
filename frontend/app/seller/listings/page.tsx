@@ -17,6 +17,7 @@ import { useToast } from "@/context/ToastContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { canUseSellerWorkspace } from "@/lib/workspace";
@@ -32,6 +33,7 @@ export default function SellerListingsManagePage() {
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
 
@@ -314,7 +316,7 @@ export default function SellerListingsManagePage() {
                       {p.status}
                     </span>
                     {p.category && (
-                      <span className="text-xs font-medium text-slate-500">{p.category.name}</span>
+                      <span className="text-xs font-medium text-slate-500">{categoryLabel(p.category)}</span>
                     )}
                   </div>
                   <h2 className="line-clamp-2 text-xl font-bold text-[var(--foreground)]">{p.title}</h2>
@@ -424,7 +426,7 @@ export default function SellerListingsManagePage() {
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name}
+                      {categoryLabel(c)}
                     </option>
                   ))}
                 </select>

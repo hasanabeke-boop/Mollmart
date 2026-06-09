@@ -9,8 +9,7 @@ import {
   patchAdminRequestDealOrder,
   type RequestDealOrder,
 } from "@/lib/requestDeals";
-
-const STATUSES: RequestDealOrder["status"][] = ["processing", "shipped", "delivered", "cancelled"];
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
 
 export default function AdminOrdersPage() {
   const [items, setItems] = useState<RequestDealOrder[]>([]);
@@ -21,9 +20,7 @@ export default function AdminOrdersPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RequestDealOrder | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [drafts, setDrafts] = useState<
-    Record<string, { status: RequestDealOrder["status"]; trackingNumber: string; carrier: string }>
-  >({});
+  const [drafts, setDrafts] = useState<Record<string, { trackingNumber: string; carrier: string }>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,7 +32,6 @@ export default function AdminOrdersPage() {
       const next: typeof drafts = {};
       for (const o of data.items ?? []) {
         next[o.id] = {
-          status: o.status,
           trackingNumber: o.trackingNumber ?? "",
           carrier: o.carrier ?? "",
         };
@@ -59,15 +55,27 @@ export default function AdminOrdersPage() {
     setSavingId(orderId);
     setError("");
     try {
-      const body = {
-        status: d.status,
+      await patchAdminRequestDealOrder(orderId, {
         trackingNumber: d.trackingNumber.trim() || null,
         carrier: d.carrier.trim() || null,
-      };
-      await patchAdminRequestDealOrder(orderId, body);
+      });
       await load();
     } catch (e: unknown) {
       setError((e as Error).message || "Save failed");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const cancelOrder = async (order: RequestDealOrder) => {
+    if (order.status === "cancelled" || order.status === "completed") return;
+    setSavingId(order.id);
+    setError("");
+    try {
+      await patchAdminRequestDealOrder(order.id, { status: "cancelled" });
+      await load();
+    } catch (e: unknown) {
+      setError((e as Error).message || "Cancel failed");
     } finally {
       setSavingId(null);
     }
@@ -93,9 +101,8 @@ export default function AdminOrdersPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-black text-[#0d1b12]">Orders</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Request-deal orders come from accepted-offer chats after demo payment. Update status, carrier, and tracking
-          number for the diploma tracking flow. Deleting an order removes it from history; the related chat or request
-          stays.
+          Request-deal orders from demo payment. Sellers and buyers advance status; admins can cancel or edit tracking
+          details.
         </p>
       </div>
 
@@ -146,25 +153,10 @@ export default function AdminOrdersPage() {
                       {formatCatalogMoney(o.total, o.currency, 2)}
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        className="w-full min-w-[120px] rounded border border-gray-200 px-2 py-1 text-xs"
-                        value={d?.status ?? o.status}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [o.id]: {
-                              ...(prev[o.id] ?? { status: o.status, trackingNumber: "", carrier: "" }),
-                              status: e.target.value as RequestDealOrder["status"],
-                            },
-                          }))
-                        }
-                      >
-                        {STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
+                      <p className="text-xs font-semibold text-[#0d1b12]">
+                        {ORDER_STATUS_LABELS[o.status as OrderStatus]}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">{o.status}</p>
                     </td>
                     <td className="px-4 py-3">
                       <input
@@ -175,7 +167,7 @@ export default function AdminOrdersPage() {
                           setDrafts((prev) => ({
                             ...prev,
                             [o.id]: {
-                              ...(prev[o.id] ?? { status: o.status, trackingNumber: "", carrier: "" }),
+                              ...(prev[o.id] ?? { trackingNumber: "", carrier: "" }),
                               trackingNumber: e.target.value,
                             },
                           }))
@@ -191,7 +183,7 @@ export default function AdminOrdersPage() {
                           setDrafts((prev) => ({
                             ...prev,
                             [o.id]: {
-                              ...(prev[o.id] ?? { status: o.status, trackingNumber: "", carrier: "" }),
+                              ...(prev[o.id] ?? { trackingNumber: "", carrier: "" }),
                               carrier: e.target.value,
                             },
                           }))
@@ -204,10 +196,20 @@ export default function AdminOrdersPage() {
                           type="button"
                           disabled={savingId === o.id}
                           onClick={() => void save(o.id)}
-                          className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-[#0d1b12] hover:opacity-90 disabled:opacity-50"
                         >
-                          {savingId === o.id ? "…" : "Save"}
+                          {savingId === o.id ? "…" : "Save tracking"}
                         </button>
+                        {o.status !== "cancelled" && o.status !== "completed" ? (
+                          <button
+                            type="button"
+                            disabled={savingId === o.id}
+                            onClick={() => void cancelOrder(o)}
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            Cancel order
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(o)}

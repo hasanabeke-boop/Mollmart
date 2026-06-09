@@ -229,6 +229,32 @@ export class ShopRepository {
     }
   }
 
+  async creditSellerAndUpdateOrder(
+    orderId: string,
+    sellerId: string,
+    total: Prisma.Decimal,
+    data: Prisma.CatalogOrderUpdateInput
+  ): Promise<OrderRow | null> {
+    return this.client.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: sellerId },
+        data: { walletBalance: { increment: total } }
+      });
+      return tx.catalogOrder.update({
+        where: { id: orderId },
+        data: {
+          ...data,
+          sellerCreditedAt: new Date()
+        },
+        include: {
+          lines: true,
+          seller: { select: { id: true, name: true } },
+          buyer: { select: { id: true, name: true } }
+        }
+      });
+    });
+  }
+
   async checkoutTransaction(
     buyerId: string,
     checkoutCurrency: string,
@@ -255,7 +281,7 @@ export class ShopRepository {
           data: {
             buyerId,
             sellerId: g.sellerId,
-            status: CatalogOrderStatus.processing,
+            status: CatalogOrderStatus.paid,
             currency: checkoutCurrency,
             subtotal: new Prisma.Decimal(g.subtotal),
             shippingAmount: new Prisma.Decimal(g.shippingAmount),

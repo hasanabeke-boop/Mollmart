@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { apiFetch } from "@/lib/api";
 import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
 import { addCartItem } from "@/lib/shop";
@@ -31,6 +32,7 @@ export default function ShowcaseDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const slug = typeof params.slug === "string" ? params.slug : "";
   const displayCurrency = useMemo(() => normalizeCatalogCurrencyCode("USD"), []);
 
@@ -139,7 +141,7 @@ export default function ShowcaseDetailPage() {
         {product.category && (
           <>
             <span className="text-[#4c9a66] text-sm font-medium">/</span>
-            <span className="text-[#0d1b12] text-sm font-medium">{product.category.name}</span>
+            <span className="text-[#0d1b12] text-sm font-medium">{categoryLabel(product.category)}</span>
           </>
         )}
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
@@ -184,7 +186,7 @@ export default function ShowcaseDetailPage() {
           <div className="flex flex-col gap-2">
             {product.category && (
               <span className="px-2 py-1 rounded bg-[#e7f3eb] text-[#4c9a66] text-xs font-bold uppercase tracking-wider w-fit">
-                {product.category.name}
+                {categoryLabel(product.category)}
               </span>
             )}
             <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">{product.title}</h1>

@@ -8,14 +8,15 @@ async function main(): Promise<void> {
     { name: 'Fashion & Apparel', slug: 'fashion' },
     { name: 'Collectibles', slug: 'collectibles' },
     { name: 'Services', slug: 'services' },
-    { name: 'Sustainability', slug: 'sustainability' }
+    { name: 'Sustainability', slug: 'sustainability' },
+    { name: 'Other', slug: 'other' },
   ];
 
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
       update: { name: category.name, isActive: true },
-      create: category
+      create: category,
     });
   }
 }
