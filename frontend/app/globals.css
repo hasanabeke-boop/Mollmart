@@ -265,6 +265,10 @@ html[data-landing="true"] .app-shell-bg {
   background: #f6f6f6;
 }
 
+.dark html[data-landing="true"] .app-shell-bg {
+  background: #0a0f1a;
+}
+
 /* Lenis smooth scroll (landing) */
 html.lenis,
 html.lenis body {

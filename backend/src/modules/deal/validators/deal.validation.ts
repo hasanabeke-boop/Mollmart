@@ -1,5 +1,7 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
+import { demoCardOnlySchema, demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
 
 export const conversationIdParamSchema = {
   params: Joi.object({
@@ -16,7 +18,7 @@ export const proposalIdParamSchema = {
 export const createPriceProposalSchema = {
   body: Joi.object({
     amount: Joi.number().positive().required(),
-    currency: Joi.string().trim().uppercase().length(3).required()
+    currency: Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY)
   })
 };
 
@@ -68,16 +70,11 @@ export const requestOrderStatusPatchSchema = {
 };
 
 export const demoPaySchema = {
-  body: Joi.object({
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required(),
-    cardHolderName: Joi.string().trim().min(2).max(120).optional()
-  })
+  body: demoCheckoutWithShippingSchema
 };
 
 export const demoWithdrawSchema = {
-  body: Joi.object({
-    amount: Joi.number().positive().max(1_000_000).required(),
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required(),
-    cardHolderName: Joi.string().trim().min(2).max(120).required()
+  body: demoCardOnlySchema.keys({
+    amount: Joi.number().positive().max(1_000_000).required()
   })
 };

@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { apiFetch } from "@/lib/api";
-import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
+import { formatCatalogMoney } from "@/lib/catalog";
 import { addCartItem } from "@/lib/shop";
 
 type ShowcaseDetail = {
@@ -18,8 +18,6 @@ type ShowcaseDetail = {
   price: number;
   compareAtPrice: number | null;
   currency: string;
-  listedPrice?: number;
-  listedCurrency?: string;
   imageUrl: string;
   galleryUrls: string[];
   quantity: number;
@@ -34,7 +32,6 @@ export default function ShowcaseDetailPage() {
   const { t } = useLanguage();
   const categoryLabel = useCategoryLabel();
   const slug = typeof params.slug === "string" ? params.slug : "";
-  const displayCurrency = useMemo(() => normalizeCatalogCurrencyCode("USD"), []);
 
   const [product, setProduct] = useState<ShowcaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,10 +47,8 @@ export default function ShowcaseDetailPage() {
       setLoading(true);
       setError("");
       try {
-        const qs = new URLSearchParams();
-        qs.set("currency", displayCurrency);
         const data = await apiFetch<ShowcaseDetail>(
-          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}?${qs.toString()}`,
+          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}`,
           { service: "catalog" },
         );
         if (!cancelled) {
@@ -73,7 +68,7 @@ export default function ShowcaseDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, displayCurrency, t]);
+  }, [slug, t]);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -199,13 +194,6 @@ export default function ShowcaseDetailPage() {
                 <p className="text-3xl font-black text-[#0d1b12]">
                   {formatCatalogMoney(product.price, product.currency, 2)}
                 </p>
-                {product.listedCurrency && product.listedPrice != null ? (
-                  <p className="text-xs text-slate-500">
-                    {t("Listed as {price}", {
-                      price: formatCatalogMoney(product.listedPrice, product.listedCurrency, 2),
-                    })}
-                  </p>
-                ) : null}
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                 {inStock

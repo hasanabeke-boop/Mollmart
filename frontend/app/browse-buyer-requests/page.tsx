@@ -10,8 +10,7 @@ import { translateCategoryName } from "@/lib/categoryI18n";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseSellerWorkspace } from "@/lib/workspace";
-import { formatMoney, normalizeCurrency } from "@/lib/currency";
-import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
+import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
 import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
 import ModalPortal from "@/components/ui/ModalPortal";
@@ -241,14 +240,11 @@ function OfferModal({
   request: BuyerRequest;
   onClose: () => void;
 }) {
-  const reqCur = normalizeCurrency(request.currency);
   const [price, setPrice] = useState("");
-  const [offerCurrency, setOfferCurrency] = useState(reqCur);
   const [message, setMessage] = useState("");
   const [delivery, setDelivery] = useState("");
   const [sent, setSent] = useState(false);
   const [sendError, setSendError] = useState("");
-  const [equivHint, setEquivHint] = useState<string | null>(null);
 
   const [sending, setSending] = useState(false);
   const qty = Math.max(1, Math.floor(request.quantity) || 1);
@@ -257,35 +253,6 @@ function OfferModal({
     price && Number.isFinite(unitNum) && unitNum > 0
       ? computeOfferLineTotal(unitNum, qty)
       : null;
-
-  useEffect(() => {
-    setOfferCurrency(reqCur);
-  }, [reqCur, request.id]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      const n = Number(price);
-      if (!price || !Number.isFinite(n) || n <= 0 || offerCurrency === reqCur) {
-        setEquivHint(null);
-        return;
-      }
-      try {
-        const data = await fetchLatestRates(reqCur);
-        const conv = convertViaBase(n, offerCurrency, reqCur, data.base, data.rates);
-        if (cancelled || conv == null) return;
-        setEquivHint(
-          `≈ ${formatMoney(conv, reqCur)} in the buyer’s currency (rates from ${data.fetchedAt.slice(0, 10)}, refreshed hourly on server).`,
-        );
-      } catch {
-        if (!cancelled) setEquivHint(null);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [price, offerCurrency, reqCur]);
 
   const handleSend = async () => {
     const num = Number(price);
@@ -304,7 +271,7 @@ function OfferModal({
         body: JSON.stringify({
           requestId: request.id,
           price: num,
-          currency: normalizeCurrency(offerCurrency),
+          currency: DEFAULT_CURRENCY,
           message: message.trim(),
           deliveryDays: delivery ? parseInt(delivery, 10) || undefined : undefined,
         }),
@@ -353,11 +320,11 @@ function OfferModal({
             <p className="text-slate-500 text-sm mb-2">
               Your offer:{" "}
               <span className="font-bold text-slate-900">
-                {formatMoney(Number(price), offerCurrency)}
+                {formatMoney(Number(price), DEFAULT_CURRENCY)}
               </span>{" "}
               per unit × {qty} ={" "}
               <span className="font-bold text-slate-900">
-                {formatMoney(computeOfferLineTotal(Number(price), qty), offerCurrency)}
+                {formatMoney(computeOfferLineTotal(Number(price), qty), DEFAULT_CURRENCY)}
               </span>{" "}
               total for
             </p>
@@ -390,38 +357,21 @@ function OfferModal({
 
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Your price (per unit)
+                Your price per unit (₸)
               </label>
-              <div className="flex gap-2">
-                <select
-                  value={offerCurrency}
-                  onChange={(e) => setOfferCurrency(e.target.value)}
-                  className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Offer currency"
-                >
-                  {["KZT", "USD", "EUR", "RUB"].map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                  min={0}
-                  step={0.01}
-                  autoFocus
-                />
-              </div>
-              {equivHint && (
-                <p className="text-xs text-slate-500 leading-relaxed">{equivHint}</p>
-              )}
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+                min={0}
+                step={0.01}
+                autoFocus
+              />
               {lineTotal != null && lineTotal > 0 && (
                 <p className="text-sm font-semibold text-slate-800">
-                  Order total: {formatMoney(lineTotal, offerCurrency)}
+                  Order total: {formatMoney(lineTotal, DEFAULT_CURRENCY)}
                 </p>
               )}
             </div>

@@ -14,6 +14,9 @@ import {
   normalizeRequestQuantity,
   roundMoney
 } from '../../../shared/offerPricing';
+import { validateDemoCardFields } from '../../../shared/demoPayment.validation';
+import OfferRepository from '../../offer/repositories/offer.repository';
+import OfferEventPublisher from '../../offer/services/offer-event.service';
 
 const dealOrderShopInclude = {
   buyer: { select: { id: true, name: true } },
@@ -58,9 +61,9 @@ function serializeShopLikeOrder(row: DealOrderForShop) {
     subtotal: total,
     shippingAmount: 0,
     total,
-    shippingName: null as string | null,
-    shippingPhone: null as string | null,
-    shippingAddress: null as string | null,
+    shippingName: row.shippingName,
+    shippingPhone: row.shippingPhone,
+    shippingAddress: row.shippingAddress,
     trackingNumber: row.trackingNumber,
     carrier: row.carrier,
     createdAt: row.createdAt.toISOString(),
@@ -108,7 +111,12 @@ export class DealService {
       }),
       prisma.requestDealOrder.findUnique({
         where: { conversationId },
-        select: { id: true }
+        select: {
+          id: true,
+          shippingName: true,
+          shippingPhone: true,
+          shippingAddress: true
+        }
       })
     ]);
 
@@ -144,7 +152,18 @@ export class DealService {
               };
             })()
           : null,
-      orderId: order?.id ?? null
+      orderId: order?.id ?? null,
+      orderShipping:
+        order != null &&
+        (order.shippingName != null ||
+          order.shippingPhone != null ||
+          order.shippingAddress != null)
+          ? {
+              name: order.shippingName,
+              phone: order.shippingPhone,
+              address: order.shippingAddress
+            }
+          : null
     };
   }
 
@@ -277,9 +296,33 @@ export class DealService {
     return this.getDealState(user, proposal.conversationId);
   }
 
-  async demoPay(user: AuthUser, conversationId: string, _cardLast4: string, _cardHolderName?: string) {
-    void _cardLast4;
-    void _cardHolderName;
+  async demoPay(
+    user: AuthUser,
+    conversationId: string,
+    input: {
+      shippingName: string;
+      shippingPhone: string;
+      shippingAddress: string;
+      cardHolderName: string;
+      cardNumber: string;
+      cardExpiry: string;
+      cardCvv: string;
+    }
+  ) {
+    validateDemoCardFields(input);
+    const shippingName = input.shippingName.trim();
+    const shippingPhone = input.shippingPhone.trim();
+    const shippingAddress = input.shippingAddress.trim();
+    if (shippingName.length < 2) {
+      throw badRequest('shippingName is required');
+    }
+    if (shippingPhone.length < 5) {
+      throw badRequest('shippingPhone is required');
+    }
+    if (shippingAddress.length < 5) {
+      throw badRequest('shippingAddress is required');
+    }
+
     const conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { request: { select: { id: true, title: true, quantity: true } } }
@@ -315,6 +358,9 @@ export class DealService {
           title: conv.request.title,
           amount,
           currency,
+          shippingName,
+          shippingPhone,
+          shippingAddress,
           status: CatalogOrderStatus.paid
         },
         include: dealOrderShopInclude
@@ -333,6 +379,103 @@ export class DealService {
     });
 
     return serializeShopLikeOrder(order);
+  }
+
+  async checkoutAuctionWinner(
+    user: AuthUser,
+    requestId: string,
+    input: {
+      shippingName: string;
+      shippingPhone: string;
+      shippingAddress: string;
+      cardHolderName: string;
+      cardNumber: string;
+      cardExpiry: string;
+      cardCvv: string;
+    }
+  ) {
+    validateDemoCardFields(input);
+
+    const session = await prisma.auctionSession.findUnique({
+      where: { requestId },
+      include: { request: { select: { id: true, buyerId: true, title: true, quantity: true, currency: true } } }
+    });
+    if (session == null || session.status !== 'ended' || session.winnerSellerId == null) {
+      throw badRequest('Auction has not finished with a winner yet');
+    }
+    if (session.request.buyerId !== user.id) {
+      throw forbidden('Only the buyer on this request can pay the auction winner');
+    }
+    if (user.canBuy === false) {
+      throw forbidden('Your account cannot complete buyer payments');
+    }
+
+    const existingOrder = await prisma.requestDealOrder.findFirst({ where: { requestId } });
+    if (existingOrder != null) {
+      throw conflict('This auction has already been paid');
+    }
+
+    const offerRepo = new OfferRepository();
+    let offer = await prisma.offer.findFirst({
+      where: {
+        requestId,
+        sellerId: session.winnerSellerId,
+        status: { in: ['submitted', 'updated', 'accepted'] }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (offer == null) {
+      throw badRequest('Winning offer not found — refresh the auction page');
+    }
+
+    if (offer.status !== 'accepted') {
+      const accepted = await offerRepo.acceptOffer(offer.id, user.id);
+      await new OfferEventPublisher().publishOfferAccepted(accepted.acceptedOffer);
+      for (const rejected of accepted.rejectedOffers) {
+        await new OfferEventPublisher().publishOfferRejected(rejected);
+      }
+      offer = accepted.acceptedOffer;
+    }
+
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        requestId,
+        buyerId: user.id,
+        sellerId: session.winnerSellerId
+      }
+    });
+    if (conversation == null) {
+      conversation = await prisma.conversation.create({
+        data: {
+          requestId,
+          buyerId: user.id,
+          sellerId: session.winnerSellerId,
+          offerId: offer.id
+        }
+      });
+    } else if (conversation.offerId == null) {
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { offerId: offer.id }
+      });
+    }
+
+    const qty = normalizeRequestQuantity(session.request.quantity);
+    const total = computeOfferLineTotal(Number(offer.price), qty);
+    const currency = offer.currency.trim().toUpperCase();
+
+    if (conversation.agreedPrice == null || conversation.agreedCurrency == null) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          agreedPrice: total,
+          agreedCurrency: currency,
+          agreedAt: new Date()
+        }
+      });
+    }
+
+    return this.demoPay(user, conversation.id, input);
   }
 
   async listMyRequestOrders(user: AuthUser, page: number, limit: number, status?: string) {
@@ -554,12 +697,16 @@ export class DealService {
     return { balance: toNumber(row.walletBalance) };
   }
 
-  async demoWithdraw(user: AuthUser, amount: number, _cardLast4: string, _cardHolderName: string) {
+  async demoWithdraw(
+    user: AuthUser,
+    amount: number,
+    input: { cardHolderName: string; cardNumber: string; cardExpiry: string; cardCvv: string }
+  ) {
+    validateDemoCardFields(input);
     if (user.role !== 'seller') {
       throw forbidden('Only sellers can withdraw balance');
     }
-    void _cardLast4;
-    void _cardHolderName;
+    void input;
     const row = await prisma.user.findUnique({
       where: { id: user.id },
       select: { walletBalance: true }

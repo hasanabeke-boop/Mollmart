@@ -27,8 +27,7 @@ export class CatalogController {
   };
 
   getBySlug = async (req: Request, res: Response): Promise<void> => {
-    const { currency } = req.query as { currency?: string };
-    const product = await this.catalogService.getPublishedBySlug(req.params.slug, currency);
+    const product = await this.catalogService.getPublishedBySlug(req.params.slug);
     res.status(httpStatus.OK).json(product);
   };
 

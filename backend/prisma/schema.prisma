@@ -660,6 +660,9 @@ model RequestDealOrder {
   status           CatalogOrderStatus @default(paid)
   paymentProvider  String             @default("demo")
   paymentStatus    String             @default("paid")
+  shippingName     String?
+  shippingPhone    String?
+  shippingAddress  String?            @db.Text
   trackingNumber   String?
   carrier          String?
   sellerCreditedAt DateTime?

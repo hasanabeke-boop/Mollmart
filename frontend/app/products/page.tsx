@@ -118,7 +118,6 @@ export default function CatalogBrowsePage() {
       params.set("page", String(page));
       params.set("limit", "12");
       params.set("sort", "newest");
-      params.set("currency", "USD");
       if (debouncedQ) params.set("q", debouncedQ);
 
       if (showRecommendations) {

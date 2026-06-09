@@ -7,11 +7,9 @@ import CatalogRepository, {
 } from '../repositories/catalog.repository';
 import type { CatalogListQuery, CreateCatalogProductInput, UpdateCatalogProductInput } from '../types/catalog';
 import { uniqueCatalogSlug } from '../utils/slug';
-import { convertUsdQuoted, getUsdQuoteRates, roundCatalogMoney, type UsdQuoteRates } from './exchangeRates';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
 import { getBuyerRecommendedCategoryUuids } from '../../recommendations/recommendationSignals';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
-
-const DISPLAY_CURRENCIES = ['USD', 'EUR', 'RUB', 'KZT'] as const;
 
 /** Hide own listings when browsing catalog as a buyer (incl. dual-workspace seller → buyer). */
 function catalogExcludeSellerId(user?: AuthUser): string | undefined {
@@ -28,56 +26,25 @@ function catalogExcludeSellerId(user?: AuthUser): string | undefined {
   return undefined;
 }
 
-function buildNativePriceOrFilter(
+function buildKztPriceFilter(
   minD: number | undefined,
-  maxD: number | undefined,
-  display: string,
-  rates: UsdQuoteRates
+  maxD: number | undefined
 ): Prisma.CatalogProductWhereInput | undefined {
   const hasMin = minD != null && !Number.isNaN(minD);
   const hasMax = maxD != null && !Number.isNaN(maxD);
   if (!hasMin && !hasMax) {
     return undefined;
   }
-  const d = display.toUpperCase();
-  const rD = rates[d];
-  if (rD == null || rD <= 0) {
-    return undefined;
-  }
 
-  let minUsd: number | undefined;
-  let maxUsd: number | undefined;
+  const priceFilter: Prisma.DecimalFilter = {};
   if (hasMin) {
-    minUsd = minD! / rD;
+    priceFilter.gte = minD;
   }
   if (hasMax) {
-    maxUsd = maxD! / rD;
+    priceFilter.lte = maxD;
   }
 
-  const or: Prisma.CatalogProductWhereInput[] = [];
-  for (const cur of DISPLAY_CURRENCIES) {
-    const rCur = rates[cur];
-    if (rCur == null || rCur <= 0) {
-      continue;
-    }
-
-    const priceFilter: Prisma.DecimalFilter = {};
-    if (minUsd != null) {
-      priceFilter.gte = minUsd * rCur;
-    }
-    if (maxUsd != null) {
-      priceFilter.lte = maxUsd * rCur;
-    }
-    if (Object.keys(priceFilter).length === 0) {
-      continue;
-    }
-
-    or.push({
-      AND: [{ currency: cur }, { price: priceFilter }]
-    });
-  }
-
-  return or.length > 0 ? { OR: or } : undefined;
+  return { currency: MARKETPLACE_CURRENCY, price: priceFilter };
 }
 
 export class CatalogService {
@@ -91,13 +58,7 @@ export class CatalogService {
     const q = query.q != null && query.q.trim().length > 0 ? query.q.trim() : undefined;
     const categoryId =
       query.categoryId != null && query.categoryId.trim().length > 0 ? query.categoryId.trim() : undefined;
-    const displayCurrency =
-      query.currency != null && query.currency.trim().length === 3
-        ? query.currency.trim().toUpperCase()
-        : 'USD';
-
-    const rates = await getUsdQuoteRates();
-    const andPriceFilter = buildNativePriceOrFilter(query.minPrice, query.maxPrice, displayCurrency, rates);
+    const andPriceFilter = buildKztPriceFilter(query.minPrice, query.maxPrice);
 
     const result = await this.repo.listPublished({
       page: query.page,
@@ -110,20 +71,14 @@ export class CatalogService {
     });
 
     return {
-      items: result.items.map((row) => this.serializeListRow(row, { displayCurrency, rates })),
+      items: result.items.map((row) => this.serializeListRow(row)),
       meta: result.meta
     };
   }
 
   async listRecommendedForUser(user: AuthUser, query: CatalogListQuery) {
     const q = query.q != null && query.q.trim().length > 0 ? query.q.trim() : undefined;
-    const displayCurrency =
-      query.currency != null && query.currency.trim().length === 3
-        ? query.currency.trim().toUpperCase()
-        : 'USD';
-
-    const rates = await getUsdQuoteRates();
-    const andPriceFilter = buildNativePriceOrFilter(query.minPrice, query.maxPrice, displayCurrency, rates);
+    const andPriceFilter = buildKztPriceFilter(query.minPrice, query.maxPrice);
 
     const categoryIds = await getBuyerRecommendedCategoryUuids(user.id);
     const page = normalizePage(query.page);
@@ -148,23 +103,18 @@ export class CatalogService {
     });
 
     return {
-      items: result.items.map((row) => this.serializeListRow(row, { displayCurrency, rates })),
+      items: result.items.map((row) => this.serializeListRow(row)),
       meta: result.meta,
       hasRecommendationSignals: true
     };
   }
 
-  async getPublishedBySlug(slug: string, displayCurrency?: string) {
+  async getPublishedBySlug(slug: string) {
     const row = await this.repo.findPublishedBySlug(slug);
     if (row == null) {
       throw notFound('Product not found');
     }
-    const d =
-      displayCurrency != null && displayCurrency.trim().length === 3
-        ? displayCurrency.trim().toUpperCase()
-        : 'USD';
-    const rates = await getUsdQuoteRates();
-    return this.serializeDetail(row, { displayCurrency: d, rates });
+    return this.serializeDetail(row);
   }
 
   async listMine(user: AuthUser, page: number, limit: number) {
@@ -216,7 +166,7 @@ export class CatalogService {
         input.compareAtPrice != null && !Number.isNaN(Number(input.compareAtPrice))
           ? new Prisma.Decimal(input.compareAtPrice)
           : null,
-      currency: input.currency.trim().toUpperCase(),
+      currency: MARKETPLACE_CURRENCY,
       imageUrl: input.imageUrl.trim(),
       galleryUrls,
       quantity: input.quantity ?? 0,
@@ -254,8 +204,8 @@ export class CatalogService {
       data.compareAtPrice =
         input.compareAtPrice == null ? null : new Prisma.Decimal(input.compareAtPrice);
     }
-    if (input.currency !== undefined) {
-      data.currency = input.currency.trim().toUpperCase();
+    if (input.currency !== undefined && input.currency.trim().toUpperCase() !== MARKETPLACE_CURRENCY) {
+      throw badRequest(`Only ${MARKETPLACE_CURRENCY} is supported`);
     }
     if (input.imageUrl !== undefined) {
       data.imageUrl = input.imageUrl.trim();
@@ -325,55 +275,14 @@ export class CatalogService {
     return raw.filter((x): x is string => typeof x === 'string');
   }
 
-  private serializeListRow(
-    row: CatalogListRow,
-    convert?: { displayCurrency: string; rates: UsdQuoteRates }
-  ) {
+  private serializeListRow(row: CatalogListRow) {
     const listedPrice = Number(row.price);
     const listedCompare =
       row.compareAtPrice != null && !Number.isNaN(Number(row.compareAtPrice))
         ? Number(row.compareAtPrice)
         : null;
 
-    if (convert == null) {
-      return {
-        id: row.id,
-        sellerId: row.sellerId,
-        title: row.title,
-        description: row.description,
-        categoryId: row.categoryId,
-        category: row.category,
-        slug: row.slug,
-        price: listedPrice,
-        compareAtPrice: listedCompare,
-        currency: row.currency,
-        imageUrl: row.imageUrl,
-        galleryUrls: this.galleryArray(row.galleryUrls),
-        quantity: row.quantity,
-        status: row.status,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt
-      };
-    }
-
-    const native = row.currency.trim().toUpperCase();
-    const to = convert.displayCurrency.trim().toUpperCase();
-    const { rates } = convert;
-
-    let price = listedPrice;
-    let compareAt = listedCompare;
-    if (native !== to) {
-      price = roundCatalogMoney(convertUsdQuoted(listedPrice, native, to, rates));
-      compareAt =
-        listedCompare != null
-          ? roundCatalogMoney(convertUsdQuoted(listedCompare, native, to, rates))
-          : null;
-    } else {
-      price = roundCatalogMoney(listedPrice);
-      compareAt = listedCompare != null ? roundCatalogMoney(listedCompare) : null;
-    }
-
-    const base = {
+    return {
       id: row.id,
       sellerId: row.sellerId,
       title: row.title,
@@ -381,9 +290,9 @@ export class CatalogService {
       categoryId: row.categoryId,
       category: row.category,
       slug: row.slug,
-      price,
-      compareAtPrice: compareAt,
-      currency: to,
+      price: listedPrice,
+      compareAtPrice: listedCompare,
+      currency: row.currency,
       imageUrl: row.imageUrl,
       galleryUrls: this.galleryArray(row.galleryUrls),
       quantity: row.quantity,
@@ -391,19 +300,11 @@ export class CatalogService {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt
     };
-
-    if (native !== to) {
-      return { ...base, listedPrice, listedCurrency: row.currency };
-    }
-    return base;
   }
 
-  private serializeDetail(
-    row: CatalogDetailRow,
-    convert?: { displayCurrency: string; rates: UsdQuoteRates }
-  ) {
+  private serializeDetail(row: CatalogDetailRow) {
     return {
-      ...this.serializeListRow(row, convert),
+      ...this.serializeListRow(row),
       seller: row.seller
     };
   }

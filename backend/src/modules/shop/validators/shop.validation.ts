@@ -1,7 +1,9 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
+import { demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
 
-const currency = Joi.string().valid('USD', 'EUR', 'RUB', 'KZT').uppercase();
+const currency = Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY);
 
 export const shopCartAddSchema = {
   body: Joi.object({
@@ -26,13 +28,8 @@ export const shopCartDeleteParamsSchema = {
 };
 
 export const shopCheckoutSchema = {
-  body: Joi.object({
-    checkoutCurrency: currency.required(),
-    shippingName: Joi.string().trim().max(200).allow('', null).optional(),
-    shippingPhone: Joi.string().trim().max(40).allow('', null).optional(),
-    shippingAddress: Joi.string().trim().max(2000).allow('', null).optional(),
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).optional(),
-    cardHolderName: Joi.string().trim().min(2).max(120).optional()
+  body: demoCheckoutWithShippingSchema.keys({
+    checkoutCurrency: currency
   })
 };
 

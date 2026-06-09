@@ -1,7 +1,9 @@
 import { CatalogOrderStatus, CatalogProductStatus } from '@prisma/client';
 import type { AuthUser } from '../../request/types/express';
 import { badRequest, forbidden, notFound } from '../../request/utils/apiError';
-import { convertUsdQuoted, getUsdQuoteRates, roundCatalogMoney } from '../../catalog/services/exchangeRates';
+import { roundCatalogMoney } from '../../catalog/services/exchangeRates';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
+import { validateDemoCardFields } from '../../../shared/demoPayment.validation';
 import ShopRepository, { type CartRow, type OrderRow } from '../repositories/shop.repository';
 import ShopEventPublisher, { type ShopEventPublisherLike } from './shop-event.service';
 import {
@@ -10,16 +12,16 @@ import {
   resolveOrderActor
 } from '../../../shared/catalogOrderStatus';
 
-const CHECKOUT_CURRENCIES = new Set(['USD', 'EUR', 'RUB', 'KZT']);
-
 export type AddCartItemInput = { productId: string; quantity?: number };
 export type CheckoutInput = {
   checkoutCurrency: string;
-  shippingName?: string | null;
-  shippingPhone?: string | null;
-  shippingAddress?: string | null;
-  cardLast4?: string | null;
-  cardHolderName?: string | null;
+  shippingName: string;
+  shippingPhone: string;
+  shippingAddress: string;
+  cardHolderName: string;
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvv: string;
 };
 export type AdminPatchOrderInput = {
   status?: CatalogOrderStatus;
@@ -97,19 +99,16 @@ export class ShopService {
 
   async checkout(user: AuthUser, input: CheckoutInput) {
     this.assertBuyerCapability(user, 'checkout');
-    void input.cardLast4;
-    void input.cardHolderName;
+    validateDemoCardFields(input);
     const checkoutCurrency = input.checkoutCurrency.trim().toUpperCase();
-    if (!CHECKOUT_CURRENCIES.has(checkoutCurrency)) {
-      throw badRequest('Invalid checkout currency');
+    if (checkoutCurrency !== MARKETPLACE_CURRENCY) {
+      throw badRequest(`Checkout currency must be ${MARKETPLACE_CURRENCY}`);
     }
 
     const cart = await this.repo.findCartRows(user.id);
     if (cart.length === 0) {
       throw badRequest('Cart is empty');
     }
-
-    const rates = await getUsdQuoteRates();
 
     const bySeller = new Map<string, CartRow[]>();
     for (const row of cart) {
@@ -122,6 +121,9 @@ export class ShopService {
       }
       if (p.quantity < row.quantity) {
         throw badRequest(`Not enough stock for "${p.title}"`);
+      }
+      if (p.currency.trim().toUpperCase() !== MARKETPLACE_CURRENCY) {
+        throw badRequest(`"${p.title}" must be priced in ${MARKETPLACE_CURRENCY}`);
       }
       const list = bySeller.get(p.sellerId) ?? [];
       list.push(row);
@@ -156,9 +158,7 @@ export class ShopService {
 
       for (const row of rows) {
         const p = row.product;
-        const unit = roundCatalogMoney(
-          convertUsdQuoted(Number(p.price), p.currency, checkoutCurrency, rates)
-        );
+        const unit = roundCatalogMoney(Number(p.price));
         const lineSum = roundCatalogMoney(unit * row.quantity);
         subtotal = roundCatalogMoney(subtotal + lineSum);
         lines.push({

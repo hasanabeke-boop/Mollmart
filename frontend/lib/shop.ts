@@ -1,4 +1,5 @@
 import { apiFetchWithRefresh } from "@/lib/api";
+import { demoCheckoutPayload, type DemoCheckoutInput } from "@/lib/demoPayment";
 
 export type CartItem = {
   productId: string;
@@ -81,18 +82,14 @@ export async function removeCartItem(productId: string): Promise<void> {
   });
 }
 
-export async function checkoutCart(body: {
-  checkoutCurrency: string;
-  shippingName?: string;
-  shippingPhone?: string;
-  shippingAddress?: string;
-  cardLast4?: string;
-  cardHolderName?: string;
-}): Promise<{ orders: ShopOrder[] }> {
+export async function checkoutCart(body: DemoCheckoutInput & { checkoutCurrency: string }): Promise<{ orders: ShopOrder[] }> {
   return apiFetchWithRefresh<{ orders: ShopOrder[] }>("/api/v1/shop/checkout", {
     method: "POST",
     service: "shop",
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      checkoutCurrency: body.checkoutCurrency,
+      ...demoCheckoutPayload(body),
+    }),
   });
 }
 

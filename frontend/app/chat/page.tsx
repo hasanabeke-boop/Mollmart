@@ -17,6 +17,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { SearchField, searchInputClassName } from "@/components/ui/SearchField";
 import { fieldInputClassName } from "@/components/ui/fieldStyles";
+import DemoPaymentFields from "@/components/payment/DemoPaymentFields";
+import { EMPTY_DEMO_CHECKOUT, validateDemoCheckout } from "@/lib/demoPayment";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 
 const panelInputClass = fieldInputClassName;
@@ -228,12 +230,10 @@ function ChatPageContent() {
   const [dealState, setDealState] = useState<DealState | null>(null);
   const [dealLoading, setDealLoading] = useState(false);
   const [proposeAmount, setProposeAmount] = useState("");
-  const [proposeCurrency, setProposeCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [dealBusy, setDealBusy] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [dealPanelOpen, setDealPanelOpen] = useState(false);
-  const [cardLast4, setCardLast4] = useState("");
-  const [cardName, setCardName] = useState("");
+  const [payForm, setPayForm] = useState(EMPTY_DEMO_CHECKOUT);
 
   const active = conversations.find((conversation) => conversation.id === activeId);
   const isBuyerOnThread = Boolean(user?.id && active && active.buyerId === user.id);
@@ -323,12 +323,6 @@ function ChatPageContent() {
       setDealLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (dealState?.requestCurrency) {
-      setProposeCurrency(normalizeCurrency(dealState.requestCurrency));
-    }
-  }, [dealState?.requestCurrency]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -754,11 +748,36 @@ function ChatPageContent() {
             ) : dealState ? (
               <div className="space-y-4">
                 {dealState.orderId ? (
-                  <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-200">
-                    Paid —{" "}
-                    <Link className="font-bold underline" href={`/orders/${dealState.orderId}`}>
-                      view order
-                    </Link>
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-200">
+                      Paid —{" "}
+                      <Link className="font-bold underline" href={`/orders/${dealState.orderId}`}>
+                        view order
+                      </Link>
+                    </div>
+                    {dealState.orderShipping &&
+                    (dealState.orderShipping.name ||
+                      dealState.orderShipping.phone ||
+                      dealState.orderShipping.address) ? (
+                      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-sm">
+                        <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">
+                          {isSellerOnThread ? "Buyer delivery details" : "Your delivery details"}
+                        </p>
+                        {dealState.orderShipping.name ? (
+                          <p className="font-semibold text-[var(--foreground)]">{dealState.orderShipping.name}</p>
+                        ) : null}
+                        {dealState.orderShipping.address ? (
+                          <p className="mt-1 whitespace-pre-wrap text-[var(--foreground)]">
+                            {dealState.orderShipping.address}
+                          </p>
+                        ) : null}
+                        {dealState.orderShipping.phone ? (
+                          <p className="mt-2 text-[var(--text-muted)]">
+                            {t("Phone")}: {dealState.orderShipping.phone}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 {dealState.initialOffer && !dealState.orderId && (
@@ -798,25 +817,13 @@ function ChatPageContent() {
                     {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""})
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <select
-                      value={proposeCurrency}
-                      onChange={(e) => setProposeCurrency(e.target.value)}
-                      className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs font-bold text-[var(--foreground)]"
-                      aria-label="Proposal currency"
-                    >
-                      {["KZT", "USD", "EUR", "RUB"].map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
                     <input
                       type="number"
                       min={0}
                       step="0.01"
                       value={proposeAmount}
                       onChange={(e) => setProposeAmount(e.target.value)}
-                      placeholder={normalizeCurrency(dealState.requestCurrency)}
+                      placeholder={DEFAULT_CURRENCY}
                       className="min-w-0 flex-1 rounded-md border border-[var(--border)] px-2 py-1.5 text-sm"
                     />
                     <button
@@ -830,7 +837,7 @@ function ChatPageContent() {
                         try {
                           const d = await postPriceProposal(active.id, {
                             amount: n,
-                            currency: normalizeCurrency(proposeCurrency),
+                            currency: DEFAULT_CURRENCY,
                           });
                           setDealState(d);
                           setProposeAmount("");
@@ -970,7 +977,7 @@ function ChatPageContent() {
       )}
       {payOpen && active && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="app-card w-full max-w-md rounded-xl p-6 shadow-[var(--shadow-card)]">
+          <div className="app-card max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl p-6 shadow-[var(--shadow-card)]">
             <h3 className="mb-1 text-lg font-bold text-[var(--foreground)]">Demo payment</h3>
             {dealState?.agreedPrice != null && dealState.agreedCurrency && (
               <p className="mb-2 text-base font-bold text-[var(--foreground)]">
@@ -979,22 +986,14 @@ function ChatPageContent() {
               </p>
             )}
             <p className="mb-4 text-sm text-[var(--text-muted)]">
-              No real charge. Fill the fields below to simulate payment for the agreed request-deal total.
+              No real charge. Enter delivery details and demo card fields to complete payment.
             </p>
-            <label className="mb-1 block text-xs font-semibold text-[var(--text-muted)]">Name on card</label>
-            <input
-              value={cardName}
-              onChange={(e) => setCardName(e.target.value)}
-              className={`mb-3 ${panelInputClass}`}
-              placeholder="Jane Buyer"
-            />
-            <label className="mb-1 block text-xs font-semibold text-[var(--text-muted)]">Last 4 digits</label>
-            <input
-              value={cardLast4}
-              onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              className={`${panelInputClass} tracking-widest`}
-              placeholder="4242"
-              inputMode="numeric"
+            <DemoPaymentFields
+              card={payForm}
+              onCardChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
+              shipping={payForm}
+              onShippingChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
+              inputClassName={panelInputClass}
             />
             <div className="mt-6 flex gap-2">
               <button
@@ -1002,31 +1001,27 @@ function ChatPageContent() {
                 className="flex-1 rounded-lg border border-[var(--border)] py-2.5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
                 onClick={() => {
                   setPayOpen(false);
-                  setCardLast4("");
-                  setCardName("");
+                  setPayForm(EMPTY_DEMO_CHECKOUT);
                 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={dealBusy || cardLast4.length !== 4 || !cardName.trim()}
+                disabled={dealBusy || validateDemoCheckout(payForm) != null}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                 onClick={async () => {
-                  if (cardLast4.length !== 4) {
-                    setError("Enter the last 4 digits of the card.");
+                  const validationError = validateDemoCheckout(payForm);
+                  if (validationError) {
+                    setError(validationError);
                     return;
                   }
                   setDealBusy(true);
                   try {
-                    await demoPayConversation(active.id, {
-                      cardLast4,
-                      cardHolderName: cardName.trim(),
-                    });
+                    await demoPayConversation(active.id, payForm);
                     await loadDealState(active.id);
                     setPayOpen(false);
-                    setCardLast4("");
-                    setCardName("");
+                    setPayForm(EMPTY_DEMO_CHECKOUT);
                   } catch (e) {
                     setError((e as Error).message || "Payment failed.");
                   } finally {
