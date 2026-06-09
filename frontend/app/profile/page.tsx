@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import type { FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -58,7 +58,7 @@ function navButtonClass(active: boolean) {
   }`;
 }
 
-export default function UserProfilePage() {
+function UserProfilePageContent() {
   const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const { activeRole, hasDualWorkspace, enableMixedMode, mixedModeBusy } = useWorkspace();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -877,6 +877,20 @@ export default function UserProfilePage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+export default function UserProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="app-page flex min-h-[40vh] items-center justify-center text-sm text-[var(--text-muted)]">
+          Loading…
+        </div>
+      }
+    >
+      <UserProfilePageContent />
+    </Suspense>
   );
 }
 
