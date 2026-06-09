@@ -11,6 +11,7 @@ function usesLandingNav(pathname: string) {
     pathname.startsWith("/register") ||
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/confirm-password-change") ||
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/auth/")
   );
