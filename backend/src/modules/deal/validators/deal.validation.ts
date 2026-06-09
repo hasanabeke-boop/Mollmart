@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
-import { demoCardOnlySchema, demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
+import { shippingSchema } from '../../../shared/shipping.validation';
 
 export const conversationIdParamSchema = {
   params: Joi.object({
@@ -69,12 +69,6 @@ export const requestOrderStatusPatchSchema = {
   })
 };
 
-export const demoPaySchema = {
-  body: demoCheckoutWithShippingSchema
-};
-
-export const demoWithdrawSchema = {
-  body: demoCardOnlySchema.keys({
-    amount: Joi.number().positive().max(1_000_000).required()
-  })
+export const placeOrderSchema = {
+  body: shippingSchema
 };

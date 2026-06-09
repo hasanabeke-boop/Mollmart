@@ -107,7 +107,7 @@ export default function OrdersPage() {
         <p className="max-w-2xl text-sm text-[var(--text-muted)] sm:text-base">
           {isSellerView
             ? "Orders from paid request deals and catalog checkout. Open one to see details and tracking."
-            : "Orders after checkout or demo payment in chat. Track status and details here."}
+            : "Orders after checkout or delivery details in chat. Track status and agreed price here."}
         </p>
       </header>
 

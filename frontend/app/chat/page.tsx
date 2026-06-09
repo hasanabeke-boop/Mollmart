@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { apiFetchWithRefresh } from "@/lib/api";
 import {
   acceptPriceProposal,
-  demoPayConversation,
+  placeRequestOrderConversation,
   fetchDealState,
   postApplyOfferTotal,
   postPriceProposal,
@@ -17,8 +17,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { SearchField, searchInputClassName } from "@/components/ui/SearchField";
 import { fieldInputClassName } from "@/components/ui/fieldStyles";
-import DemoPaymentFields from "@/components/payment/DemoPaymentFields";
-import { EMPTY_DEMO_CHECKOUT, validateDemoCheckout } from "@/lib/demoPayment";
+import ShippingFields from "@/components/shipping/ShippingFields";
+import { EMPTY_SHIPPING, validateShipping } from "@/lib/shipping";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 
 const panelInputClass = fieldInputClassName;
@@ -231,16 +231,16 @@ function ChatPageContent() {
   const [dealLoading, setDealLoading] = useState(false);
   const [proposeAmount, setProposeAmount] = useState("");
   const [dealBusy, setDealBusy] = useState(false);
-  const [payOpen, setPayOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
   const [dealPanelOpen, setDealPanelOpen] = useState(false);
-  const [payForm, setPayForm] = useState(EMPTY_DEMO_CHECKOUT);
+  const [shippingForm, setShippingForm] = useState(EMPTY_SHIPPING);
 
   const active = conversations.find((conversation) => conversation.id === activeId);
   const isBuyerOnThread = Boolean(user?.id && active && active.buyerId === user.id);
   const isSellerOnThread = Boolean(user?.id && active && active.sellerId === user.id);
-  const canPayAsBuyer = isBuyerOnThread && user?.canBuy !== false;
-  const showPayCta =
-    Boolean(dealState?.agreedPrice != null && dealState?.agreedCurrency && !dealState?.orderId && canPayAsBuyer);
+  const canPlaceOrderAsBuyer = isBuyerOnThread && user?.canBuy !== false;
+  const showOrderCta =
+    Boolean(dealState?.agreedPrice != null && dealState?.agreedCurrency && !dealState?.orderId && canPlaceOrderAsBuyer);
 
   const loadConversations = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!user?.id) return;
@@ -560,9 +560,9 @@ function ChatPageContent() {
                 <button
                   type="button"
                   className="min-h-10 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] lg:hidden"
-                  onClick={() => (showPayCta ? setPayOpen(true) : setDealPanelOpen(true))}
+                  onClick={() => (showOrderCta ? setOrderOpen(true) : setDealPanelOpen(true))}
                 >
-                  {showPayCta ? t("Pay") : t("Deal")}
+                  {showOrderCta ? t("Order") : t("Deal")}
                 </button>
                 <span className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-xs font-medium capitalize text-[var(--text-muted)]">
                   {active.status}
@@ -611,11 +611,11 @@ function ChatPageContent() {
               })}
             </div>
 
-            {showPayCta && dealState && (
+            {showOrderCta && dealState && (
               <div className="border-t border-primary/25 bg-primary/8 px-4 py-3 lg:px-6">
                 <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">{t("Ready to pay")}</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">{t("Ready to order")}</p>
                     <p className="text-sm font-semibold text-[var(--foreground)]">
                       {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
                       {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""}
@@ -624,9 +624,9 @@ function ChatPageContent() {
                   <button
                     type="button"
                     className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-                    onClick={() => setPayOpen(true)}
+                    onClick={() => setOrderOpen(true)}
                   >
-                    {t("Pay now (demo)")}
+                    {t("Submit delivery details")}
                   </button>
                 </div>
               </div>
@@ -678,7 +678,7 @@ function ChatPageContent() {
           } shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] lg:relative lg:flex lg:w-80 lg:max-w-none`}
         >
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 lg:hidden">
-            <p className="text-sm font-semibold text-[var(--foreground)]">{t("Deal & payment")}</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">{t("Deal")}</p>
             <button
               type="button"
               className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
@@ -742,7 +742,7 @@ function ChatPageContent() {
           )}
 
           <section className="border-b border-[var(--border)] p-6">
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Price &amp; pay</h2>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Price &amp; order</h2>
             {dealLoading && !dealState ? (
               <p className="text-sm text-[var(--text-muted)]">Loading deal…</p>
             ) : dealState ? (
@@ -863,21 +863,20 @@ function ChatPageContent() {
                         </span>
                       ) : null}
                     </p>
-                    {canPayAsBuyer ? (
+                    {canPlaceOrderAsBuyer ? (
                       <button
                         type="button"
                         className="mt-2 w-full rounded-lg bg-primary py-2 text-xs font-semibold text-white hover:opacity-90"
-                        onClick={() => setPayOpen(true)}
+                        onClick={() => setOrderOpen(true)}
                       >
-                        Pay now (demo)
+                        Submit delivery details
                       </button>
                     ) : isSellerOnThread ? (
                       <p className="mt-2 text-xs text-[var(--text-muted)]">
-                        Waiting for buyer to pay… They will see <span className="font-bold">Pay now</span>{" "}
-                        in this chat (or the green bar above messages on phone).
+                        Waiting for the buyer to submit delivery details and create the order.
                       </p>
                     ) : (
-                      <p className="mt-2 text-xs text-[var(--text-muted)]">Waiting for buyer to pay…</p>
+                      <p className="mt-2 text-xs text-[var(--text-muted)]">Waiting for buyer to submit delivery details…</p>
                     )}
                   </div>
                 ) : null}
@@ -975,10 +974,10 @@ function ChatPageContent() {
           </section>
         </aside>
       )}
-      {payOpen && active && (
+      {orderOpen && active && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="app-card max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl p-6 shadow-[var(--shadow-card)]">
-            <h3 className="mb-1 text-lg font-bold text-[var(--foreground)]">Demo payment</h3>
+            <h3 className="mb-1 text-lg font-bold text-[var(--foreground)]">Delivery details</h3>
             {dealState?.agreedPrice != null && dealState.agreedCurrency && (
               <p className="mb-2 text-base font-bold text-[var(--foreground)]">
                 {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
@@ -986,13 +985,11 @@ function ChatPageContent() {
               </p>
             )}
             <p className="mb-4 text-sm text-[var(--text-muted)]">
-              No real charge. Enter delivery details and demo card fields to complete payment.
+              Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.
             </p>
-            <DemoPaymentFields
-              card={payForm}
-              onCardChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
-              shipping={payForm}
-              onShippingChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
+            <ShippingFields
+              value={shippingForm}
+              onChange={(patch) => setShippingForm((s) => ({ ...s, ...patch }))}
               inputClassName={panelInputClass}
             />
             <div className="mt-6 flex gap-2">
@@ -1000,36 +997,36 @@ function ChatPageContent() {
                 type="button"
                 className="flex-1 rounded-lg border border-[var(--border)] py-2.5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
                 onClick={() => {
-                  setPayOpen(false);
-                  setPayForm(EMPTY_DEMO_CHECKOUT);
+                  setOrderOpen(false);
+                  setShippingForm(EMPTY_SHIPPING);
                 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={dealBusy || validateDemoCheckout(payForm) != null}
+                disabled={dealBusy || validateShipping(shippingForm) != null}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                 onClick={async () => {
-                  const validationError = validateDemoCheckout(payForm);
+                  const validationError = validateShipping(shippingForm);
                   if (validationError) {
                     setError(validationError);
                     return;
                   }
                   setDealBusy(true);
                   try {
-                    await demoPayConversation(active.id, payForm);
+                    await placeRequestOrderConversation(active.id, shippingForm);
                     await loadDealState(active.id);
-                    setPayOpen(false);
-                    setPayForm(EMPTY_DEMO_CHECKOUT);
+                    setOrderOpen(false);
+                    setShippingForm(EMPTY_SHIPPING);
                   } catch (e) {
-                    setError((e as Error).message || "Payment failed.");
+                    setError((e as Error).message || "Could not create order.");
                   } finally {
                     setDealBusy(false);
                   }
                 }}
               >
-                {dealBusy ? "Processing…" : "Complete payment"}
+                {dealBusy ? "Processing…" : "Create order"}
               </button>
             </div>
           </div>

@@ -1,17 +1,17 @@
 import { apiFetchWithRefresh } from "@/lib/api";
-import { demoCheckoutPayload, type DemoCheckoutInput } from "@/lib/demoPayment";
+import { shippingPayload, type ShippingInput } from "@/lib/shipping";
 import type { RequestDealOrder } from "@/lib/requestDeals";
 
-export async function checkoutAuctionWinner(
+export async function placeAuctionWinnerOrder(
   requestId: string,
-  input: DemoCheckoutInput,
+  input: ShippingInput,
 ): Promise<RequestDealOrder> {
   return apiFetchWithRefresh<RequestDealOrder>(
-    `/api/v1/auctions/request/${encodeURIComponent(requestId)}/winner-checkout`,
+    `/api/v1/auctions/request/${encodeURIComponent(requestId)}/winner-place-order`,
     {
       method: "POST",
       service: "auction",
-      body: JSON.stringify(demoCheckoutPayload(input)),
+      body: JSON.stringify(shippingPayload(input)),
     },
   );
 }

@@ -55,8 +55,8 @@ export class AuctionController {
     res.json(data);
   };
 
-  checkoutWinner = async (req: Request, res: Response): Promise<void> => {
-    const data = await dealService.checkoutAuctionWinner(
+  placeWinnerOrder = async (req: Request, res: Response): Promise<void> => {
+    const data = await dealService.placeAuctionWinnerOrder(
       req.user as AuthUser,
       req.params.requestId,
       req.body

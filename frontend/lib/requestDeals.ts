@@ -1,5 +1,5 @@
 ﻿import { apiFetchWithRefresh } from "@/lib/api";
-import { demoCardPayload, demoCheckoutPayload, type DemoCardInput, type DemoCheckoutInput } from "@/lib/demoPayment";
+import { shippingPayload, type ShippingInput } from "@/lib/shipping";
 
 export type RequestDealOrderLine = {
   id: string;
@@ -164,31 +164,16 @@ export async function acceptPriceProposal(proposalId: string): Promise<DealState
   });
 }
 
-export async function demoPayConversation(
+export async function placeRequestOrderConversation(
   conversationId: string,
-  body: DemoCheckoutInput,
+  body: ShippingInput,
 ): Promise<RequestDealOrder> {
-  return apiFetchWithRefresh<RequestDealOrder>(`/api/v1/conversations/${encodeURIComponent(conversationId)}/demo-pay`, {
-    method: "POST",
-    service: "deal",
-    body: JSON.stringify(demoCheckoutPayload(body)),
-  });
-}
-
-export async function fetchWalletMe(): Promise<{ balance: number }> {
-  return apiFetchWithRefresh<{ balance: number }>("/api/v1/wallet/me", { service: "deal" });
-}
-
-export async function demoWithdrawWallet(
-  amount: number,
-  card: DemoCardInput,
-): Promise<{ ok: true; withdrawn: number; balance: number }> {
-  return apiFetchWithRefresh("/api/v1/wallet/demo-withdraw", {
-    method: "POST",
-    service: "deal",
-    body: JSON.stringify({
-      amount,
-      ...demoCardPayload(card),
-    }),
-  });
+  return apiFetchWithRefresh<RequestDealOrder>(
+    `/api/v1/conversations/${encodeURIComponent(conversationId)}/place-order`,
+    {
+      method: "POST",
+      service: "deal",
+      body: JSON.stringify(shippingPayload(body)),
+    },
+  );
 }

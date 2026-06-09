@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
+import { shippingSchema } from '../../../shared/shipping.validation';
 
 export const participateSchema = {
   params: Joi.object({
@@ -25,9 +25,9 @@ export const requestIdParamSchema = {
   })
 };
 
-export const auctionWinnerCheckoutSchema = {
+export const auctionWinnerPlaceOrderSchema = {
   params: Joi.object({
     requestId: Joi.string().trim().required()
   }),
-  body: demoCheckoutWithShippingSchema
+  body: shippingSchema
 };
