@@ -18,9 +18,9 @@ const NAV_HREFS = [
 ];
 
 const navSectionPill =
-  "rounded-full bg-[#242424] px-1 py-1 shadow-sm";
+  "max-w-full rounded-full bg-[#242424] px-1 py-1 shadow-sm";
 const navSectionLink =
-  "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-white/10 xl:px-3 xl:text-[11px] xl:tracking-[0.1em]";
+  "shrink-0 whitespace-nowrap rounded-full px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.06em] text-white transition-colors hover:bg-white/10 lg:px-2 lg:text-[10px] xl:px-3 xl:text-[11px] xl:tracking-[0.1em]";
 
 export default function LandingNavigation() {
   const copy = useLandingCopy();
@@ -61,12 +61,12 @@ export default function LandingNavigation() {
             size={32}
             showWordmark
             className="group relative z-[1] shrink-0"
-            wordmarkClassName="text-sm font-bold uppercase tracking-[0.08em] text-[#16171a] md:text-base"
+            wordmarkClassName="text-sm font-bold uppercase tracking-[0.08em] text-[#16171a] dark:text-white md:text-base"
             imageClassName="shadow-none transition-transform group-hover:scale-105"
           />
 
-          <div className={`hidden justify-center lg:flex ${navSectionPill}`}>
-            <div className="flex flex-nowrap items-center gap-0.5">
+          <div className={`hidden min-w-0 justify-center lg:flex ${navSectionPill}`}>
+            <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {NAV_HREFS.map(({ href, key }) => (
                 <button
                   key={href}
@@ -80,15 +80,15 @@ export default function LandingNavigation() {
             </div>
           </div>
 
-          <div className="relative z-[1] flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
+          <div className="relative z-[2] flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
             <ThemeToggle />
             <LanguageSwitcher />
             <Link
               href="/login"
               className={`hidden rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wide shadow-sm transition-colors sm:block ${
                 pathname === "/login"
-                  ? "border border-[#242424] bg-[#242424] text-white"
-                  : "border border-[#242424]/15 bg-white/90 text-[#242424] hover:bg-white"
+                  ? "border border-[#242424] bg-[#242424] text-white dark:border-white/20 dark:bg-mm-dark-elevated"
+                  : "border border-[#242424]/15 bg-white/90 text-[#242424] hover:bg-white dark:border-white/15 dark:bg-mm-dark-elevated/90 dark:text-white dark:hover:bg-mm-dark-elevated"
               }`}
             >
               {copy.nav.login}
@@ -113,7 +113,7 @@ export default function LandingNavigation() {
 
             <button
               type="button"
-              className="relative z-[1001] flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-full bg-[#242424] lg:hidden"
+              className="relative z-[1001] flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-full bg-[#242424] dark:bg-mm-dark-elevated dark:ring-1 dark:ring-white/15 lg:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
               aria-expanded={menuOpen}
@@ -139,49 +139,64 @@ export default function LandingNavigation() {
       </nav>
 
       <div
-        className={`fixed inset-0 z-[998] flex flex-col items-center justify-center gap-4 bg-[#f6f6f6] px-6 transition-all duration-500 lg:hidden ${
+        className={`fixed inset-0 z-[998] flex flex-col items-center justify-center gap-6 bg-mm-bg/95 px-6 backdrop-blur-md transition-all duration-500 dark:bg-mm-dark-bg/95 lg:hidden ${
           menuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <div className={`w-full max-w-sm ${navSectionPill}`}>
-          <div className="flex flex-col gap-0.5 p-1">
-            {NAV_HREFS.map(({ href, key }, i) => (
-              <button
-                key={href}
-                type="button"
-                onClick={() => goToSection(href)}
-                className={`${navSectionLink} w-full py-3 text-sm tracking-wide`}
-                style={{
-                  transitionDelay: menuOpen ? `${i * 40}ms` : "0ms",
-                  opacity: menuOpen ? 1 : 0,
-                  transform: menuOpen ? "translateY(0)" : "translateY(12px)",
-                }}
-              >
-                {copy.nav.links[key]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div
-          className="mt-2 flex w-full max-w-sm flex-col gap-2.5 sm:flex-row"
+        <nav
+          className="flex w-full max-w-sm flex-col gap-1"
           style={{
-            transitionDelay: menuOpen ? `${NAV_HREFS.length * 40}ms` : "0ms",
             opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.5s, transform 0.5s",
+          }}
+        >
+          {NAV_HREFS.map(({ href, key }) => (
+            <button
+              key={href}
+              type="button"
+              onClick={() => goToSection(href)}
+              className="rounded-xl px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide text-mm-text transition-colors hover:bg-black/[0.04] dark:text-white dark:hover:bg-white/10"
+            >
+              {copy.nav.links[key]}
+            </button>
+          ))}
+        </nav>
+        <div
+          className="flex w-full max-w-sm flex-col gap-2.5 sm:flex-row"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.5s, transform 0.5s",
           }}
         >
           <Link
             href="/login"
-            className="flex-1 rounded-full border border-[#242424]/15 bg-white px-6 py-3 text-center text-sm font-semibold uppercase tracking-wide text-[#242424] shadow-sm"
+            onClick={() => setMenuOpen(false)}
+            className="flex-1 rounded-full border border-black/[0.08] bg-mm-surface px-6 py-3 text-center text-sm font-semibold uppercase tracking-wide text-mm-text shadow-sm transition-colors hover:bg-mm-surface-elevated dark:border-white/10 dark:bg-mm-dark-elevated dark:text-white dark:hover:bg-mm-dark-surface"
           >
             {copy.nav.login}
           </Link>
           <Link
             href="/register"
-            className="flex-1 rounded-full bg-mm-primary px-6 py-3 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-sm"
+            onClick={() => setMenuOpen(false)}
+            className="flex-1 rounded-full bg-mm-primary px-6 py-3 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:brightness-110"
           >
             {copy.nav.signup}
           </Link>
         </div>
+        <button
+          type="button"
+          onClick={() => goToSection("#cta")}
+          className="w-full max-w-sm rounded-full bg-[#242424] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-mm-primary dark:bg-mm-dark-elevated dark:ring-1 dark:ring-white/10 dark:hover:bg-mm-primary"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transform: menuOpen ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.5s, transform 0.5s",
+          }}
+        >
+          {copy.nav.cta}
+        </button>
       </div>
     </>
   );

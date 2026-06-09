@@ -9,7 +9,8 @@ import {
   shopCartPatchSchema,
   shopCheckoutSchema,
   shopOrderIdParamsSchema,
-  shopOrderListQuerySchema
+  shopOrderListQuerySchema,
+  shopOrderStatusPatchSchema
 } from '../../validators/shop.validation';
 
 export function createShopRouter(controller: ShopController): Router {
@@ -32,6 +33,11 @@ export function createShopRouter(controller: ShopController): Router {
   router.post('/checkout', validate(shopCheckoutSchema), asyncHandler(controller.checkout));
   router.get('/orders', validate(shopOrderListQuerySchema), asyncHandler(controller.listOrders));
   router.get('/orders/:id', validate(shopOrderIdParamsSchema), asyncHandler(controller.getOrder));
+  router.patch(
+    '/orders/:id/status',
+    validate(shopOrderStatusPatchSchema),
+    asyncHandler(controller.patchOrderStatus)
+  );
 
   return router;
 }

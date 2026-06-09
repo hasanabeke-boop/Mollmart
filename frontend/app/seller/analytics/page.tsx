@@ -7,6 +7,7 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { canUseSellerWorkspace } from "@/lib/workspace";
 
 type OfferItem = {
@@ -43,6 +44,7 @@ export default function SellerAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
+  const categoryLabel = useCategoryLabel();
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -124,9 +126,9 @@ export default function SellerAnalyticsPage() {
     const requestIdToCategory = new Map(requests.map((r) => [r.id, r.categoryId]));
 
     const labelFor = (categoryId: string) => {
-      if (categoryId === ORPHAN_KEY) return "Other";
+      if (categoryId === ORPHAN_KEY) return categoryLabel("Other");
       const row = catalogCategories.find((c) => c.id === categoryId || c.slug === categoryId);
-      return row?.name?.trim() || categoryId;
+      return row ? categoryLabel(row) : categoryId;
     };
 
     const byCategory = new Map<string, { categoryId: string; label: string; requests: number; offers: number }>();
@@ -153,7 +155,7 @@ export default function SellerAnalyticsPage() {
     return Array.from(byCategory.values())
       .sort((a, b) => b.offers - a.offers || b.requests - a.requests)
       .slice(0, 8);
-  }, [offers, requests, catalogCategories]);
+  }, [offers, requests, catalogCategories, categoryLabel]);
 
   return (
     <RoleGate

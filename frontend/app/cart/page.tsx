@@ -46,7 +46,7 @@ export default function CartPage() {
     () => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
     [items],
   );
-  const currency = items[0]?.currency ?? "USD";
+  const currency = items[0]?.currency ?? "KZT";
 
   const setQuantity = async (item: CartItem, nextQty: number) => {
     setBusyId(item.productId);

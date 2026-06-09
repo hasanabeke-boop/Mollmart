@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+import httpStatus from 'http-status';
 import { auctionRulesTooltips } from '../../../config/auctionRules';
 import { AuthUser } from '../../request/types/express';
+import { dealService } from '../../deal/routes/v1/index';
 import AuctionService from '../services/auction.service';
 import { auctionEventHub } from '../services/auction-event-hub';
 
@@ -51,6 +53,15 @@ export class AuctionController {
   withdraw = async (req: Request, res: Response): Promise<void> => {
     const data = await this.auctionService.withdraw(req.user as AuthUser, req.params.sessionId);
     res.json(data);
+  };
+
+  checkoutWinner = async (req: Request, res: Response): Promise<void> => {
+    const data = await dealService.checkoutAuctionWinner(
+      req.user as AuthUser,
+      req.params.requestId,
+      req.body
+    );
+    res.status(httpStatus.CREATED).json(data);
   };
 
   stream = async (req: Request, res: Response): Promise<void> => {

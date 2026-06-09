@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import DemoPaymentFields from "@/components/payment/DemoPaymentFields";
 import { useLanguage } from "@/context/LanguageContext";
 import { apiFetchWithRefresh } from "@/lib/api";
+import { checkoutAuctionWinner } from "@/lib/auctionApi";
 import { formatMoney } from "@/lib/currency";
+import { EMPTY_DEMO_CHECKOUT, validateDemoCheckout } from "@/lib/demoPayment";
 import type { AuctionSessionView } from "@/lib/auctionTypes";
 import { useAuctionSession, useAuctionTick } from "@/hooks/useAuctionStream";
 import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
@@ -18,9 +22,14 @@ type Props = {
 
 export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded }: Props) {
   const { t } = useLanguage();
+  const router = useRouter();
   const { session, setSession, lastDrop, roundEnding } = useAuctionSession(sessionId);
   const [acting, setActing] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
+  const [payOpen, setPayOpen] = useState(false);
+  const [payForm, setPayForm] = useState(EMPTY_DEMO_CHECKOUT);
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState("");
 
   const statusLabel = useCallback(
     (status: string, count: number, min: number) => {
@@ -61,6 +70,12 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
 
   const tickSession = session;
   const secondsRemaining = useAuctionTick(tickSession);
+
+  useEffect(() => {
+    if (tickSession?.status === "ended") {
+      void load();
+    }
+  }, [tickSession?.status, load]);
   const urgent =
     secondsRemaining != null &&
     tickSession?.rules.urgentThresholdSeconds != null &&
@@ -252,12 +267,111 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
       )}
 
       {tickSession.status === "ended" && tickSession.winner?.price != null && (
-        <p className="mt-2 text-sm text-[var(--foreground)]">
-          {t("Winner secured at")}{" "}
-          <strong>{formatMoney(tickSession.winner.price, currency)}</strong>.{" "}
-          {t("An offer was created automatically.")}
-        </p>
+        <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">
+            {t("Auction winner")}
+          </p>
+          <p className="mt-1 text-sm text-[var(--foreground)]">
+            {t("Winning bid")}{" "}
+            <strong>{formatMoney(tickSession.winner.price, currency)}</strong>
+            {tickSession.winnerLineTotal != null && tickSession.request.quantity > 1 ? (
+              <>
+                {" "}
+                · {t("Total")}{" "}
+                <strong>{formatMoney(tickSession.winnerLineTotal, currency)}</strong>
+              </>
+            ) : null}
+          </p>
+          {tickSession.orderId ? (
+            <Link
+              href={`/orders/${tickSession.orderId}`}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-[#0d1b12] hover:opacity-90"
+            >
+              {t("View order")}
+            </Link>
+          ) : tickSession.canPayAsBuyer && mode === "buyer" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setPayError("");
+                setPayOpen(true);
+              }}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-[#0d1b12] hover:opacity-90"
+            >
+              {t("Accept offer & pay")}
+            </button>
+          ) : mode === "buyer" ? (
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              {t("Payment is not available for your account.")}
+            </p>
+          ) : null}
+        </div>
       )}
+
+      {payOpen && tickSession.canPayAsBuyer ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xl">
+            <h3 className="text-lg font-bold text-[var(--foreground)]">{t("Accept offer & pay")}</h3>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              {t("Enter delivery details and demo card to complete the order. No chat required.")}
+            </p>
+            {payError ? (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {payError}
+              </p>
+            ) : null}
+            <div className="mt-4">
+              <DemoPaymentFields
+                card={payForm}
+                onCardChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
+                shipping={payForm}
+                onShippingChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
+                inputClassName="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)]"
+              />
+            </div>
+            <div className="mt-6 flex gap-2">
+              <button
+                type="button"
+                className="flex-1 rounded-lg border border-[var(--border)] py-2.5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+                disabled={payBusy}
+                onClick={() => {
+                  setPayOpen(false);
+                  setPayForm(EMPTY_DEMO_CHECKOUT);
+                  setPayError("");
+                }}
+              >
+                {t("Cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={payBusy || validateDemoCheckout(payForm) != null}
+                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-[#0d1b12] hover:opacity-90 disabled:opacity-50"
+                onClick={async () => {
+                  const validationError = validateDemoCheckout(payForm);
+                  if (validationError) {
+                    setPayError(validationError);
+                    return;
+                  }
+                  setPayBusy(true);
+                  setPayError("");
+                  try {
+                    const order = await checkoutAuctionWinner(tickSession.requestId, payForm);
+                    setPayOpen(false);
+                    setPayForm(EMPTY_DEMO_CHECKOUT);
+                    router.push(`/orders/${order.id}`);
+                  } catch (e) {
+                    setPayError((e as Error).message || t("Payment failed."));
+                  } finally {
+                    setPayBusy(false);
+                  }
+                }}
+              >
+                {payBusy ? t("Processing…") : t("Complete payment")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {!compact && (
         <p className="mt-4 text-xs text-[var(--text-muted)]">

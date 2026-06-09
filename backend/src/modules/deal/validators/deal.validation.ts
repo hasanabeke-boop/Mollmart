@@ -1,5 +1,7 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
+import { demoCardOnlySchema, demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
 
 export const conversationIdParamSchema = {
   params: Joi.object({
@@ -16,7 +18,7 @@ export const proposalIdParamSchema = {
 export const createPriceProposalSchema = {
   body: Joi.object({
     amount: Joi.number().positive().required(),
-    currency: Joi.string().trim().uppercase().length(3).required()
+    currency: Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY)
   })
 };
 
@@ -24,7 +26,7 @@ export const requestOrderListQuerySchema = {
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1).custom(normalizePage),
     limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
-    status: Joi.string().trim().valid('processing', 'shipped', 'delivered', 'cancelled').optional()
+    status: Joi.string().trim().valid('paid', 'in_progress', 'awaiting_confirmation', 'completed', 'cancelled').optional()
   })
 };
 
@@ -38,7 +40,7 @@ export const adminRequestOrderListSchema = {
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1).custom(normalizePage),
     limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
-    status: Joi.string().trim().valid('processing', 'shipped', 'delivered', 'cancelled').optional()
+    status: Joi.string().trim().valid('paid', 'in_progress', 'awaiting_confirmation', 'completed', 'cancelled').optional()
   })
 };
 
@@ -47,23 +49,32 @@ export const adminRequestOrderPatchSchema = {
     id: Joi.string().trim().min(1).required()
   }),
   body: Joi.object({
-    status: Joi.string().trim().valid('processing', 'shipped', 'delivered', 'cancelled').optional(),
+    status: Joi.string().trim().valid('cancelled').optional(),
     trackingNumber: Joi.string().trim().max(120).allow('', null).optional(),
     carrier: Joi.string().trim().max(120).allow('', null).optional()
   }).min(1)
 };
 
-export const demoPaySchema = {
+export const requestOrderStatusPatchSchema = {
+  params: Joi.object({
+    id: Joi.string().trim().min(1).required()
+  }),
   body: Joi.object({
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required(),
-    cardHolderName: Joi.string().trim().min(2).max(120).optional()
+    status: Joi.string()
+      .trim()
+      .valid('in_progress', 'awaiting_confirmation', 'completed')
+      .required(),
+    trackingNumber: Joi.string().trim().max(120).allow('', null).optional(),
+    carrier: Joi.string().trim().max(120).allow('', null).optional()
   })
 };
 
+export const demoPaySchema = {
+  body: demoCheckoutWithShippingSchema
+};
+
 export const demoWithdrawSchema = {
-  body: Joi.object({
-    amount: Joi.number().positive().max(1_000_000).required(),
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).required(),
-    cardHolderName: Joi.string().trim().min(2).max(120).required()
+  body: demoCardOnlySchema.keys({
+    amount: Joi.number().positive().max(1_000_000).required()
   })
 };

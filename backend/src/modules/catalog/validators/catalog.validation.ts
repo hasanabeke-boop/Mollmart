@@ -1,7 +1,8 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
 
-const catalogCurrency = Joi.string().valid('USD', 'EUR', 'RUB', 'KZT').uppercase();
+const catalogCurrency = Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY);
 
 const imageUrlValue = Joi.alternatives().try(
   Joi.string().trim().uri({ scheme: ['http', 'https'] }).min(8).max(2000),
@@ -17,7 +18,6 @@ export const catalogListQuerySchema = {
     limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
     q: Joi.string().trim().max(200).allow('').optional(),
     categoryId: Joi.string().trim().optional(),
-    currency: catalogCurrency.optional().default('USD'),
     minPrice: Joi.number().min(0).optional(),
     maxPrice: Joi.number().min(0).optional(),
     sort: Joi.string().valid('newest', 'price_asc', 'price_desc').default('newest')
@@ -34,9 +34,6 @@ export const catalogMineQuerySchema = {
 export const catalogSlugParamsSchema = {
   params: Joi.object({
     slug: Joi.string().trim().min(1).max(160).required()
-  }),
-  query: Joi.object({
-    currency: catalogCurrency.optional().default('USD')
   })
 };
 
@@ -47,7 +44,7 @@ export const catalogCreateSchema = {
     categoryId: Joi.string().trim().required(),
     price: Joi.number().precision(2).greater(0).required(),
     compareAtPrice: Joi.number().precision(2).greater(0).optional().allow(null),
-    currency: catalogCurrency.default('USD'),
+    currency: catalogCurrency,
     imageUrl: imageUrlValue.required(),
     galleryUrls: Joi.array().items(imageUrlValue).max(12).optional().default([]),
     quantity: Joi.number().integer().min(0).max(1_000_000).default(0),

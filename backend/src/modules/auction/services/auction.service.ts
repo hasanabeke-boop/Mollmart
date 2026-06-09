@@ -1,7 +1,9 @@
 import { auctionRules } from '../../../config/auctionRules';
+import prisma from '../../../config/prisma';
 import { AuthUser } from '../../request/types/express';
 import { badRequest, conflict, forbidden, notFound } from '../../request/utils/apiError';
 import OfferRepository from '../../offer/repositories/offer.repository';
+import { computeOfferLineTotal, normalizeRequestQuantity } from '../../../shared/offerPricing';
 import AuctionRepository, {
   AuctionSessionFull,
   ParticipateInput
@@ -117,6 +119,42 @@ export class AuctionService {
     };
   }
 
+  private async attachPaymentMeta(
+    view: ReturnType<AuctionService['serializeSession']>,
+    session: AuctionSessionFull,
+    viewer?: AuthUser
+  ) {
+    if (session.status !== 'ended' || session.winnerSellerId == null) {
+      return {
+        ...view,
+        orderId: null as string | null,
+        winnerLineTotal: null as number | null,
+        canPayAsBuyer: false
+      };
+    }
+
+    const order = await prisma.requestDealOrder.findFirst({
+      where: { requestId: session.requestId },
+      select: { id: true }
+    });
+    const qty = normalizeRequestQuantity(session.request.quantity);
+    const unitPrice = session.winningPrice != null ? toNumber(session.winningPrice) : null;
+    const winnerLineTotal = unitPrice != null ? computeOfferLineTotal(unitPrice, qty) : null;
+    const isBuyer = viewer?.id === session.request.buyerId;
+    const canPayAsBuyer =
+      order == null &&
+      winnerLineTotal != null &&
+      isBuyer &&
+      viewer?.canBuy !== false;
+
+    return {
+      ...view,
+      orderId: order?.id ?? null,
+      winnerLineTotal,
+      canPayAsBuyer
+    };
+  }
+
   private broadcastState(session: AuctionSessionFull): void {
     auctionEventHub.publish(session.id, {
       type: 'state',
@@ -128,14 +166,16 @@ export class AuctionService {
     const session = await this.repo.findByRequestId(requestId);
     if (session == null) throw notFound('Auction not found for this request');
     this.assertCanView(session, user);
-    return this.serializeSession(session, user);
+    const view = this.serializeSession(session, user);
+    return this.attachPaymentMeta(view, session, user);
   }
 
   async getById(sessionId: string, user?: AuthUser) {
     const session = await this.repo.findById(sessionId);
     if (session == null) throw notFound('Auction not found');
     this.assertCanView(session, user);
-    return this.serializeSession(session, user);
+    const view = this.serializeSession(session, user);
+    return this.attachPaymentMeta(view, session, user);
   }
 
   async listMine(user: AuthUser) {
@@ -508,7 +548,7 @@ export class AuctionService {
       leader.message?.trim() ||
       'Winning bid from reverse auction — ready to fulfill per agreed terms.';
 
-    const offer = await this.offerRepository.create(
+    await this.offerRepository.create(
       {
         requestId: session.requestId,
         sellerId: leader.sellerId,
@@ -519,8 +559,6 @@ export class AuctionService {
       },
       session.request.buyerId
     );
-
-    await this.offerRepository.acceptOffer(offer.id, session.request.buyerId);
 
     const ended = await this.repo.updateSession(session.id, {
       status: 'ended',
@@ -538,8 +576,7 @@ export class AuctionService {
       payload: {
         outcome: 'ended',
         winnerSellerId: leader.sellerId,
-        winningPrice: toNumber(leader.currentPrice),
-        offerId: offer.id
+        winningPrice: toNumber(leader.currentPrice)
       }
     });
     this.broadcastState(ended);

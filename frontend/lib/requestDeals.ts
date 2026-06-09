@@ -1,4 +1,5 @@
 ﻿import { apiFetchWithRefresh } from "@/lib/api";
+import { demoCardPayload, demoCheckoutPayload, type DemoCardInput, type DemoCheckoutInput } from "@/lib/demoPayment";
 
 export type RequestDealOrderLine = {
   id: string;
@@ -16,7 +17,7 @@ export type RequestDealOrder = {
   id: string;
   buyerId: string;
   sellerId: string;
-  status: "processing" | "shipped" | "delivered" | "cancelled";
+  status: "paid" | "in_progress" | "awaiting_confirmation" | "completed" | "cancelled";
   currency: string;
   subtotal: number;
   shippingAmount: number;
@@ -106,6 +107,12 @@ export type DealInitialOffer = {
   status: string;
 };
 
+export type DealOrderShipping = {
+  name: string | null;
+  phone: string | null;
+  address: string | null;
+};
+
 export type DealState = {
   proposals: DealProposal[];
   agreedPrice: number | null;
@@ -116,6 +123,7 @@ export type DealState = {
   requestQuantity: number;
   initialOffer: DealInitialOffer | null;
   orderId: string | null;
+  orderShipping: DealOrderShipping | null;
 };
 
 export async function fetchDealState(conversationId: string): Promise<DealState> {
@@ -158,15 +166,12 @@ export async function acceptPriceProposal(proposalId: string): Promise<DealState
 
 export async function demoPayConversation(
   conversationId: string,
-  card: { cardLast4: string; cardHolderName?: string },
+  body: DemoCheckoutInput,
 ): Promise<RequestDealOrder> {
   return apiFetchWithRefresh<RequestDealOrder>(`/api/v1/conversations/${encodeURIComponent(conversationId)}/demo-pay`, {
     method: "POST",
     service: "deal",
-    body: JSON.stringify({
-      cardLast4: card.cardLast4.trim(),
-      cardHolderName: card.cardHolderName?.trim(),
-    }),
+    body: JSON.stringify(demoCheckoutPayload(body)),
   });
 }
 
@@ -176,15 +181,14 @@ export async function fetchWalletMe(): Promise<{ balance: number }> {
 
 export async function demoWithdrawWallet(
   amount: number,
-  card: { cardLast4: string; cardHolderName: string },
+  card: DemoCardInput,
 ): Promise<{ ok: true; withdrawn: number; balance: number }> {
   return apiFetchWithRefresh("/api/v1/wallet/demo-withdraw", {
     method: "POST",
     service: "deal",
     body: JSON.stringify({
       amount,
-      cardLast4: card.cardLast4.trim(),
-      cardHolderName: card.cardHolderName.trim(),
+      ...demoCardPayload(card),
     }),
   });
 }

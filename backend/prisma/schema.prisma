@@ -171,9 +171,10 @@ enum CatalogProductStatus {
 }
 
 enum CatalogOrderStatus {
-  processing
-  shipped
-  delivered
+  paid
+  in_progress
+  awaiting_confirmation
+  completed
   cancelled
 }
 
@@ -592,21 +593,22 @@ model CatalogOrder {
   id              String             @id @default(cuid())
   buyerId         String
   sellerId        String
-  status          CatalogOrderStatus @default(processing)
-  paymentProvider String             @default("demo")
-  paymentStatus   String             @default("paid")
-  currency        String             @db.VarChar(3)
-  subtotal        Decimal            @db.Decimal(14, 2)
-  shippingAmount  Decimal            @default(0) @db.Decimal(14, 2)
-  total           Decimal            @db.Decimal(14, 2)
-  shippingName    String?
-  shippingPhone   String?
-  shippingAddress String?            @db.Text
-  trackingNumber  String?
-  carrier         String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  buyer           User               @relation("BuyerCatalogOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  status            CatalogOrderStatus @default(paid)
+  paymentProvider   String             @default("demo")
+  paymentStatus     String             @default("paid")
+  currency          String             @db.VarChar(3)
+  subtotal          Decimal            @db.Decimal(14, 2)
+  shippingAmount    Decimal            @default(0) @db.Decimal(14, 2)
+  total             Decimal            @db.Decimal(14, 2)
+  shippingName      String?
+  shippingPhone     String?
+  shippingAddress   String?            @db.Text
+  trackingNumber    String?
+  carrier           String?
+  sellerCreditedAt  DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  buyer             User               @relation("BuyerCatalogOrders", fields: [buyerId], references: [id], onDelete: Cascade)
   seller          User               @relation("SellerCatalogOrders", fields: [sellerId], references: [id], onDelete: Cascade)
   lines           CatalogOrderLine[]
 
@@ -655,12 +657,16 @@ model RequestDealOrder {
   title           String
   amount          Decimal            @db.Decimal(14, 2)
   currency        String             @db.VarChar(3)
-  status          CatalogOrderStatus @default(processing)
-  paymentProvider String             @default("demo")
-  paymentStatus   String             @default("paid")
-  trackingNumber  String?
-  carrier         String?
-  paidAt          DateTime           @default(now())
+  status           CatalogOrderStatus @default(paid)
+  paymentProvider  String             @default("demo")
+  paymentStatus    String             @default("paid")
+  shippingName     String?
+  shippingPhone    String?
+  shippingAddress  String?            @db.Text
+  trackingNumber   String?
+  carrier          String?
+  sellerCreditedAt DateTime?
+  paidAt           DateTime           @default(now())
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   conversation    Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)

@@ -5,10 +5,18 @@ import { badRequest, conflict, forbidden, notFound } from '../../offer/utils/api
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import type { DealEventPublisherLike } from './deal-event.service';
 import {
+  assertOrderStatusTransition,
+  parseCatalogOrderStatus,
+  resolveOrderActor
+} from '../../../shared/catalogOrderStatus';
+import {
   computeOfferLineTotal,
   normalizeRequestQuantity,
   roundMoney
 } from '../../../shared/offerPricing';
+import { validateDemoCardFields } from '../../../shared/demoPayment.validation';
+import OfferRepository from '../../offer/repositories/offer.repository';
+import OfferEventPublisher from '../../offer/services/offer-event.service';
 
 const dealOrderShopInclude = {
   buyer: { select: { id: true, name: true } },
@@ -53,9 +61,9 @@ function serializeShopLikeOrder(row: DealOrderForShop) {
     subtotal: total,
     shippingAmount: 0,
     total,
-    shippingName: null as string | null,
-    shippingPhone: null as string | null,
-    shippingAddress: null as string | null,
+    shippingName: row.shippingName,
+    shippingPhone: row.shippingPhone,
+    shippingAddress: row.shippingAddress,
     trackingNumber: row.trackingNumber,
     carrier: row.carrier,
     createdAt: row.createdAt.toISOString(),
@@ -103,7 +111,12 @@ export class DealService {
       }),
       prisma.requestDealOrder.findUnique({
         where: { conversationId },
-        select: { id: true }
+        select: {
+          id: true,
+          shippingName: true,
+          shippingPhone: true,
+          shippingAddress: true
+        }
       })
     ]);
 
@@ -139,7 +152,18 @@ export class DealService {
               };
             })()
           : null,
-      orderId: order?.id ?? null
+      orderId: order?.id ?? null,
+      orderShipping:
+        order != null &&
+        (order.shippingName != null ||
+          order.shippingPhone != null ||
+          order.shippingAddress != null)
+          ? {
+              name: order.shippingName,
+              phone: order.shippingPhone,
+              address: order.shippingAddress
+            }
+          : null
     };
   }
 
@@ -272,9 +296,33 @@ export class DealService {
     return this.getDealState(user, proposal.conversationId);
   }
 
-  async demoPay(user: AuthUser, conversationId: string, _cardLast4: string, _cardHolderName?: string) {
-    void _cardLast4;
-    void _cardHolderName;
+  async demoPay(
+    user: AuthUser,
+    conversationId: string,
+    input: {
+      shippingName: string;
+      shippingPhone: string;
+      shippingAddress: string;
+      cardHolderName: string;
+      cardNumber: string;
+      cardExpiry: string;
+      cardCvv: string;
+    }
+  ) {
+    validateDemoCardFields(input);
+    const shippingName = input.shippingName.trim();
+    const shippingPhone = input.shippingPhone.trim();
+    const shippingAddress = input.shippingAddress.trim();
+    if (shippingName.length < 2) {
+      throw badRequest('shippingName is required');
+    }
+    if (shippingPhone.length < 5) {
+      throw badRequest('shippingPhone is required');
+    }
+    if (shippingAddress.length < 5) {
+      throw badRequest('shippingAddress is required');
+    }
+
     const conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { request: { select: { id: true, title: true, quantity: true } } }
@@ -310,14 +358,12 @@ export class DealService {
           title: conv.request.title,
           amount,
           currency,
-          status: CatalogOrderStatus.processing
+          shippingName,
+          shippingPhone,
+          shippingAddress,
+          status: CatalogOrderStatus.paid
         },
         include: dealOrderShopInclude
-      });
-
-      await tx.user.update({
-        where: { id: conv.sellerId },
-        data: { walletBalance: { increment: amount } }
       });
 
       return created;
@@ -333,6 +379,103 @@ export class DealService {
     });
 
     return serializeShopLikeOrder(order);
+  }
+
+  async checkoutAuctionWinner(
+    user: AuthUser,
+    requestId: string,
+    input: {
+      shippingName: string;
+      shippingPhone: string;
+      shippingAddress: string;
+      cardHolderName: string;
+      cardNumber: string;
+      cardExpiry: string;
+      cardCvv: string;
+    }
+  ) {
+    validateDemoCardFields(input);
+
+    const session = await prisma.auctionSession.findUnique({
+      where: { requestId },
+      include: { request: { select: { id: true, buyerId: true, title: true, quantity: true, currency: true } } }
+    });
+    if (session == null || session.status !== 'ended' || session.winnerSellerId == null) {
+      throw badRequest('Auction has not finished with a winner yet');
+    }
+    if (session.request.buyerId !== user.id) {
+      throw forbidden('Only the buyer on this request can pay the auction winner');
+    }
+    if (user.canBuy === false) {
+      throw forbidden('Your account cannot complete buyer payments');
+    }
+
+    const existingOrder = await prisma.requestDealOrder.findFirst({ where: { requestId } });
+    if (existingOrder != null) {
+      throw conflict('This auction has already been paid');
+    }
+
+    const offerRepo = new OfferRepository();
+    let offer = await prisma.offer.findFirst({
+      where: {
+        requestId,
+        sellerId: session.winnerSellerId,
+        status: { in: ['submitted', 'updated', 'accepted'] }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (offer == null) {
+      throw badRequest('Winning offer not found — refresh the auction page');
+    }
+
+    if (offer.status !== 'accepted') {
+      const accepted = await offerRepo.acceptOffer(offer.id, user.id);
+      await new OfferEventPublisher().publishOfferAccepted(accepted.acceptedOffer);
+      for (const rejected of accepted.rejectedOffers) {
+        await new OfferEventPublisher().publishOfferRejected(rejected);
+      }
+      offer = accepted.acceptedOffer;
+    }
+
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        requestId,
+        buyerId: user.id,
+        sellerId: session.winnerSellerId
+      }
+    });
+    if (conversation == null) {
+      conversation = await prisma.conversation.create({
+        data: {
+          requestId,
+          buyerId: user.id,
+          sellerId: session.winnerSellerId,
+          offerId: offer.id
+        }
+      });
+    } else if (conversation.offerId == null) {
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { offerId: offer.id }
+      });
+    }
+
+    const qty = normalizeRequestQuantity(session.request.quantity);
+    const total = computeOfferLineTotal(Number(offer.price), qty);
+    const currency = offer.currency.trim().toUpperCase();
+
+    if (conversation.agreedPrice == null || conversation.agreedCurrency == null) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          agreedPrice: total,
+          agreedCurrency: currency,
+          agreedAt: new Date()
+        }
+      });
+    }
+
+    return this.demoPay(user, conversation.id, input);
   }
 
   async listMyRequestOrders(user: AuthUser, page: number, limit: number, status?: string) {
@@ -373,6 +516,84 @@ export class DealService {
       throw notFound('Order not found');
     }
     return serializeShopLikeOrder(row);
+  }
+
+  async patchMyRequestOrderStatus(
+    user: AuthUser,
+    orderId: string,
+    input: {
+      status: CatalogOrderStatus;
+      trackingNumber?: string | null;
+      carrier?: string | null;
+    }
+  ) {
+    const current = await prisma.requestDealOrder.findFirst({
+      where: {
+        id: orderId,
+        OR: [{ buyerId: user.id }, { sellerId: user.id }]
+      }
+    });
+    if (current == null) {
+      throw notFound('Order not found');
+    }
+
+    const actor = resolveOrderActor(user, current);
+    if (actor == null) {
+      throw forbidden('You cannot update this order');
+    }
+
+    assertOrderStatusTransition(actor, current.status, input.status);
+
+    if (actor !== 'seller' && (input.trackingNumber !== undefined || input.carrier !== undefined)) {
+      throw forbidden('Only the seller can update tracking details');
+    }
+
+    const previousStatus = current.status;
+    const data: {
+      status: CatalogOrderStatus;
+      trackingNumber?: string | null;
+      carrier?: string | null;
+      sellerCreditedAt?: Date;
+    } = { status: input.status };
+
+    if (input.trackingNumber !== undefined) {
+      data.trackingNumber = input.trackingNumber;
+    }
+    if (input.carrier !== undefined) {
+      data.carrier = input.carrier;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (
+        input.status === CatalogOrderStatus.completed &&
+        current.sellerCreditedAt == null
+      ) {
+        await tx.user.update({
+          where: { id: current.sellerId },
+          data: { walletBalance: { increment: current.amount } }
+        });
+        data.sellerCreditedAt = new Date();
+      }
+
+      return tx.requestDealOrder.update({
+        where: { id: orderId },
+        data,
+        include: dealOrderShopInclude
+      });
+    });
+
+    if (updated.status !== previousStatus) {
+      await this.events.publishRequestDealStatusChanged({
+        orderId: updated.id,
+        buyerId: updated.buyerId,
+        sellerId: updated.sellerId,
+        title: updated.title,
+        previousStatus,
+        newStatus: updated.status
+      });
+    }
+
+    return serializeShopLikeOrder(updated);
   }
 
   async listRequestOrdersAdmin(page: number, limit: number, status?: string) {
@@ -420,7 +641,13 @@ export class DealService {
       trackingNumber?: string | null;
       carrier?: string | null;
     } = {};
-    if (input.status !== undefined) data.status = input.status;
+    if (input.status !== undefined) {
+      if (input.status !== CatalogOrderStatus.cancelled) {
+        throw forbidden('Admins can only cancel orders or update tracking details');
+      }
+      assertOrderStatusTransition('admin', current.status, input.status);
+      data.status = input.status;
+    }
     if (input.trackingNumber !== undefined) data.trackingNumber = input.trackingNumber;
     if (input.carrier !== undefined) data.carrier = input.carrier;
 
@@ -470,12 +697,16 @@ export class DealService {
     return { balance: toNumber(row.walletBalance) };
   }
 
-  async demoWithdraw(user: AuthUser, amount: number, _cardLast4: string, _cardHolderName: string) {
+  async demoWithdraw(
+    user: AuthUser,
+    amount: number,
+    input: { cardHolderName: string; cardNumber: string; cardExpiry: string; cardCvv: string }
+  ) {
+    validateDemoCardFields(input);
     if (user.role !== 'seller') {
       throw forbidden('Only sellers can withdraw balance');
     }
-    void _cardLast4;
-    void _cardHolderName;
+    void input;
     const row = await prisma.user.findUnique({
       where: { id: user.id },
       select: { walletBalance: true }
@@ -497,14 +728,7 @@ export class DealService {
   }
 
   private parseOrderStatus(status?: string): CatalogOrderStatus | undefined {
-    if (status == null || status.trim().length === 0) {
-      return undefined;
-    }
-    const s = status.trim() as CatalogOrderStatus;
-    if (!['processing', 'shipped', 'delivered', 'cancelled'].includes(s)) {
-      return undefined;
-    }
-    return s;
+    return parseCatalogOrderStatus(status);
   }
 }
 

@@ -6,11 +6,11 @@ import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { firstAttachmentImageUrl } from "@/lib/requestMedia";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { translateCategoryName } from "@/lib/categoryI18n";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { canUseSellerWorkspace } from "@/lib/workspace";
-import { formatMoney, normalizeCurrency } from "@/lib/currency";
-import { convertViaBase, fetchLatestRates } from "@/lib/fxRates";
+import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
 import AuctionJoinModal from "@/components/auction/AuctionJoinModal";
 import ModalPortal from "@/components/ui/ModalPortal";
@@ -22,7 +22,6 @@ type ApiCategory = { id: string; name: string; slug: string };
 type BuyerRequest = {
   id: string;
   title: string;
-  category: string;
   categoryId: string;
   icon: string;
   iconBg: string;
@@ -48,6 +47,12 @@ const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor:
     iconBg: "bg-gradient-to-br from-blue-100 to-sky-100",
     iconColor: "text-blue-700",
     barColor: "bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400",
+  },
+  home: {
+    icon: "home",
+    iconBg: "bg-gradient-to-br from-amber-100 to-orange-100",
+    iconColor: "text-amber-800",
+    barColor: "bg-gradient-to-r from-amber-600 via-orange-500 to-yellow-400",
   },
   "home-furniture": {
     icon: "chair",
@@ -78,6 +83,12 @@ const CATEGORY_STYLES: Record<string, { icon: string; iconBg: string; iconColor:
     iconBg: "bg-gradient-to-br from-cyan-100 to-blue-100",
     iconColor: "text-cyan-700",
     barColor: "bg-gradient-to-r from-cyan-600 via-blue-500 to-indigo-500",
+  },
+  other: {
+    icon: "more_horiz",
+    iconBg: "bg-gradient-to-br from-slate-100 to-gray-100",
+    iconColor: "text-slate-700",
+    barColor: "bg-gradient-to-r from-slate-600 via-gray-500 to-zinc-400",
   },
 };
 
@@ -144,13 +155,6 @@ function lookupCategory(list: ApiCategory[], categoryId: string): ApiCategory | 
 
 function styleSlugForCategory(list: ApiCategory[], categoryId: string): string {
   return lookupCategory(list, categoryId)?.slug ?? categoryId;
-}
-
-function categoryLabelFromId(list: ApiCategory[], categoryId: string): string {
-  const row = lookupCategory(list, categoryId);
-  const name = row?.name?.trim();
-  if (name) return name;
-  return categoryId.trim() || "Uncategorized";
 }
 
 function timeAgo(dateStr: string): string {
@@ -236,14 +240,11 @@ function OfferModal({
   request: BuyerRequest;
   onClose: () => void;
 }) {
-  const reqCur = normalizeCurrency(request.currency);
   const [price, setPrice] = useState("");
-  const [offerCurrency, setOfferCurrency] = useState(reqCur);
   const [message, setMessage] = useState("");
   const [delivery, setDelivery] = useState("");
   const [sent, setSent] = useState(false);
   const [sendError, setSendError] = useState("");
-  const [equivHint, setEquivHint] = useState<string | null>(null);
 
   const [sending, setSending] = useState(false);
   const qty = Math.max(1, Math.floor(request.quantity) || 1);
@@ -252,35 +253,6 @@ function OfferModal({
     price && Number.isFinite(unitNum) && unitNum > 0
       ? computeOfferLineTotal(unitNum, qty)
       : null;
-
-  useEffect(() => {
-    setOfferCurrency(reqCur);
-  }, [reqCur, request.id]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      const n = Number(price);
-      if (!price || !Number.isFinite(n) || n <= 0 || offerCurrency === reqCur) {
-        setEquivHint(null);
-        return;
-      }
-      try {
-        const data = await fetchLatestRates(reqCur);
-        const conv = convertViaBase(n, offerCurrency, reqCur, data.base, data.rates);
-        if (cancelled || conv == null) return;
-        setEquivHint(
-          `≈ ${formatMoney(conv, reqCur)} in the buyer’s currency (rates from ${data.fetchedAt.slice(0, 10)}, refreshed hourly on server).`,
-        );
-      } catch {
-        if (!cancelled) setEquivHint(null);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [price, offerCurrency, reqCur]);
 
   const handleSend = async () => {
     const num = Number(price);
@@ -299,7 +271,7 @@ function OfferModal({
         body: JSON.stringify({
           requestId: request.id,
           price: num,
-          currency: normalizeCurrency(offerCurrency),
+          currency: DEFAULT_CURRENCY,
           message: message.trim(),
           deliveryDays: delivery ? parseInt(delivery, 10) || undefined : undefined,
         }),
@@ -348,11 +320,11 @@ function OfferModal({
             <p className="text-slate-500 text-sm mb-2">
               Your offer:{" "}
               <span className="font-bold text-slate-900">
-                {formatMoney(Number(price), offerCurrency)}
+                {formatMoney(Number(price), DEFAULT_CURRENCY)}
               </span>{" "}
               per unit × {qty} ={" "}
               <span className="font-bold text-slate-900">
-                {formatMoney(computeOfferLineTotal(Number(price), qty), offerCurrency)}
+                {formatMoney(computeOfferLineTotal(Number(price), qty), DEFAULT_CURRENCY)}
               </span>{" "}
               total for
             </p>
@@ -385,38 +357,21 @@ function OfferModal({
 
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Your price (per unit)
+                Your price per unit (₸)
               </label>
-              <div className="flex gap-2">
-                <select
-                  value={offerCurrency}
-                  onChange={(e) => setOfferCurrency(e.target.value)}
-                  className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Offer currency"
-                >
-                  {["KZT", "USD", "EUR", "RUB"].map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                  min={0}
-                  step={0.01}
-                  autoFocus
-                />
-              </div>
-              {equivHint && (
-                <p className="text-xs text-slate-500 leading-relaxed">{equivHint}</p>
-              )}
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+                min={0}
+                step={0.01}
+                autoFocus
+              />
               {lineTotal != null && lineTotal > 0 && (
                 <p className="text-sm font-semibold text-slate-800">
-                  Order total: {formatMoney(lineTotal, offerCurrency)}
+                  Order total: {formatMoney(lineTotal, DEFAULT_CURRENCY)}
                 </p>
               )}
             </div>
@@ -485,7 +440,7 @@ function OfferModal({
 
 export default function BrowseBuyerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
@@ -500,6 +455,18 @@ export default function BrowseBuyerRequestsPage() {
   const [hasRecommendationSignals, setHasRecommendationSignals] = useState<boolean | null>(null);
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
   const userId = user?.id ?? null;
+
+  const categoryLabel = useCallback(
+    (categoryId: string) => {
+      const row = lookupCategory(catalogCategories, categoryId);
+      return translateCategoryName(
+        row?.name?.trim() || categoryId.trim() || "Uncategorized",
+        language,
+        row?.slug,
+      );
+    },
+    [catalogCategories, language],
+  );
 
   const loadRequests = useCallback(async () => {
     if (!userId || !sellerWorkspace) return;
@@ -576,7 +543,6 @@ export default function BrowseBuyerRequestsPage() {
         return {
           id: r.id,
           title: r.title,
-          category: categoryLabelFromId(catalogCategories, r.categoryId),
           categoryId: r.categoryId,
           ...style,
           budget: formatBudget(r.budgetMin, r.budgetMax, r.currency, r.quantity),
@@ -655,13 +621,13 @@ export default function BrowseBuyerRequestsPage() {
         (r) =>
           r.title.toLowerCase().includes(q) ||
           r.description.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q) ||
+          categoryLabel(r.categoryId).toLowerCase().includes(q) ||
           r.categoryId.toLowerCase().includes(q),
       );
     }
 
     return data;
-  }, [requests, search, selectedCategory, activeTab]);
+  }, [requests, search, selectedCategory, activeTab, categoryLabel]);
 
   const featuredRequest = filteredRequests.find((r) => r.image);
   const regularRequests = filteredRequests.filter((r) => r !== featuredRequest);
@@ -671,10 +637,10 @@ export default function BrowseBuyerRequestsPage() {
     return ids
       .map((id) => ({
         id,
-        name: categoryLabelFromId(catalogCategories, id),
+        name: categoryLabel(id),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [requests, catalogCategories]);
+  }, [requests, catalogCategories, categoryLabel]);
 
   const boardBudgetMax = useMemo(() => {
     const nums = filteredRequests.map((r) => r.budgetMax).filter((n) => n > 0);
@@ -887,7 +853,7 @@ export default function BrowseBuyerRequestsPage() {
                   <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1 block">
-                        Category: {featuredRequest.category}
+                        Category: {categoryLabel(featuredRequest.categoryId)}
                       </span>
                       <h3 className="text-2xl font-bold leading-tight">
                         {featuredRequest.title}
@@ -982,7 +948,7 @@ export default function BrowseBuyerRequestsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                      {req.category}
+                      {categoryLabel(req.categoryId)}
                     </span>
                     <h3 className="font-bold text-lg truncate">{req.title}</h3>
                   </div>

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { useWorkspaceOptional } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
@@ -45,6 +46,7 @@ function filterOwnListings(items: CatalogItem[], userId: string | undefined, hid
 export default function CatalogBrowsePage() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const workspace = useWorkspaceOptional();
   const hideOwnInCatalog = canUseBuyerWorkspace(user, workspace?.activeRole);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -116,7 +118,6 @@ export default function CatalogBrowsePage() {
       params.set("page", String(page));
       params.set("limit", "12");
       params.set("sort", "newest");
-      params.set("currency", "USD");
       if (debouncedQ) params.set("q", debouncedQ);
 
       if (showRecommendations) {
@@ -192,10 +193,10 @@ export default function CatalogBrowsePage() {
     if (showRecommendations) return t("Recommendations");
     if (categoryId) {
       const c = categories.find((x) => x.id === categoryId);
-      return c ? c.name : t("Catalog");
+      return c ? categoryLabel(c) : t("Catalog");
     }
     return t("Catalog");
-  }, [showRecommendations, categoryId, categories, t]);
+  }, [showRecommendations, categoryId, categories, t, categoryLabel]);
 
   return (
     <div className="app-page">
@@ -289,7 +290,7 @@ export default function CatalogBrowsePage() {
                         className="h-4 w-4 border-slate-300 text-primary focus:ring-primary"
                       />
                       <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">
-                        {c.name}
+                        {categoryLabel(c)}
                       </span>
                     </label>
                   ))}
@@ -406,7 +407,7 @@ export default function CatalogBrowsePage() {
                   <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
                     {product.category && (
                       <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-800 backdrop-blur-sm">
-                        {product.category.name}
+                        {categoryLabel(product.category)}
                       </span>
                     )}
                   </div>

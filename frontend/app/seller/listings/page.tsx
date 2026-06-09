@@ -6,6 +6,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { apiFetch } from "@/lib/api";
 import { uploadCatalogImage } from "@/lib/catalog";
 import { formatCatalogMoney } from "@/lib/catalog";
+import { DEFAULT_CURRENCY } from "@/lib/currency";
 import {
   deleteListingProduct,
   fetchMyListingsPage,
@@ -17,6 +18,7 @@ import { useToast } from "@/context/ToastContext";
 import RoleGate from "@/components/auth/RoleGate";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useModalPresence } from "@/hooks/useModalPresence";
 import { canUseSellerWorkspace } from "@/lib/workspace";
@@ -32,6 +34,7 @@ export default function SellerListingsManagePage() {
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
 
@@ -48,7 +51,6 @@ export default function SellerListingsManagePage() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("USD");
   const [quantity, setQuantity] = useState("");
   const [status, setStatus] = useState<"draft" | "published" | "archived">("published");
   const [imageUrl, setImageUrl] = useState("");
@@ -123,7 +125,6 @@ export default function SellerListingsManagePage() {
     setDescription(p.description);
     setCategoryId(p.categoryId);
     setPrice(String(p.price));
-    setCurrency(p.currency || "USD");
     setQuantity(String(p.quantity));
     setStatus(p.status as "draft" | "published" | "archived");
     setImageUrl(p.imageUrl);
@@ -196,7 +197,7 @@ export default function SellerListingsManagePage() {
         description: description.trim(),
         categoryId,
         price: parsedPrice,
-        currency: currency.trim().toUpperCase(),
+        currency: DEFAULT_CURRENCY,
         quantity: parsedQty,
         status,
         imageUrl: imageUrl.trim(),
@@ -314,7 +315,7 @@ export default function SellerListingsManagePage() {
                       {p.status}
                     </span>
                     {p.category && (
-                      <span className="text-xs font-medium text-slate-500">{p.category.name}</span>
+                      <span className="text-xs font-medium text-slate-500">{categoryLabel(p.category)}</span>
                     )}
                   </div>
                   <h2 className="line-clamp-2 text-xl font-bold text-[var(--foreground)]">{p.title}</h2>
@@ -424,14 +425,16 @@ export default function SellerListingsManagePage() {
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name}
+                      {categoryLabel(c)}
                     </option>
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase text-slate-500">{t("Price")}</label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-500">
+                    {t("Price")} (₸)
+                  </label>
                   <input
                     type="number"
                     min={0.01}
@@ -443,31 +446,17 @@ export default function SellerListingsManagePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500">{t("Currency")}</label>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
+                  <label className="block text-xs font-bold uppercase text-slate-500">{t("Quantity in stock")}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    required
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                  >
-                    {["USD", "EUR", "RUB", "KZT"].map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-500">{t("Quantity in stock")}</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  required
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                />
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500">Status</label>

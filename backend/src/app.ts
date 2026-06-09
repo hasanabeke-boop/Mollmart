@@ -16,7 +16,6 @@ import catalogRoutes from './modules/catalog/routes/v1';
 import shopRoutes from './modules/shop/routes/v1';
 import dealRoutes from './modules/deal/routes/v1';
 import auctionRoutes from './modules/auction/routes/v1';
-import currencyRoutes from './modules/currency/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
 import profileRoutes from './modules/profile/routes/v1';
 import requestRoutes from './modules/request/routes/v1';
@@ -97,7 +96,6 @@ app.use('/api/v1', chatbotRoutes);
 app.use('/api/v1', notificationRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
 app.use('/api/v1/shop', shopRoutes);
-app.use('/api/v1/currency', currencyRoutes);
 app.use('/api/v1', dealRoutes);
 app.use('/api/v1', auctionRoutes);
 

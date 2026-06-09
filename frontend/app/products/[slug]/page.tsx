@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { apiFetch } from "@/lib/api";
-import { formatCatalogMoney, normalizeCatalogCurrencyCode } from "@/lib/catalog";
+import { formatCatalogMoney } from "@/lib/catalog";
 import { addCartItem } from "@/lib/shop";
 
 type ShowcaseDetail = {
@@ -17,8 +18,6 @@ type ShowcaseDetail = {
   price: number;
   compareAtPrice: number | null;
   currency: string;
-  listedPrice?: number;
-  listedCurrency?: string;
   imageUrl: string;
   galleryUrls: string[];
   quantity: number;
@@ -31,8 +30,8 @@ export default function ShowcaseDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const slug = typeof params.slug === "string" ? params.slug : "";
-  const displayCurrency = useMemo(() => normalizeCatalogCurrencyCode("USD"), []);
 
   const [product, setProduct] = useState<ShowcaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,10 +47,8 @@ export default function ShowcaseDetailPage() {
       setLoading(true);
       setError("");
       try {
-        const qs = new URLSearchParams();
-        qs.set("currency", displayCurrency);
         const data = await apiFetch<ShowcaseDetail>(
-          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}?${qs.toString()}`,
+          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}`,
           { service: "catalog" },
         );
         if (!cancelled) {
@@ -71,7 +68,7 @@ export default function ShowcaseDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, displayCurrency, t]);
+  }, [slug, t]);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -139,7 +136,7 @@ export default function ShowcaseDetailPage() {
         {product.category && (
           <>
             <span className="text-[#4c9a66] text-sm font-medium">/</span>
-            <span className="text-[#0d1b12] text-sm font-medium">{product.category.name}</span>
+            <span className="text-[#0d1b12] text-sm font-medium">{categoryLabel(product.category)}</span>
           </>
         )}
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
@@ -184,7 +181,7 @@ export default function ShowcaseDetailPage() {
           <div className="flex flex-col gap-2">
             {product.category && (
               <span className="px-2 py-1 rounded bg-[#e7f3eb] text-[#4c9a66] text-xs font-bold uppercase tracking-wider w-fit">
-                {product.category.name}
+                {categoryLabel(product.category)}
               </span>
             )}
             <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">{product.title}</h1>
@@ -197,13 +194,6 @@ export default function ShowcaseDetailPage() {
                 <p className="text-3xl font-black text-[#0d1b12]">
                   {formatCatalogMoney(product.price, product.currency, 2)}
                 </p>
-                {product.listedCurrency && product.listedPrice != null ? (
-                  <p className="text-xs text-slate-500">
-                    {t("Listed as {price}", {
-                      price: formatCatalogMoney(product.listedPrice, product.listedCurrency, 2),
-                    })}
-                  </p>
-                ) : null}
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                 {inStock

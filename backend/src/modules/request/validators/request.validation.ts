@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../utils/pagination';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
 
 const attachmentSchema = Joi.object({
   fileName: Joi.string().trim().min(1).max(255).required(),
@@ -8,7 +9,7 @@ const attachmentSchema = Joi.object({
 });
 
 const isoDate = Joi.string().isoDate();
-const currency = Joi.string().trim().length(3).uppercase();
+const currency = Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY);
 
 export const createRequestSchema = {
   body: Joi.object({

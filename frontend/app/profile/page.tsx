@@ -11,7 +11,10 @@ import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
 import { demoWithdrawWallet, fetchWalletMe } from "@/lib/requestDeals";
+import DemoPaymentFields from "@/components/payment/DemoPaymentFields";
+import { EMPTY_DEMO_CARD, validateDemoCard } from "@/lib/demoPayment";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { resolveAccountDisplayName } from "@/lib/profileDisplay";
 
 type ProfileStats = {
@@ -58,6 +61,7 @@ export default function UserProfilePage() {
   const { activeRole, hasDualWorkspace, enableMixedMode, mixedModeBusy } = useWorkspace();
   const { success: toastSuccess, error: toastError } = useToast();
   const router = useRouter();
+  const categoryLabel = useCategoryLabel();
 
   const canEnableMixedMode =
     Boolean(user) &&
@@ -80,8 +84,7 @@ export default function UserProfilePage() {
   const [catalogCategories, setCatalogCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletWithdraw, setWalletWithdraw] = useState("");
-  const [walletWithdrawCardName, setWalletWithdrawCardName] = useState("");
-  const [walletWithdrawCardLast4, setWalletWithdrawCardLast4] = useState("");
+  const [walletWithdrawCard, setWalletWithdrawCard] = useState(EMPTY_DEMO_CARD);
   const [walletBusy, setWalletBusy] = useState(false);
 
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
@@ -283,9 +286,12 @@ export default function UserProfilePage() {
         : profileData.buyerProfile?.preferencesJson;
     const ids = readRecommendedCategoryIds(prefs);
     return ids
-      .map((id) => catalogCategories.find((c) => c.id === id)?.name)
+      .map((id) => {
+        const row = catalogCategories.find((c) => c.id === id);
+        return row ? categoryLabel(row) : null;
+      })
       .filter((x): x is string => Boolean(x));
-  }, [profileData, prefsMode, catalogCategories]);
+  }, [profileData, prefsMode, catalogCategories, categoryLabel]);
 
   useEffect(() => {
     if (mainTab !== "preferences" || prefsMode == null || !profileData) return;
@@ -820,7 +826,7 @@ export default function UserProfilePage() {
                           checked={prefCategoryIds.includes(c.id)}
                           onChange={() => togglePrefCategory(c.id)}
                         />
-                        {c.name}
+                        {categoryLabel(c)}
                       </label>
                     ))
                   )}
@@ -867,28 +873,11 @@ export default function UserProfilePage() {
                   </p>
                 </div>
                 <div className="max-w-md space-y-4">
-                  <p className="text-xs font-semibold uppercase text-[#4c9a66]">Payout card (demo)</p>
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Name on card</label>
-                    <input
-                      value={walletWithdrawCardName}
-                      onChange={(e) => setWalletWithdrawCardName(e.target.value)}
-                      className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
-                      placeholder="Seller name"
-                      autoComplete="cc-name"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">Last 4 digits</label>
-                    <input
-                      value={walletWithdrawCardLast4}
-                      onChange={(e) => setWalletWithdrawCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm tracking-widest"
-                      placeholder="4242"
-                      inputMode="numeric"
-                      autoComplete="cc-number"
-                    />
-                  </div>
+                  <DemoPaymentFields
+                    card={walletWithdrawCard}
+                    onCardChange={(patch) => setWalletWithdrawCard((s) => ({ ...s, ...patch }))}
+                    inputClassName="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
+                  />
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">
                       Amount ({DEFAULT_CURRENCY})
@@ -907,8 +896,7 @@ export default function UserProfilePage() {
                     type="button"
                     disabled={
                       walletBusy ||
-                      walletWithdrawCardLast4.length !== 4 ||
-                      !walletWithdrawCardName.trim() ||
+                      validateDemoCard(walletWithdrawCard) != null ||
                       !Number.isFinite(Number(walletWithdraw)) ||
                       Number(walletWithdraw) <= 0
                     }
@@ -918,24 +906,17 @@ export default function UserProfilePage() {
                         toastError("Enter a valid amount.");
                         return;
                       }
-                      if (walletWithdrawCardLast4.length !== 4) {
-                        toastError("Enter the last 4 digits of the card.");
-                        return;
-                      }
-                      if (!walletWithdrawCardName.trim()) {
-                        toastError("Enter the name on the card.");
+                      const cardError = validateDemoCard(walletWithdrawCard);
+                      if (cardError) {
+                        toastError(cardError);
                         return;
                       }
                       setWalletBusy(true);
                       try {
-                        const r = await demoWithdrawWallet(n, {
-                          cardLast4: walletWithdrawCardLast4,
-                          cardHolderName: walletWithdrawCardName.trim(),
-                        });
+                        const r = await demoWithdrawWallet(n, walletWithdrawCard);
                         setWalletBalance(r.balance);
                         setWalletWithdraw("");
-                        setWalletWithdrawCardName("");
-                        setWalletWithdrawCardLast4("");
+                        setWalletWithdrawCard(EMPTY_DEMO_CARD);
                         toastSuccess(`Demo withdraw: ${formatMoney(r.withdrawn, DEFAULT_CURRENCY)}`);
                       } catch (e: unknown) {
                         toastError(e instanceof Error ? e.message : "Withdraw failed.");

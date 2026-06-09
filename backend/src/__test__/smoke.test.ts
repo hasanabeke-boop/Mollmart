@@ -148,7 +148,7 @@ describeSmoke('backend smoke flow', () => {
         quantity: 2,
         budgetMin: 100,
         budgetMax: 300,
-        currency: 'USD',
+        currency: 'KZT',
         location: 'Test City',
         isNegotiable: true
       });
@@ -172,7 +172,7 @@ describeSmoke('backend smoke flow', () => {
       .send({
         requestId,
         price: 125,
-        currency: 'USD',
+        currency: 'KZT',
         message: 'Smoke seller can provide this item in good condition.',
         deliveryDays: 5
       });

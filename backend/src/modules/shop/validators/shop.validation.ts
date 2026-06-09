@@ -1,7 +1,9 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
+import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
+import { demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
 
-const currency = Joi.string().valid('USD', 'EUR', 'RUB', 'KZT').uppercase();
+const currency = Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY);
 
 export const shopCartAddSchema = {
   body: Joi.object({
@@ -26,13 +28,8 @@ export const shopCartDeleteParamsSchema = {
 };
 
 export const shopCheckoutSchema = {
-  body: Joi.object({
-    checkoutCurrency: currency.required(),
-    shippingName: Joi.string().trim().max(200).allow('', null).optional(),
-    shippingPhone: Joi.string().trim().max(40).allow('', null).optional(),
-    shippingAddress: Joi.string().trim().max(2000).allow('', null).optional(),
-    cardLast4: Joi.string().trim().length(4).pattern(/^\d{4}$/).optional(),
-    cardHolderName: Joi.string().trim().min(2).max(120).optional()
+  body: demoCheckoutWithShippingSchema.keys({
+    checkoutCurrency: currency
   })
 };
 
@@ -40,7 +37,7 @@ export const shopOrderListQuerySchema = {
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1).custom(normalizePage),
     limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
-    status: Joi.string().valid('processing', 'shipped', 'delivered', 'cancelled').optional()
+    status: Joi.string().valid('paid', 'in_progress', 'awaiting_confirmation', 'completed', 'cancelled').optional()
   })
 };
 
@@ -48,7 +45,7 @@ export const adminCatalogOrderListSchema = {
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1).custom(normalizePage),
     limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
-    status: Joi.string().valid('processing', 'shipped', 'delivered', 'cancelled').optional()
+    status: Joi.string().valid('paid', 'in_progress', 'awaiting_confirmation', 'completed', 'cancelled').optional()
   })
 };
 
@@ -57,10 +54,23 @@ export const adminCatalogOrderPatchSchema = {
     id: Joi.string().trim().required()
   }),
   body: Joi.object({
-    status: Joi.string().valid('processing', 'shipped', 'delivered', 'cancelled').optional(),
+    status: Joi.string().valid('cancelled').optional(),
     trackingNumber: Joi.string().trim().max(120).allow('', null).optional(),
     carrier: Joi.string().trim().max(120).allow('', null).optional()
   }).min(1)
+};
+
+export const shopOrderStatusPatchSchema = {
+  params: Joi.object({
+    id: Joi.string().trim().required()
+  }),
+  body: Joi.object({
+    status: Joi.string()
+      .valid('in_progress', 'awaiting_confirmation', 'completed')
+      .required(),
+    trackingNumber: Joi.string().trim().max(120).allow('', null).optional(),
+    carrier: Joi.string().trim().max(120).allow('', null).optional()
+  })
 };
 
 export const shopOrderIdParamsSchema = {

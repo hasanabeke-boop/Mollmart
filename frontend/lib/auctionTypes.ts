@@ -44,6 +44,9 @@ export type AuctionSessionView = {
   isUrgent: boolean;
   leader: { sellerId: string; price: number | null } | null;
   winner: { sellerId: string; price: number | null } | null;
+  orderId: string | null;
+  winnerLineTotal: number | null;
+  canPayAsBuyer?: boolean;
   request: {
     id: string;
     title: string;

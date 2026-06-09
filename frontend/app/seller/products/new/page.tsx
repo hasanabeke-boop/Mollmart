@@ -9,6 +9,8 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { canUseSellerWorkspace } from "@/lib/workspace";
 import { uploadCatalogImage } from "@/lib/catalog";
+import { DEFAULT_CURRENCY } from "@/lib/currency";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 
 type Category = {
   id: string;
@@ -35,6 +37,7 @@ export default function NewCatalogProductPage() {
   const { activeRole } = useWorkspace();
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const router = useRouter();
+  const categoryLabel = useCategoryLabel();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState("");
@@ -44,7 +47,6 @@ export default function NewCatalogProductPage() {
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [galleryUrlLines, setGalleryUrlLines] = useState("");
   const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("USD");
   const [quantity, setQuantity] = useState("1");
   const [status, setStatus] = useState<"draft" | "published" | "archived">("published");
   const [submitting, setSubmitting] = useState(false);
@@ -177,7 +179,7 @@ export default function NewCatalogProductPage() {
           description: description.trim(),
           categoryId,
           price: parsedPrice,
-          currency: currency.trim().toUpperCase(),
+          currency: DEFAULT_CURRENCY,
           imageUrl: imageUrl.trim(),
           status,
           galleryUrls: mergedGallery,
@@ -206,7 +208,6 @@ export default function NewCatalogProductPage() {
       description,
       categoryId,
       price,
-      currency,
       quantity,
       imageUrl,
       galleryUrls,
@@ -251,47 +252,33 @@ export default function NewCatalogProductPage() {
 
         <fieldset className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-4">
           <legend className="px-1 text-sm font-bold text-[var(--foreground)]">Price &amp; stock (required)</legend>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Price</label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Price (₸)</label>
               <input
                 required
                 type="number"
                 min={0.01}
                 step="0.01"
-                placeholder="e.g. 29.99"
+                placeholder="e.g. 15000"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Currency</label>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Quantity in stock</label>
+              <input
+                required
+                type="number"
+                min={0}
+                step={1}
+                placeholder="e.g. 10"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-              >
-                {["USD", "EUR", "RUB", "KZT"].map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Quantity in stock</label>
-            <input
-              required
-              type="number"
-              min={0}
-              step={1}
-              placeholder="e.g. 10"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-            />
           </div>
         </fieldset>
 
@@ -318,7 +305,7 @@ export default function NewCatalogProductPage() {
             <option value="">Select category…</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {categoryLabel(c)}
               </option>
             ))}
           </select>

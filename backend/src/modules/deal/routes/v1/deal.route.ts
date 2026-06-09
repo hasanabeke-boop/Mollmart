@@ -10,7 +10,8 @@ import {
   demoWithdrawSchema,
   proposalIdParamSchema,
   requestOrderIdParamSchema,
-  requestOrderListQuerySchema
+  requestOrderListQuerySchema,
+  requestOrderStatusPatchSchema
 } from '../../validators/deal.validation';
 
 export function createDealRouter(controller: DealController): Router {
@@ -59,6 +60,11 @@ export function createDealRouter(controller: DealController): Router {
     '/request-orders/:id',
     validate(requestOrderIdParamSchema),
     asyncHandler(controller.getMyOrder)
+  );
+  router.patch(
+    '/request-orders/:id/status',
+    validate(requestOrderStatusPatchSchema),
+    asyncHandler(controller.patchMyOrderStatus)
   );
 
   router.get('/wallet/me', asyncHandler(controller.getWallet));

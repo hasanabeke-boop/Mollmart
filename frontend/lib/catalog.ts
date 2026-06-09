@@ -1,46 +1,26 @@
 import { apiFetchWithRefresh } from "@/lib/api";
-
-export const CATALOG_CURRENCIES = [
-  { code: "USD", label: "USD ($)" },
-  { code: "EUR", label: "EUR (€)" },
-  { code: "RUB", label: "RUB (₽)" },
-  { code: "KZT", label: "KZT (₸)" },
-] as const;
-
-const CATALOG_CURRENCY_CODES = new Set<string>(CATALOG_CURRENCIES.map((c) => c.code));
-
-/** Valid catalog display / listing currency from query or UI; defaults to USD. */
-export function normalizeCatalogCurrencyCode(raw: string | null | undefined): string {
-  const v = (raw ?? "").trim().toUpperCase();
-  return CATALOG_CURRENCY_CODES.has(v) ? v : "USD";
-}
+import { DEFAULT_CURRENCY } from "@/lib/currency";
 
 /** Upper bound for the catalog price filter sliders (not a product price cap). */
 export const PRICE_FILTER_MAX = 1_000_000;
 
-function localeForCurrency(currency: string): string {
-  switch (currency) {
-    case "EUR":
-      return "de-DE";
-    case "RUB":
-      return "ru-RU";
-    case "KZT":
-      return "ru-KZ";
-    default:
-      return "en-US";
-  }
+/** All catalog prices are stored and displayed in KZT. */
+export function normalizeCatalogCurrencyCode(_raw?: string | null): string {
+  return DEFAULT_CURRENCY;
 }
 
-export function formatCatalogMoney(amount: number, currency: string, fractionDigits: 0 | 2 = 0) {
+export function formatCatalogMoney(amount: number, _currency?: string, fractionDigits: 0 | 2 = 0) {
   try {
-    return new Intl.NumberFormat(localeForCurrency(currency), {
+    return new Intl.NumberFormat("kk-KZ", {
       style: "currency",
-      currency: currency || "USD",
+      currency: DEFAULT_CURRENCY,
       maximumFractionDigits: fractionDigits,
       minimumFractionDigits: fractionDigits === 2 ? 2 : 0,
     }).format(amount);
   } catch {
-    return fractionDigits === 2 ? `${amount.toFixed(2)} ${currency}` : `${Math.round(amount)} ${currency}`;
+    return fractionDigits === 2
+      ? `${amount.toFixed(2)} ${DEFAULT_CURRENCY}`
+      : `${Math.round(amount)} ${DEFAULT_CURRENCY}`;
   }
 }
 

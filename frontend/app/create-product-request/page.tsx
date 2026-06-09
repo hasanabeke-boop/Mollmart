@@ -8,8 +8,10 @@ import { uploadCatalogImage } from "@/lib/catalog";
 import { resendVerificationEmail } from "@/lib/emailVerification";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import RoleGate from "@/components/auth/RoleGate";
 import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
+import { DEFAULT_CURRENCY } from "@/lib/currency";
 
 type ApiCategory = { id: string; name: string; slug: string };
 
@@ -21,15 +23,7 @@ type ShowcaseForPrefill = {
   seller: { id: string; name: string };
 };
 
-const CURRENCIES = [
-  { code: "KZT", label: "KZT — Kazakhstani Tenge (₸)" },
-  { code: "USD", label: "USD — US Dollar" },
-  { code: "EUR", label: "EUR — Euro" },
-  { code: "RUB", label: "RUB — Russian Ruble" },
-];
-
 const MAX_DESC = 1000;
-
 const MAX_REQUEST_PHOTOS = 10;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const PHOTO_MIMES = new Set([
@@ -80,13 +74,13 @@ function CreateProductRequestContent() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const categoryLabel = useCategoryLabel();
   const [catalogCategories, setCatalogCategories] = useState<ApiCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const lastPrefillSlug = useRef<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
-  const [currency, setCurrency] = useState("KZT");
   const [quantity, setQuantity] = useState("1");
   const [budget, setBudget] = useState("");
   const [deadlineLocal, setDeadlineLocal] = useState("");
@@ -171,7 +165,7 @@ function CreateProductRequestContent() {
     (async () => {
       try {
         const p = await apiFetch<ShowcaseForPrefill>(
-          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}?currency=USD`,
+          `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}`,
           { service: "catalog" },
         );
         if (cancelled) return;
@@ -270,7 +264,7 @@ function CreateProductRequestContent() {
         categoryId: category,
         quantity: Math.floor(Number(quantity)),
         budgetMax: Number(budget),
-        currency,
+        currency: DEFAULT_CURRENCY,
         isNegotiable: false,
         auctionEnabled,
       };
@@ -309,7 +303,6 @@ function CreateProductRequestContent() {
     lastPrefillSlug.current = null;
     setTitle("");
     setCategory("");
-    setCurrency("USD");
     setQuantity("1");
     setBudget("");
     setDeadlineLocal("");
@@ -368,7 +361,10 @@ function CreateProductRequestContent() {
             <div className="flex justify-between">
               <span className="text-sm text-slate-500">Category</span>
               <span className="text-sm font-semibold text-slate-900">
-                {catalogCategories.find((c) => c.id === category)?.name ?? "—"}
+                {(() => {
+                  const row = catalogCategories.find((c) => c.id === category);
+                  return row ? categoryLabel(row) : "—";
+                })()}
               </span>
             </div>
             <div className="flex justify-between">
@@ -380,14 +376,14 @@ function CreateProductRequestContent() {
               <span className="text-sm font-semibold text-slate-900">
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
-                  currency,
+                  currency: DEFAULT_CURRENCY,
                   maximumFractionDigits: 0,
                 }).format(Number(budget))}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-slate-500">Currency</span>
-              <span className="text-sm font-semibold text-slate-900">{currency}</span>
+              <span className="text-sm font-semibold text-slate-900">₸ KZT</span>
             </div>
             {deadlineLocal && (
               <div className="flex justify-between gap-4">
@@ -646,7 +642,7 @@ function CreateProductRequestContent() {
                       <option value="">{categoriesLoading ? "Loading categories…" : "Select a category"}</option>
                       {catalogCategories.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.name}
+                          {categoryLabel(c)}
                         </option>
                       ))}
                     </select>
@@ -662,31 +658,6 @@ function CreateProductRequestContent() {
                       {errors.category}
                     </p>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">
-                    Currency
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    >
-                      {CURRENCIES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="material-symbols-outlined absolute right-4 top-3.5 text-slate-400 pointer-events-none">
-                      expand_more
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Budget will be stored in this currency.
-                  </p>
                 </div>
               </div>
 
@@ -718,7 +689,7 @@ function CreateProductRequestContent() {
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Price per unit ({currency})
+                    Price per unit (₸)
                   </label>
                   <input
                     type="number"
@@ -738,7 +709,7 @@ function CreateProductRequestContent() {
                     step={0.01}
                   />
                   <p className="text-xs text-slate-400">
-                    Target price for one item in the currency you selected above.
+                    Target price for one item in Kazakhstani tenge (KZT).
                   </p>
                   {errors.budget && (
                     <p className="text-xs text-red-500 flex items-center gap-1">
