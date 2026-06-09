@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import DealController from '../../controllers/deal.controller';
-import { authenticate, requireRoles } from '../../../request/middleware/auth';
+import { authenticate } from '../../../request/middleware/auth';
 import validate from '../../../request/middleware/validate';
 import asyncHandler from '../../../request/utils/asyncHandler';
 import {
   conversationIdParamSchema,
   createPriceProposalSchema,
-  demoPaySchema,
-  demoWithdrawSchema,
+  placeOrderSchema,
   proposalIdParamSchema,
   requestOrderIdParamSchema,
   requestOrderListQuerySchema,
@@ -43,12 +42,12 @@ export function createDealRouter(controller: DealController): Router {
     asyncHandler(controller.acceptProposal)
   );
   router.post(
-    '/conversations/:conversationId/demo-pay',
+    '/conversations/:conversationId/place-order',
     validate({
       ...conversationIdParamSchema,
-      ...demoPaySchema
+      ...placeOrderSchema
     }),
-    asyncHandler(controller.demoPay)
+    asyncHandler(controller.placeOrder)
   );
 
   router.get(
@@ -65,14 +64,6 @@ export function createDealRouter(controller: DealController): Router {
     '/request-orders/:id/status',
     validate(requestOrderStatusPatchSchema),
     asyncHandler(controller.patchMyOrderStatus)
-  );
-
-  router.get('/wallet/me', asyncHandler(controller.getWallet));
-  router.post(
-    '/wallet/demo-withdraw',
-    requireRoles('seller'),
-    validate(demoWithdrawSchema),
-    asyncHandler(controller.demoWithdraw)
   );
 
   return router;

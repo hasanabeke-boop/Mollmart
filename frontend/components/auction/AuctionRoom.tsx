@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import DemoPaymentFields from "@/components/payment/DemoPaymentFields";
+import ShippingFields from "@/components/shipping/ShippingFields";
 import { useLanguage } from "@/context/LanguageContext";
 import { apiFetchWithRefresh } from "@/lib/api";
-import { checkoutAuctionWinner } from "@/lib/auctionApi";
+import { placeAuctionWinnerOrder } from "@/lib/auctionApi";
 import { formatMoney } from "@/lib/currency";
-import { EMPTY_DEMO_CHECKOUT, validateDemoCheckout } from "@/lib/demoPayment";
+import { EMPTY_SHIPPING, validateShipping } from "@/lib/shipping";
 import type { AuctionSessionView } from "@/lib/auctionTypes";
 import { useAuctionSession, useAuctionTick } from "@/hooks/useAuctionStream";
 import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
@@ -26,10 +26,10 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
   const { session, setSession, lastDrop, roundEnding } = useAuctionSession(sessionId);
   const [acting, setActing] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
-  const [payOpen, setPayOpen] = useState(false);
-  const [payForm, setPayForm] = useState(EMPTY_DEMO_CHECKOUT);
-  const [payBusy, setPayBusy] = useState(false);
-  const [payError, setPayError] = useState("");
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [shippingForm, setShippingForm] = useState(EMPTY_SHIPPING);
+  const [orderBusy, setOrderBusy] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   const statusLabel = useCallback(
     (status: string, count: number, min: number) => {
@@ -293,39 +293,37 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
             <button
               type="button"
               onClick={() => {
-                setPayError("");
-                setPayOpen(true);
+                setOrderError("");
+                setOrderOpen(true);
               }}
               className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-[#0d1b12] hover:opacity-90"
             >
-              {t("Accept offer & pay")}
+              {t("Accept offer & submit details")}
             </button>
           ) : mode === "buyer" ? (
             <p className="mt-2 text-xs text-[var(--text-muted)]">
-              {t("Payment is not available for your account.")}
+              {t("Order placement is not available for your account.")}
             </p>
           ) : null}
         </div>
       )}
 
-      {payOpen && tickSession.canPayAsBuyer ? (
+      {orderOpen && tickSession.canPayAsBuyer ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xl">
-            <h3 className="text-lg font-bold text-[var(--foreground)]">{t("Accept offer & pay")}</h3>
+            <h3 className="text-lg font-bold text-[var(--foreground)]">{t("Accept offer & submit details")}</h3>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {t("Enter delivery details and demo card to complete the order. No chat required.")}
+              {t("Enter delivery details to create the order. Payment is arranged directly with the seller.")}
             </p>
-            {payError ? (
+            {orderError ? (
               <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-                {payError}
+                {orderError}
               </p>
             ) : null}
             <div className="mt-4">
-              <DemoPaymentFields
-                card={payForm}
-                onCardChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
-                shipping={payForm}
-                onShippingChange={(patch) => setPayForm((s) => ({ ...s, ...patch }))}
+              <ShippingFields
+                value={shippingForm}
+                onChange={(patch) => setShippingForm((s) => ({ ...s, ...patch }))}
                 inputClassName="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)]"
               />
             </div>
@@ -333,40 +331,40 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
               <button
                 type="button"
                 className="flex-1 rounded-lg border border-[var(--border)] py-2.5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
-                disabled={payBusy}
+                disabled={orderBusy}
                 onClick={() => {
-                  setPayOpen(false);
-                  setPayForm(EMPTY_DEMO_CHECKOUT);
-                  setPayError("");
+                  setOrderOpen(false);
+                  setShippingForm(EMPTY_SHIPPING);
+                  setOrderError("");
                 }}
               >
                 {t("Cancel")}
               </button>
               <button
                 type="button"
-                disabled={payBusy || validateDemoCheckout(payForm) != null}
+                disabled={orderBusy || validateShipping(shippingForm) != null}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-[#0d1b12] hover:opacity-90 disabled:opacity-50"
                 onClick={async () => {
-                  const validationError = validateDemoCheckout(payForm);
+                  const validationError = validateShipping(shippingForm);
                   if (validationError) {
-                    setPayError(validationError);
+                    setOrderError(validationError);
                     return;
                   }
-                  setPayBusy(true);
-                  setPayError("");
+                  setOrderBusy(true);
+                  setOrderError("");
                   try {
-                    const order = await checkoutAuctionWinner(tickSession.requestId, payForm);
-                    setPayOpen(false);
-                    setPayForm(EMPTY_DEMO_CHECKOUT);
+                    const order = await placeAuctionWinnerOrder(tickSession.requestId, shippingForm);
+                    setOrderOpen(false);
+                    setShippingForm(EMPTY_SHIPPING);
                     router.push(`/orders/${order.id}`);
                   } catch (e) {
-                    setPayError((e as Error).message || t("Payment failed."));
+                    setOrderError((e as Error).message || t("Could not create order."));
                   } finally {
-                    setPayBusy(false);
+                    setOrderBusy(false);
                   }
                 }}
               >
-                {payBusy ? t("Processing…") : t("Complete payment")}
+                {orderBusy ? t("Processing…") : t("Create order")}
               </button>
             </div>
           </div>

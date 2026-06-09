@@ -6,7 +6,7 @@ import { auctionService } from '../../bootstrap';
 import AuctionController from '../../controllers/auction.controller';
 import { authenticateAuctionStream } from '../../middleware/stream-auth';
 import {
-  auctionWinnerCheckoutSchema,
+  auctionWinnerPlaceOrderSchema,
   participateSchema,
   requestIdParamSchema,
   sessionIdParamSchema
@@ -46,10 +46,10 @@ export function createAuctionRouter(controller: AuctionController): Router {
     asyncHandler(controller.participate)
   );
   router.post(
-    '/request/:requestId/winner-checkout',
+    '/request/:requestId/winner-place-order',
     requireRoles('buyer', 'admin'),
-    validate(auctionWinnerCheckoutSchema),
-    asyncHandler(controller.checkoutWinner)
+    validate(auctionWinnerPlaceOrderSchema),
+    asyncHandler(controller.placeWinnerOrder)
   );
   router.post(
     '/:sessionId/lower',

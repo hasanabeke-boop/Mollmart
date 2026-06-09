@@ -3,7 +3,6 @@ import type { AuthUser } from '../../request/types/express';
 import { badRequest, forbidden, notFound } from '../../request/utils/apiError';
 import { roundCatalogMoney } from '../../catalog/services/exchangeRates';
 import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
-import { validateDemoCardFields } from '../../../shared/demoPayment.validation';
 import ShopRepository, { type CartRow, type OrderRow } from '../repositories/shop.repository';
 import ShopEventPublisher, { type ShopEventPublisherLike } from './shop-event.service';
 import {
@@ -18,10 +17,6 @@ export type CheckoutInput = {
   shippingName: string;
   shippingPhone: string;
   shippingAddress: string;
-  cardHolderName: string;
-  cardNumber: string;
-  cardExpiry: string;
-  cardCvv: string;
 };
 export type AdminPatchOrderInput = {
   status?: CatalogOrderStatus;
@@ -99,7 +94,6 @@ export class ShopService {
 
   async checkout(user: AuthUser, input: CheckoutInput) {
     this.assertBuyerCapability(user, 'checkout');
-    validateDemoCardFields(input);
     const checkoutCurrency = input.checkoutCurrency.trim().toUpperCase();
     if (checkoutCurrency !== MARKETPLACE_CURRENCY) {
       throw badRequest(`Checkout currency must be ${MARKETPLACE_CURRENCY}`);
@@ -278,7 +272,6 @@ export class ShopService {
       status: CatalogOrderStatus;
       trackingNumber?: string | null;
       carrier?: string | null;
-      sellerCreditedAt?: Date;
     } = { status: input.status };
 
     if (input.trackingNumber !== undefined) {
@@ -288,19 +281,7 @@ export class ShopService {
       data.carrier = input.carrier;
     }
 
-    if (
-      input.status === CatalogOrderStatus.completed &&
-      current.sellerCreditedAt == null
-    ) {
-      await this.repo.creditSellerAndUpdateOrder(orderId, current.sellerId, current.total, data);
-    } else {
-      const updated = await this.repo.updateOrder(orderId, data);
-      if (updated == null) {
-        throw notFound('Order not found');
-      }
-    }
-
-    const updated = await this.repo.getOrderById(orderId);
+    const updated = await this.repo.updateOrder(orderId, data);
     if (updated == null) {
       throw notFound('Order not found');
     }

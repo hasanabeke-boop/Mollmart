@@ -32,17 +32,13 @@ export class DealController {
     res.status(httpStatus.OK).json(data);
   };
 
-  demoPay = async (req: Request, res: Response): Promise<void> => {
+  placeOrder = async (req: Request, res: Response): Promise<void> => {
     const body = req.body as {
       shippingName: string;
       shippingPhone: string;
       shippingAddress: string;
-      cardHolderName: string;
-      cardNumber: string;
-      cardExpiry: string;
-      cardCvv: string;
     };
-    const data = await this.dealService.demoPay(req.user as AuthUser, req.params.conversationId, body);
+    const data = await this.dealService.placeRequestOrder(req.user as AuthUser, req.params.conversationId, body);
     res.status(httpStatus.CREATED).json(data);
   };
 
@@ -68,28 +64,6 @@ export class DealController {
       carrier?: string | null;
     };
     const data = await this.dealService.patchMyRequestOrderStatus(req.user as AuthUser, req.params.id, body);
-    res.status(httpStatus.OK).json(data);
-  };
-
-  getWallet = async (req: Request, res: Response): Promise<void> => {
-    const data = await this.dealService.getWallet(req.user as AuthUser);
-    res.status(httpStatus.OK).json(data);
-  };
-
-  demoWithdraw = async (req: Request, res: Response): Promise<void> => {
-    const body = req.body as {
-      amount: number;
-      cardHolderName: string;
-      cardNumber: string;
-      cardExpiry: string;
-      cardCvv: string;
-    };
-    const data = await this.dealService.demoWithdraw(req.user as AuthUser, Number(body.amount), {
-      cardHolderName: String(body.cardHolderName ?? ''),
-      cardNumber: String(body.cardNumber ?? ''),
-      cardExpiry: String(body.cardExpiry ?? ''),
-      cardCvv: String(body.cardCvv ?? '')
-    });
     res.status(httpStatus.OK).json(data);
   };
 }

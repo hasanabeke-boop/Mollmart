@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
-import { demoCheckoutWithShippingSchema } from '../../../shared/demoPayment.validation';
+import { shippingSchema } from '../../../shared/shipping.validation';
 
 const currency = Joi.string().valid(MARKETPLACE_CURRENCY).uppercase().default(MARKETPLACE_CURRENCY);
 
@@ -28,7 +28,7 @@ export const shopCartDeleteParamsSchema = {
 };
 
 export const shopCheckoutSchema = {
-  body: demoCheckoutWithShippingSchema.keys({
+  body: shippingSchema.keys({
     checkoutCurrency: currency
   })
 };

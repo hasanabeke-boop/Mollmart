@@ -9,10 +9,6 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
-import { DEFAULT_CURRENCY, formatMoney } from "@/lib/currency";
-import { demoWithdrawWallet, fetchWalletMe } from "@/lib/requestDeals";
-import DemoPaymentFields from "@/components/payment/DemoPaymentFields";
-import { EMPTY_DEMO_CARD, validateDemoCard } from "@/lib/demoPayment";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { resolveAccountDisplayName } from "@/lib/profileDisplay";
@@ -42,7 +38,7 @@ function readRecommendedCategoryIds(prefs: unknown): string[] {
   return raw.map((x) => String(x)).filter((s) => s.length > 0);
 }
 
-type ProfileMainTab = "overview" | "preferences" | "balance";
+type ProfileMainTab = "overview" | "preferences";
 
 type NotificationPreferences = {
   requestUpdates: boolean;
@@ -90,10 +86,6 @@ export default function UserProfilePage() {
 
   const [stats, setStats] = useState<ProfileStats>({ primary: 0, secondary: 0, conversations: 0 });
   const [catalogCategories, setCatalogCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [walletWithdraw, setWalletWithdraw] = useState("");
-  const [walletWithdrawCard, setWalletWithdrawCard] = useState(EMPTY_DEMO_CARD);
-  const [walletBusy, setWalletBusy] = useState(false);
 
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [notifPrefsSaving, setNotifPrefsSaving] = useState(false);
@@ -254,22 +246,6 @@ export default function UserProfilePage() {
   useEffect(() => {
     loadStats();
   }, [loadStats]);
-
-  const loadWallet = useCallback(async () => {
-    if (!user || activeRole !== "seller") return;
-    try {
-      const w = await fetchWalletMe();
-      setWalletBalance(typeof w.balance === "number" ? w.balance : 0);
-    } catch {
-      setWalletBalance(0);
-    }
-  }, [user, activeRole]);
-
-  useEffect(() => {
-    if (mainTab === "balance" && activeRole === "seller") {
-      void loadWallet();
-    }
-  }, [mainTab, activeRole, loadWallet]);
 
   const handleSaved = useCallback(async () => {
     await loadProfile();
@@ -473,16 +449,6 @@ export default function UserProfilePage() {
             <span className="material-symbols-outlined">tune</span>
             Preferences
           </button>
-          {activeRole === "seller" && (
-            <button
-              type="button"
-              onClick={() => setMainTab("balance")}
-              className={`${navButtonClass(mainTab === "balance")} shrink-0 whitespace-nowrap lg:w-full`}
-            >
-              <span className="material-symbols-outlined">account_balance_wallet</span>
-              Balance
-            </button>
-          )}
         </nav>
 
         <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[#102216] to-[#1a2e22] text-white">
@@ -529,11 +495,7 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#4c9a66] mb-1">
-                  {mainTab === "preferences"
-                    ? t("Preferences")
-                    : mainTab === "balance"
-                      ? t("Balance")
-                      : t("Overview")}
+                  {mainTab === "preferences" ? t("Preferences") : t("Overview")}
                 </p>
                 <h1 className="text-2xl md:text-3xl font-bold mb-1 text-[#0d1b12]">
                   {displayName}
@@ -805,7 +767,7 @@ export default function UserProfilePage() {
               </div>
             </section>
           </>
-        ) : mainTab === "preferences" ? (
+        ) : (
           <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
             <h2 className="text-lg font-bold text-[#0d1b12] mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">category</span>
@@ -862,88 +824,6 @@ export default function UserProfilePage() {
                   >
                     {prefsMode === "seller" ? "Open buyer requests" : "Open catalog"}
                   </Link>
-                </div>
-              </>
-            )}
-          </section>
-        ) : (
-          <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
-            <h2 className="text-lg font-bold text-[#0d1b12] mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
-              Seller balance
-            </h2>
-            <p className="text-sm text-[#4c9a66] mb-6">
-              Funds from completed request deals (demo payments). Withdrawal is simulated with payout card details;
-              no real transfer is made.
-            </p>
-            {activeRole !== "seller" ? (
-              <p className="text-sm text-slate-600">
-                Switch to seller mode in the header to view your balance.
-              </p>
-            ) : (
-              <>
-                <div className="rounded-xl border border-[#e7f3eb] bg-[#f5f6f8] p-6 mb-6">
-                  <p className="text-xs font-semibold uppercase text-[#4c9a66]">Available</p>
-                  <p className="text-3xl font-black text-[#0d1b12]">
-                    {walletBalance == null ? "…" : formatMoney(walletBalance, DEFAULT_CURRENCY)}
-                  </p>
-                </div>
-                <div className="max-w-md space-y-4">
-                  <DemoPaymentFields
-                    card={walletWithdrawCard}
-                    onCardChange={(patch) => setWalletWithdrawCard((s) => ({ ...s, ...patch }))}
-                    inputClassName="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
-                  />
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#4c9a66]">
-                      Amount ({DEFAULT_CURRENCY})
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder={`Amount (${DEFAULT_CURRENCY})`}
-                      value={walletWithdraw}
-                      onChange={(e) => setWalletWithdraw(e.target.value)}
-                      className="w-full rounded-lg border border-[#e7f3eb] px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    disabled={
-                      walletBusy ||
-                      validateDemoCard(walletWithdrawCard) != null ||
-                      !Number.isFinite(Number(walletWithdraw)) ||
-                      Number(walletWithdraw) <= 0
-                    }
-                    onClick={async () => {
-                      const n = Number(walletWithdraw);
-                      if (!Number.isFinite(n) || n <= 0) {
-                        toastError("Enter a valid amount.");
-                        return;
-                      }
-                      const cardError = validateDemoCard(walletWithdrawCard);
-                      if (cardError) {
-                        toastError(cardError);
-                        return;
-                      }
-                      setWalletBusy(true);
-                      try {
-                        const r = await demoWithdrawWallet(n, walletWithdrawCard);
-                        setWalletBalance(r.balance);
-                        setWalletWithdraw("");
-                        setWalletWithdrawCard(EMPTY_DEMO_CARD);
-                        toastSuccess(`Demo withdraw: ${formatMoney(r.withdrawn, DEFAULT_CURRENCY)}`);
-                      } catch (e: unknown) {
-                        toastError(e instanceof Error ? e.message : "Withdraw failed.");
-                      } finally {
-                        setWalletBusy(false);
-                      }
-                    }}
-                    className="w-full rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-black hover:bg-[#0fd650] disabled:opacity-50 sm:w-auto"
-                  >
-                    {walletBusy ? "…" : "Demo withdraw"}
-                  </button>
                 </div>
               </>
             )}

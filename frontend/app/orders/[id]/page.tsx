@@ -302,7 +302,7 @@ export default function OrderDetailsPage() {
                 <span>{formatCatalogMoney(order.total, order.currency, 2)}</span>
               </div>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-4">Demo payment — no real card charge.</p>
+            <p className="text-xs text-[var(--text-muted)] mt-4">Payment and delivery are arranged directly between buyer and seller.</p>
           </div>
         </div>
       </div>

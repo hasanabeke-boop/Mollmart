@@ -14,7 +14,7 @@ import {
   normalizeRequestQuantity,
   roundMoney
 } from '../../../shared/offerPricing';
-import { validateDemoCardFields } from '../../../shared/demoPayment.validation';
+import { normalizeShippingInput, type ShippingInput } from '../../../shared/shipping.validation';
 import OfferRepository from '../../offer/repositories/offer.repository';
 import OfferEventPublisher from '../../offer/services/offer-event.service';
 
@@ -296,32 +296,8 @@ export class DealService {
     return this.getDealState(user, proposal.conversationId);
   }
 
-  async demoPay(
-    user: AuthUser,
-    conversationId: string,
-    input: {
-      shippingName: string;
-      shippingPhone: string;
-      shippingAddress: string;
-      cardHolderName: string;
-      cardNumber: string;
-      cardExpiry: string;
-      cardCvv: string;
-    }
-  ) {
-    validateDemoCardFields(input);
-    const shippingName = input.shippingName.trim();
-    const shippingPhone = input.shippingPhone.trim();
-    const shippingAddress = input.shippingAddress.trim();
-    if (shippingName.length < 2) {
-      throw badRequest('shippingName is required');
-    }
-    if (shippingPhone.length < 5) {
-      throw badRequest('shippingPhone is required');
-    }
-    if (shippingAddress.length < 5) {
-      throw badRequest('shippingAddress is required');
-    }
+  async placeRequestOrder(user: AuthUser, conversationId: string, input: ShippingInput) {
+    const { shippingName, shippingPhone, shippingAddress } = normalizeShippingInput(input);
 
     const conv = await prisma.conversation.findUnique({
       where: { id: conversationId },
@@ -331,18 +307,18 @@ export class DealService {
       throw notFound('Conversation not found');
     }
     if (conv.buyerId !== user.id) {
-      throw forbidden('Only the buyer on this thread can pay');
+      throw forbidden('Only the buyer on this thread can place an order');
     }
     if (user.canBuy === false) {
-      throw forbidden('Your account cannot complete buyer payments');
+      throw forbidden('Your account cannot place buyer orders');
     }
     if (conv.agreedPrice == null || conv.agreedCurrency == null) {
-      throw badRequest('Agree on a price in chat before paying');
+      throw badRequest('Agree on a price in chat before submitting delivery details');
     }
 
     const dup = await prisma.requestDealOrder.findUnique({ where: { conversationId } });
     if (dup != null) {
-      throw conflict('Payment already completed for this conversation');
+      throw conflict('An order already exists for this conversation');
     }
 
     const amount = conv.agreedPrice;
@@ -381,21 +357,7 @@ export class DealService {
     return serializeShopLikeOrder(order);
   }
 
-  async checkoutAuctionWinner(
-    user: AuthUser,
-    requestId: string,
-    input: {
-      shippingName: string;
-      shippingPhone: string;
-      shippingAddress: string;
-      cardHolderName: string;
-      cardNumber: string;
-      cardExpiry: string;
-      cardCvv: string;
-    }
-  ) {
-    validateDemoCardFields(input);
-
+  async placeAuctionWinnerOrder(user: AuthUser, requestId: string, input: ShippingInput) {
     const session = await prisma.auctionSession.findUnique({
       where: { requestId },
       include: { request: { select: { id: true, buyerId: true, title: true, quantity: true, currency: true } } }
@@ -404,15 +366,15 @@ export class DealService {
       throw badRequest('Auction has not finished with a winner yet');
     }
     if (session.request.buyerId !== user.id) {
-      throw forbidden('Only the buyer on this request can pay the auction winner');
+      throw forbidden('Only the buyer on this request can place the order');
     }
     if (user.canBuy === false) {
-      throw forbidden('Your account cannot complete buyer payments');
+      throw forbidden('Your account cannot place buyer orders');
     }
 
     const existingOrder = await prisma.requestDealOrder.findFirst({ where: { requestId } });
     if (existingOrder != null) {
-      throw conflict('This auction has already been paid');
+      throw conflict('An order already exists for this auction');
     }
 
     const offerRepo = new OfferRepository();
@@ -475,7 +437,7 @@ export class DealService {
       });
     }
 
-    return this.demoPay(user, conversation.id, input);
+    return this.placeRequestOrder(user, conversation.id, input);
   }
 
   async listMyRequestOrders(user: AuthUser, page: number, limit: number, status?: string) {
@@ -553,7 +515,6 @@ export class DealService {
       status: CatalogOrderStatus;
       trackingNumber?: string | null;
       carrier?: string | null;
-      sellerCreditedAt?: Date;
     } = { status: input.status };
 
     if (input.trackingNumber !== undefined) {
@@ -563,23 +524,10 @@ export class DealService {
       data.carrier = input.carrier;
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      if (
-        input.status === CatalogOrderStatus.completed &&
-        current.sellerCreditedAt == null
-      ) {
-        await tx.user.update({
-          where: { id: current.sellerId },
-          data: { walletBalance: { increment: current.amount } }
-        });
-        data.sellerCreditedAt = new Date();
-      }
-
-      return tx.requestDealOrder.update({
-        where: { id: orderId },
-        data,
-        include: dealOrderShopInclude
-      });
+    const updated = await prisma.requestDealOrder.update({
+      where: { id: orderId },
+      data,
+      include: dealOrderShopInclude
     });
 
     if (updated.status !== previousStatus) {
@@ -684,47 +632,6 @@ export class DealService {
       }
       throw e;
     }
-  }
-
-  async getWallet(user: AuthUser) {
-    const row = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { walletBalance: true }
-    });
-    if (row == null) {
-      throw notFound('User not found');
-    }
-    return { balance: toNumber(row.walletBalance) };
-  }
-
-  async demoWithdraw(
-    user: AuthUser,
-    amount: number,
-    input: { cardHolderName: string; cardNumber: string; cardExpiry: string; cardCvv: string }
-  ) {
-    validateDemoCardFields(input);
-    if (user.role !== 'seller') {
-      throw forbidden('Only sellers can withdraw balance');
-    }
-    void input;
-    const row = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { walletBalance: true }
-    });
-    if (row == null) {
-      throw notFound('User not found');
-    }
-    const bal = toNumber(row.walletBalance);
-    if (amount > bal) {
-      throw badRequest('Amount exceeds available balance');
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { walletBalance: { decrement: amount } }
-    });
-
-    return { ok: true as const, withdrawn: amount, balance: bal - amount };
   }
 
   private parseOrderStatus(status?: string): CatalogOrderStatus | undefined {
