@@ -920,7 +920,7 @@ export default function BrowseBuyerRequestsPage() {
                       onClick={() => setOfferTarget(featuredRequest)}
                       className="w-full rounded-xl bg-[#607afb] px-6 py-3 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:opacity-90 active:scale-[0.98] sm:w-auto sm:px-8"
                     >
-                      Make an Offer
+                      {t("Make an Offer")}
                     </button>
                     {featuredRequest.auctionEnabled && (
                       <button
@@ -934,7 +934,7 @@ export default function BrowseBuyerRequestsPage() {
                     <button
                       type="button"
                       onClick={() => setReportTarget(featuredRequest)}
-                      className="w-full rounded-xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:w-auto"
+                      className="w-full shrink-0 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:w-auto"
                     >
                       {t("Report")}
                     </button>
@@ -1018,27 +1018,31 @@ export default function BrowseBuyerRequestsPage() {
                     {t("{count} Offers", { count: req.offerCount })}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={() => setOfferTarget(req)}
-                    className="w-full flex-1 bg-[#607afb] text-white py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                <div className="flex flex-col gap-2">
+                  <div
+                    className={`grid gap-2 ${req.auctionEnabled ? "grid-cols-2" : "grid-cols-1"}`}
                   >
-                    Make an Offer
-                  </button>
-                  {req.auctionEnabled && (
                     <button
                       type="button"
-                      onClick={() => setAuctionTarget(req)}
-                      className="w-full flex-1 border-2 border-[#607afb] text-[#607afb] py-3 rounded-xl font-bold hover:bg-[#607afb]/5 active:scale-[0.98] transition-all"
+                      onClick={() => setOfferTarget(req)}
+                      className="min-w-0 bg-[#607afb] text-white py-3 px-3 rounded-xl text-sm font-bold hover:brightness-110 active:scale-[0.98] transition-all"
                     >
-                      {t("Join auction")}
+                      {t("Make an Offer")}
                     </button>
-                  )}
+                    {req.auctionEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setAuctionTarget(req)}
+                        className="min-w-0 border-2 border-[#607afb] text-[#607afb] py-3 px-3 rounded-xl text-sm font-bold hover:bg-[#607afb]/5 active:scale-[0.98] transition-all"
+                      >
+                        {t("Join auction")}
+                      </button>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => setReportTarget(req)}
-                    className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    className="self-center rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
                   >
                     {t("Report")}
                   </button>
