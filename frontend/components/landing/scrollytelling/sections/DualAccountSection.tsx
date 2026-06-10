@@ -5,11 +5,13 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLandingCopy } from "@/hooks/useLandingCopy";
+import { useLanguage } from "@/context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function DualAccountSection() {
   const copy = useLandingCopy();
+  const { t } = useLanguage();
   const sectionRef = useRef<HTMLElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -77,12 +79,12 @@ export default function DualAccountSection() {
             <div className="overflow-hidden rounded-xl bg-mm-dark-surface shadow-mockup">
               {browserChrome}
               <div className="border-b border-white/[0.06] bg-mm-dark-surface px-4 py-2 text-xs text-gray-500">
-                Buyer Dashboard
+                {t("Buyer Dashboard")}
               </div>
               <div className="relative aspect-[16/10] p-4">
                 <Image
                   src="/landing/buyer.png"
-                  alt="Buyer Dashboard"
+                  alt={t("Buyer Dashboard")}
                   fill
                   className="rounded-lg object-cover object-top"
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -105,12 +107,12 @@ export default function DualAccountSection() {
             <div className="overflow-hidden rounded-xl bg-mm-dark-surface shadow-mockup">
               {browserChrome}
               <div className="border-b border-white/[0.06] bg-mm-dark-surface px-4 py-2 text-xs text-gray-500">
-                Seller Dashboard
+                {t("Seller Dashboard")}
               </div>
               <div className="relative aspect-[16/10] p-4">
                 <Image
                   src="/landing/seller.png"
-                  alt="Seller Dashboard"
+                  alt={t("Seller Dashboard")}
                   fill
                   className="rounded-lg object-cover object-top"
                   sizes="(max-width: 1024px) 100vw, 50vw"

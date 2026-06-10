@@ -5,6 +5,8 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLandingCopy } from "@/hooks/useLandingCopy";
+import { useLanguage } from "@/context/LanguageContext";
+import { translateCategoryName } from "@/lib/categoryI18n";
 import {
   Laptop,
   Home,
@@ -44,6 +46,7 @@ const productMocks = [1, 2, 3, 4, 1, 2] as const;
 
 export default function GallerySection() {
   const copy = useLandingCopy();
+  const { t, language } = useLanguage();
   const sectionRef = useRef<HTMLElement>(null);
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
@@ -103,8 +106,12 @@ export default function GallerySection() {
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-mm-primary/10 transition-transform group-hover:scale-110 dark:bg-mm-primary/20">
               <cat.icon size={28} className="text-mm-primary" />
             </div>
-            <h4 className="mb-1 text-sm font-semibold text-mm-text dark:text-white">{cat.name}</h4>
-            <span className="text-xs text-mm-text-muted">{cat.requests} active requests</span>
+            <h4 className="mb-1 text-sm font-semibold text-mm-text dark:text-white">
+              {translateCategoryName(cat.name, language)}
+            </h4>
+            <span className="text-xs text-mm-text-muted">
+              {cat.requests} {t("active requests")}
+            </span>
           </div>
         ))}
       </div>
@@ -117,7 +124,7 @@ export default function GallerySection() {
           >
             <Image
               src={`/landing/img-product-mock-${num}.jpg`}
-              alt="Product"
+              alt={t("Product")}
               fill
               className="object-cover"
               sizes="240px"
@@ -134,15 +141,15 @@ export default function GallerySection() {
           >
             <div>
               <h4 className="mb-1 truncate text-sm font-semibold text-mm-text dark:text-white">
-                {req.title}
+                {t(req.title)}
               </h4>
-              <span className="text-xs text-mm-text-muted">{req.location}</span>
+              <span className="text-xs text-mm-text-muted">{t(req.location)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="rounded-md bg-mm-primary/10 px-2 py-1 text-xs font-semibold text-mm-primary dark:bg-mm-primary/20">
                 {req.budget}
               </span>
-              <span className="text-xs font-medium text-mm-accent-green">Open</span>
+              <span className="text-xs font-medium text-mm-accent-green">{t("Open")}</span>
             </div>
           </div>
         ))}

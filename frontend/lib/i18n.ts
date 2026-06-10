@@ -1,4 +1,6 @@
-﻿export const languages = ["en", "ru", "kk"] as const;
+﻿import { i18nAdditions } from "./i18n-additions";
+
+export const languages = ["en", "ru", "kk"] as const;
 
 export type Language = (typeof languages)[number];
 
@@ -685,6 +687,7 @@ export const uiTranslations = {
     "Seller Dashboard is for sellers who browse buyer demand, send offers, and track conversations. Buyers should manage their requests instead.":
       "Панель продавца — для просмотра спроса, отправки предложений и отслеживания диалогов. Покупателям используйте «Мои запросы».",
     "Log in as a seller to view the seller dashboard.": "Войдите как продавец, чтобы открыть панель продавца.",
+    ...i18nAdditions.ru,
   },
   kk: {
     "Log In": "Кіру",
@@ -1348,6 +1351,7 @@ export const uiTranslations = {
     "Seller Dashboard is for sellers who browse buyer demand, send offers, and track conversations. Buyers should manage their requests instead.":
       "Сатушы панелі — сұранысты қарау, ұсыныс жіберу және чаттарды бақылауға арналған. Сатып алушылар «Менің сұраныстарым» бөлімін қолдансын.",
     "Log in as a seller to view the seller dashboard.": "Сатушы панелін көру үшін сатушы ретінде кіріңіз.",
+    ...i18nAdditions.kk,
   },
 } satisfies Record<Exclude<Language, "en">, Record<string, string>>;
 

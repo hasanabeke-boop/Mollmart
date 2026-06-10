@@ -1019,20 +1019,8 @@ function ChatPageContent() {
               )}
               {active.details.city && (
                 <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
-                  <span className="text-[var(--text-muted)]">City</span>
+                  <span className="text-[var(--text-muted)]">{t("City")}</span>
                   <span className="font-medium text-[var(--foreground)]">{active.details.city}</span>
-                </div>
-              )}
-              {active.details.ratingAverage && (
-                <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
-                  <span className="text-[var(--text-muted)]">Rating</span>
-                  <span className="font-medium text-[var(--foreground)]">{Number(active.details.ratingAverage).toFixed(1)}</span>
-                </div>
-              )}
-              {typeof active.details.completedDealsCount === "number" && (
-                <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
-                  <span className="text-[var(--text-muted)]">Deals</span>
-                  <span className="font-medium text-[var(--foreground)]">{active.details.completedDealsCount}</span>
                 </div>
               )}
             </div>

@@ -1,0 +1,55 @@
+{
+  "count": 8,
+  "strings": [
+    {
+      "s": "AbortError",
+      "files": [
+        "app\\products\\page.tsx",
+        "lib\\api.ts",
+        "lib\\api.ts"
+      ]
+    },
+    {
+      "s": "Authorization",
+      "files": [
+        "lib\\api.ts"
+      ]
+    },
+    {
+      "s": "CODE",
+      "files": [
+        "components\\i18n\\AutoTranslator.tsx"
+      ]
+    },
+    {
+      "s": "Each ",
+      "files": [
+        "lib\\auctionTooltips.ts"
+      ]
+    },
+    {
+      "s": "NOSCRIPT",
+      "files": [
+        "components\\i18n\\AutoTranslator.tsx"
+      ]
+    },
+    {
+      "s": "PRE",
+      "files": [
+        "components\\i18n\\AutoTranslator.tsx"
+      ]
+    },
+    {
+      "s": "SCRIPT",
+      "files": [
+        "components\\i18n\\AutoTranslator.tsx"
+      ]
+    },
+    {
+      "s": "STYLE",
+      "files": [
+        "components\\i18n\\AutoTranslator.tsx"
+      ]
+    }
+  ]
+}
