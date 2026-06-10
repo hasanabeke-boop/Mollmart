@@ -94,6 +94,14 @@ export class CatalogRepository {
     });
   }
 
+  async archiveById(id: string): Promise<CatalogListRow> {
+    return this.client.catalogProduct.update({
+      where: { id },
+      data: { status: CatalogProductStatus.archived },
+      include: catalogListInclude
+    });
+  }
+
   async findPublishedBySlug(slug: string): Promise<CatalogDetailRow | null> {
     const row = await this.client.catalogProduct.findFirst({
       where: { slug, status: CatalogProductStatus.published },

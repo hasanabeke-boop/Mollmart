@@ -1,4 +1,5 @@
 import {
+  CatalogOrderStatus,
   ModerationTargetType,
   Prisma,
   PrismaClient
@@ -124,9 +125,34 @@ export class AdminContentRepository {
       case 'request':
         await this.deleteRequest(input.targetId);
         return;
-      case 'catalog_product':
-        await this.client.catalogProduct.delete({ where: { id: input.targetId } });
+      case 'catalog_product': {
+        const lines = await this.client.catalogOrderLine.count({
+          where: { productId: input.targetId }
+        });
+        if (lines > 0) {
+          await this.client.catalogProduct.update({
+            where: { id: input.targetId },
+            data: { status: 'archived' }
+          });
+          return;
+        }
+        try {
+          await this.client.catalogProduct.delete({ where: { id: input.targetId } });
+        } catch (error) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            (error.code === 'P2003' || error.code === 'P2014')
+          ) {
+            await this.client.catalogProduct.update({
+              where: { id: input.targetId },
+              data: { status: 'archived' }
+            });
+            return;
+          }
+          throw error;
+        }
         return;
+      }
       case 'offer':
         await this.client.offer.delete({ where: { id: input.targetId } });
         return;

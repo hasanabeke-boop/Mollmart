@@ -340,7 +340,10 @@ export class ShopService {
       throw badRequest('No changes');
     }
 
-    const updated = await this.repo.updateOrder(orderId, data);
+    const updated =
+      input.status === CatalogOrderStatus.cancelled
+        ? await this.repo.cancelOrderWithStockRestore(orderId, data)
+        : await this.repo.updateOrder(orderId, data);
     if (updated == null) {
       throw notFound('Order not found');
     }

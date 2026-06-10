@@ -268,12 +268,23 @@ export class CatalogService {
 
     const lines = await this.repo.countOrderLinesForProduct(id);
     if (lines > 0) {
-      await this.repo.update(id, { status: CatalogProductStatus.archived });
+      await this.repo.archiveById(id);
       return { outcome: 'archived' };
     }
 
-    await this.repo.deleteById(id);
-    return { outcome: 'deleted' };
+    try {
+      await this.repo.deleteById(id);
+      return { outcome: 'deleted' };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === 'P2003' || error.code === 'P2014')
+      ) {
+        await this.repo.archiveById(id);
+        return { outcome: 'archived' };
+      }
+      throw error;
+    }
   }
 
   private parseStatus(s?: string | null): CatalogProductStatus {

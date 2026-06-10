@@ -200,13 +200,79 @@ export class ShopRepository {
 
   async deleteOrderById(orderId: string): Promise<boolean> {
     try {
-      await this.client.catalogOrder.delete({ where: { id: orderId } });
+      await this.client.$transaction(async (tx) => {
+        const order = await tx.catalogOrder.findUnique({
+          where: { id: orderId },
+          include: { lines: { select: { productId: true, quantity: true } } }
+        });
+        if (order == null) {
+          throw new Error('ORDER_NOT_FOUND');
+        }
+
+        if (
+          order.status !== CatalogOrderStatus.completed &&
+          order.status !== CatalogOrderStatus.cancelled
+        ) {
+          for (const line of order.lines) {
+            await tx.catalogProduct.update({
+              where: { id: line.productId },
+              data: { quantity: { increment: line.quantity } }
+            });
+          }
+        }
+
+        await tx.catalogOrder.delete({ where: { id: orderId } });
+      });
       return true;
     } catch (e: unknown) {
+      if (e instanceof Error && e.message === 'ORDER_NOT_FOUND') {
+        return false;
+      }
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
         return false;
       }
       throw e;
+    }
+  }
+
+  async cancelOrderWithStockRestore(
+    orderId: string,
+    data: Prisma.CatalogOrderUpdateInput
+  ): Promise<OrderRow | null> {
+    try {
+      return await this.client.$transaction(async (tx) => {
+        const order = await tx.catalogOrder.findUnique({
+          where: { id: orderId },
+          include: { lines: { select: { productId: true, quantity: true } } }
+        });
+        if (order == null) {
+          return null;
+        }
+
+        if (
+          order.status !== CatalogOrderStatus.completed &&
+          order.status !== CatalogOrderStatus.cancelled
+        ) {
+          for (const line of order.lines) {
+            await tx.catalogProduct.update({
+              where: { id: line.productId },
+              data: { quantity: { increment: line.quantity } }
+            });
+          }
+        }
+
+        return tx.catalogOrder.update({
+          where: { id: orderId },
+          data,
+          include: {
+            lines: true,
+            seller: { select: { id: true, name: true } },
+            buyer: { select: { id: true, name: true } }
+          }
+        });
+      });
+    } catch {
+      return null;
     }
   }
 
