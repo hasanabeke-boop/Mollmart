@@ -60,7 +60,7 @@ export default function SellerSection() {
                 href="/seller/products/new"
                 className="rounded-[10px] border border-mm-primary bg-mm-surface px-6 py-3 text-center font-semibold text-mm-primary transition-colors hover:bg-mm-primary/5 dark:bg-mm-dark-elevated"
               >
-                Add Product
+                {copy.seller.addProductCta}
               </Link>
             </div>
           </div>

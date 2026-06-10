@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ShoppingCart, Send, MessageCircle } from "lucide-react";
 import { useLandingCopy } from "@/hooks/useLandingCopy";
+import { useLanguage } from "@/context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -28,6 +29,7 @@ const featureMeta = [
 
 export default function FeaturesSection() {
   const copy = useLandingCopy();
+  const { language } = useLanguage();
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
@@ -38,10 +40,12 @@ export default function FeaturesSection() {
     const cards = cardsRef.current;
     if (!section || !heading || !cards) return;
 
+    const titleText = copy.features.title;
+    heading.textContent = titleText;
+
     // Подготовка букв для заголовка
-    const originalText = heading.textContent || "";
-    if (originalText && !heading.querySelector(".hero-char-span")) {
-      heading.innerHTML = originalText
+    if (titleText && !heading.querySelector(".hero-char-span")) {
+      heading.innerHTML = titleText
         .split("")
         .map(
           (char) =>
@@ -108,9 +112,9 @@ export default function FeaturesSection() {
     return () => {
       clearTimeout(refreshTimeout);
       ctx.revert();
-      if (heading) heading.innerHTML = originalText;
+      if (heading) heading.textContent = copy.features.title;
     };
-  }, [copy]);
+  }, [copy, language]);
 
   return (
     <section ref={sectionRef} id="features" className="w-full bg-white py-[120px] dark:bg-mm-dark-surface">
@@ -120,6 +124,7 @@ export default function FeaturesSection() {
             {copy.features.eyebrow}
           </span>
           <h2
+            key={language}
             ref={headingRef}
             className="text-3xl leading-tight font-bold tracking-[-1px] text-mm-text sm:text-4xl lg:text-[48px] lg:leading-[56px] dark:text-white"
           >

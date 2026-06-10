@@ -35,6 +35,7 @@ export type LandingCopy = {
     title: string;
     body: string;
     cta: string;
+    addProductCta: string;
     steps: { title: string; description: string }[];
   };
   dual: {
@@ -185,6 +186,7 @@ const en: LandingCopy = {
     title: "How It Works For Sellers",
     body: "Sell what people already want, not what sits in your warehouse. See live demand and respond with your best offers.",
     cta: "Open Request Board",
+    addProductCta: "Add Product",
     steps: [
       {
         title: "View Live Requests",
@@ -398,6 +400,7 @@ const ru: LandingCopy = {
     title: "Как это работает для продавца",
     body: "Продавайте то, что уже ищут, а не то, что пылится на складе. Видьте спрос и отвечайте лучшим оффером.",
     cta: "Доска заявок",
+    addProductCta: "Добавить товар",
     steps: [
       {
         title: "Живые заявки",
@@ -607,6 +610,7 @@ const kk: LandingCopy = {
     title: "Сатушыға қалай жұмыс істейді",
     body: "Қоймада жатқанды емес, ізделетінді сатыңыз. Нақты сұранысқа жауап беріңіз.",
     cta: "Сұраулар тақтасы",
+    addProductCta: "Тауар қосу",
     steps: [
       {
         title: "Тірі сұраулар",
