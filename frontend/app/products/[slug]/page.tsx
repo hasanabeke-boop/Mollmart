@@ -7,8 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import ReportContentModal from "@/components/moderation/ReportContentModal";
-import { apiFetch } from "@/lib/api";
-import { formatCatalogMoney } from "@/lib/catalog";
+import { apiFetchWithRefresh } from "@/lib/api";
+import { formatCatalogMoney, normalizeCatalogProductSlug } from "@/lib/catalog";
 import { addCartItem } from "@/lib/shop";
 
 type ShowcaseDetail = {
@@ -22,6 +22,7 @@ type ShowcaseDetail = {
   imageUrl: string;
   galleryUrls: string[];
   quantity: number;
+  status?: string;
   category: { id: string; name: string; slug: string } | null;
   seller: { id: string; name: string };
 };
@@ -32,7 +33,8 @@ export default function ShowcaseDetailPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const categoryLabel = useCategoryLabel();
-  const slug = typeof params.slug === "string" ? params.slug : "";
+  const slugParam = typeof params.slug === "string" ? params.slug : "";
+  const slug = normalizeCatalogProductSlug(slugParam);
 
   const [product, setProduct] = useState<ShowcaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export default function ShowcaseDetailPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await apiFetch<ShowcaseDetail>(
+        const data = await apiFetchWithRefresh<ShowcaseDetail>(
           `/api/v1/catalog/products/slug/${encodeURIComponent(slug)}`,
           { service: "catalog" },
         );
@@ -107,6 +109,8 @@ export default function ShowcaseDetailPage() {
 
   const isOwnListing = user?.id === product.seller.id;
   const inStock = product.quantity > 0;
+  const isDraftPreview = isOwnListing && product.status === "draft";
+  const isArchivedPreview = isOwnListing && product.status === "archived";
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -144,6 +148,21 @@ export default function ShowcaseDetailPage() {
         <span className="text-[#4c9a66] text-sm font-medium">/</span>
         <span className="text-[#0d1b12] text-sm font-medium line-clamp-1">{product.title}</span>
       </div>
+
+      {(isDraftPreview || isArchivedPreview) && (
+        <div className="mx-4 mb-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-[var(--foreground)]">
+          {isDraftPreview
+            ? t(
+                "This listing is a draft — only you can see this preview. Publish it from My listings to show it in the catalog.",
+              )
+            : t("This listing is archived and not shown in the public catalog.")}
+          {isDraftPreview && (
+            <Link href="/seller/listings" className="ml-2 font-semibold text-primary hover:underline">
+              {t("My listings")}
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7 flex flex-col gap-4">
@@ -217,7 +236,13 @@ export default function ShowcaseDetailPage() {
             </div>
             <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[200px]">
               {isOwnListing ? (
-                <p className="text-sm text-slate-600">{t("This is your listing.")}</p>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {isDraftPreview
+                    ? t(
+                        "This listing is a draft — only you can see this preview. Publish it from My listings to show it in the catalog.",
+                      )
+                    : t("This is your listing.")}
+                </p>
               ) : (
                 <>
                   <button

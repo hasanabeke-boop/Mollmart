@@ -33,6 +33,7 @@ export function createCatalogRouter(controller: CatalogController): Router {
   );
   router.get(
     '/products/slug/:slug',
+    optionalAuthenticate,
     validate(catalogSlugParamsSchema),
     asyncHandler(controller.getBySlug)
   );

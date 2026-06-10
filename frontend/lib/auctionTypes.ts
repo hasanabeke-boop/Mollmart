@@ -19,7 +19,7 @@ export type AuctionParticipantView = {
   sellerId: string;
   sellerName: string;
   startPrice: number;
-  floorPrice: number;
+  floorPrice: number | null;
   currentPrice: number;
   currency: string;
   status: string;

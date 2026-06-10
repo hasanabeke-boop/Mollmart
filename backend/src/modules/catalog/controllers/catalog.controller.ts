@@ -27,7 +27,7 @@ export class CatalogController {
   };
 
   getBySlug = async (req: Request, res: Response): Promise<void> => {
-    const product = await this.catalogService.getPublishedBySlug(req.params.slug);
+    const product = await this.catalogService.getBySlug(req.params.slug, req.user);
     res.status(httpStatus.OK).json(product);
   };
 

@@ -6,7 +6,7 @@ import CatalogRepository, {
   type CatalogListRow
 } from '../repositories/catalog.repository';
 import type { CatalogListQuery, CreateCatalogProductInput, UpdateCatalogProductInput } from '../types/catalog';
-import { uniqueCatalogSlug } from '../utils/slug';
+import { uniqueCatalogSlug, normalizeSlugParam } from '../utils/slug';
 import { MARKETPLACE_CURRENCY } from '../../../shared/marketplaceCurrency';
 import { getBuyerRecommendedCategoryUuids } from '../../recommendations/recommendationSignals';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
@@ -109,11 +109,29 @@ export class CatalogService {
     };
   }
 
-  async getPublishedBySlug(slug: string) {
-    const row = await this.repo.findPublishedBySlug(slug);
+  async getBySlug(slug: string, user?: AuthUser) {
+    const normalized = normalizeSlugParam(slug);
+
+    const published = await this.repo.findPublishedBySlug(normalized);
+    if (published != null) {
+      return this.serializeDetail(published);
+    }
+
+    if (user == null) {
+      throw notFound('Product not found');
+    }
+
+    const row = await this.repo.findDetailBySlug(normalized);
     if (row == null) {
       throw notFound('Product not found');
     }
+
+    const isOwner = row.sellerId === user.id;
+    const isAdmin = user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      throw notFound('Product not found');
+    }
+
     return this.serializeDetail(row);
   }
 

@@ -13,6 +13,15 @@ export const participateSchema = {
   })
 };
 
+export const lowerPriceSchema = {
+  params: Joi.object({
+    sessionId: Joi.string().trim().required()
+  }),
+  body: Joi.object({
+    targetPrice: Joi.number().positive().optional()
+  })
+};
+
 export const sessionIdParamSchema = {
   params: Joi.object({
     sessionId: Joi.string().trim().required()

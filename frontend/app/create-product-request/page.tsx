@@ -721,20 +721,20 @@ function CreateProductRequestContent() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
                     <input
                       type="checkbox"
                       checked={auctionEnabled}
                       onChange={(e) => setAuctionEnabled(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="mt-1 h-4 w-4 rounded border-[var(--border)] text-primary focus:ring-primary"
                     />
                     <span>
-                      <span className="block text-sm font-semibold text-slate-800">
+                      <span className="block text-sm font-semibold text-[var(--foreground)]">
                         {t("Enable reverse auction")}
                       </span>
-                      <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                      <span className="mt-1 block text-xs leading-relaxed text-[var(--text-muted)]">
                         {t(
                           "Optional. After you publish, sellers can join a live auction and compete by lowering price. Platform rules (timing, minimum sellers, price steps) apply automatically — you do not configure them here.",
                         )}

@@ -41,7 +41,11 @@ export class AuctionController {
   };
 
   lower = async (req: Request, res: Response): Promise<void> => {
-    const data = await this.auctionService.lowerPrice(req.user as AuthUser, req.params.sessionId);
+    const data = await this.auctionService.lowerPrice(
+      req.user as AuthUser,
+      req.params.sessionId,
+      req.body?.targetPrice
+    );
     res.json(data);
   };
 

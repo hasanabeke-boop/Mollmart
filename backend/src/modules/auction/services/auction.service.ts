@@ -27,6 +27,30 @@ export function computeLowerPrice(current: number, floor: number): number | null
   return next;
 }
 
+export function resolveLowerTargetPrice(
+  current: number,
+  floor: number,
+  targetPrice?: number
+): number {
+  if (targetPrice != null) {
+    const next = Math.round(targetPrice * 100) / 100;
+    if (!Number.isFinite(next) || next <= 0) {
+      throw badRequest('Enter a valid target price');
+    }
+    if (next >= current) {
+      throw badRequest('Target price must be lower than your current price');
+    }
+    if (next < floor) {
+      throw badRequest('Target price cannot be below your floor');
+    }
+    return next;
+  }
+
+  const next = computeLowerPrice(current, floor);
+  if (next == null) throw badRequest('Already at floor price');
+  return next;
+}
+
 function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000);
 }
@@ -98,7 +122,8 @@ export class AuctionService {
         sellerId: p.sellerId,
         sellerName: maskSellerName(p.seller.name, p.sellerId, viewer?.id),
         startPrice: toNumber(p.startPrice),
-        floorPrice: toNumber(p.floorPrice),
+        floorPrice:
+          viewer?.id === p.sellerId ? toNumber(p.floorPrice) : null,
         currentPrice: toNumber(p.currentPrice),
         currency: p.currency,
         status: p.status,
@@ -256,15 +281,14 @@ export class AuctionService {
     return session;
   }
 
-  async lowerPrice(user: AuthUser, sessionId: string) {
+  async lowerPrice(user: AuthUser, sessionId: string, targetPrice?: number) {
     const participant = await this.getActiveParticipant(user, sessionId);
     const session = await this.repo.findById(sessionId);
     if (session == null || session.status !== 'live') throw conflict('Auction is not live');
 
     const current = toNumber(participant.currentPrice);
     const floor = toNumber(participant.floorPrice);
-    const next = computeLowerPrice(current, floor);
-    if (next == null) throw badRequest('Already at floor price');
+    const next = resolveLowerTargetPrice(current, floor, targetPrice);
 
     await this.repo.recordBidEvent({
       sessionId,
@@ -370,9 +394,16 @@ export class AuctionService {
     if (fresh != null) {
       if (fresh.status === 'live') {
         const active = await this.repo.countActiveParticipants(sessionId);
-        if (active < 2) await this.finishAuction(fresh, 'no_winner');
+        if (active === 0) {
+          await this.finishAuction(fresh, 'no_winner');
+        } else if (active === 1) {
+          await this.finishAuction(fresh, 'ended');
+        } else {
+          this.broadcastState(fresh);
+        }
+      } else {
+        this.broadcastState(fresh);
       }
-      this.broadcastState(fresh);
     }
     return this.getById(sessionId, user);
   }
@@ -477,6 +508,12 @@ export class AuctionService {
       return;
     }
 
+    if (activeCount === 1) {
+      const fresh = await this.repo.findById(sessionId);
+      if (fresh != null) await this.finishAuction(fresh, 'ended');
+      return;
+    }
+
     if (
       consecutive >= auctionRules.noBidRoundsToEnd ||
       session.currentRound >= auctionRules.maxRounds
@@ -497,6 +534,9 @@ export class AuctionService {
       type: 'round_ending',
       payload: { round: session.currentRound, pauseUntil: pauseUntil.toISOString() }
     });
+
+    const paused = await this.repo.findById(sessionId);
+    if (paused != null) this.broadcastState(paused);
   }
 
   private async startNextRound(sessionId: string): Promise<void> {

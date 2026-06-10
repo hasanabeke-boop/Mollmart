@@ -10,8 +10,8 @@ import { placeAuctionWinnerOrder } from "@/lib/auctionApi";
 import { formatMoney } from "@/lib/currency";
 import { EMPTY_SHIPPING, validateShipping } from "@/lib/shipping";
 import type { AuctionSessionView } from "@/lib/auctionTypes";
+import { computeAuctionStepTarget } from "@/lib/auctionPricing";
 import { useAuctionSession, useAuctionTick } from "@/hooks/useAuctionStream";
-import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
 
 type Props = {
   sessionId: string;
@@ -23,13 +23,15 @@ type Props = {
 export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-  const { session, setSession, lastDrop, roundEnding } = useAuctionSession(sessionId);
+  const { session, setSession, lastDrop, roundEnding, reload } = useAuctionSession(sessionId);
   const [acting, setActing] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
   const [orderOpen, setOrderOpen] = useState(false);
   const [shippingForm, setShippingForm] = useState(EMPTY_SHIPPING);
   const [orderBusy, setOrderBusy] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [lowerTarget, setLowerTarget] = useState("");
+  const [lowerError, setLowerError] = useState("");
 
   const statusLabel = useCallback(
     (status: string, count: number, min: number) => {
@@ -69,37 +71,90 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
   }, [lastDrop]);
 
   const tickSession = session;
-  const secondsRemaining = useAuctionTick(tickSession);
+  const myParticipant = tickSession?.participants.find((p) => p.isMe);
+  const canAct =
+    mode === "seller" &&
+    tickSession?.status === "live" &&
+    myParticipant != null &&
+    ["active", "registered"].includes(myParticipant.status);
+  const secondsRemaining = useAuctionTick(tickSession, reload);
 
   useEffect(() => {
-    if (tickSession?.status === "ended") {
-      void load();
+    if (tickSession?.status === "ended" || tickSession?.status === "no_winner") {
+      void reload();
     }
-  }, [tickSession?.status, load]);
+  }, [tickSession?.status, reload]);
+
+  useEffect(() => {
+    if (!canAct || myParticipant?.currentPrice == null) return;
+    setLowerTarget((prev) => (prev === "" ? String(myParticipant.currentPrice) : prev));
+  }, [canAct, myParticipant?.currentPrice, myParticipant?.id]);
+
   const urgent =
     secondsRemaining != null &&
     tickSession?.rules.urgentThresholdSeconds != null &&
     secondsRemaining <= tickSession.rules.urgentThresholdSeconds;
 
-  const myParticipant = tickSession?.participants.find((p) => p.isMe);
-  const canAct =
-    mode === "seller" &&
-    tickSession?.status === "live" &&
-    myParticipant &&
-    ["active", "registered"].includes(myParticipant.status);
-
-  const act = async (action: "lower" | "hold" | "withdraw") => {
+  const act = async (action: "lower" | "hold" | "withdraw", targetPrice?: number) => {
     setActing(true);
+    setLowerError("");
     try {
       const data = await apiFetchWithRefresh<AuctionSessionView>(
         `/api/v1/auctions/${sessionId}/${action}`,
-        { method: "POST", service: "auction" },
+        {
+          method: "POST",
+          service: "auction",
+          ...(action === "lower" && targetPrice != null
+            ? { body: JSON.stringify({ targetPrice }) }
+            : {}),
+        },
       );
       setSession(data);
+      if (action === "lower") {
+        const me = data.participants.find((p) => p.isMe);
+        if (me) setLowerTarget(String(me.currentPrice));
+      }
+    } catch (err) {
+      if (action === "lower") {
+        setLowerError((err as Error).message || t("Could not lower price."));
+      }
     } finally {
       setActing(false);
     }
   };
+
+  const submitLower = () => {
+    const target = Number(lowerTarget);
+    const current = myParticipant?.currentPrice ?? 0;
+    const floor = myParticipant?.floorPrice ?? 0;
+    if (!Number.isFinite(target) || target <= 0) {
+      setLowerError(t("Enter a valid target price."));
+      return;
+    }
+    if (target >= current) {
+      setLowerError(t("Target price must be lower than your current price."));
+      return;
+    }
+    if (floor > 0 && target < floor) {
+      setLowerError(t("Target price cannot be below your floor."));
+      return;
+    }
+    void act("lower", target);
+  };
+
+  const atFloor =
+    myParticipant?.floorPrice != null &&
+    myParticipant.currentPrice <= myParticipant.floorPrice;
+
+  const stepTarget =
+    myParticipant?.floorPrice != null && tickSession?.rules
+      ? computeAuctionStepTarget(
+          myParticipant.currentPrice,
+          myParticipant.floorPrice,
+          tickSession.rules,
+        )
+      : null;
+  const stepPercent = tickSession?.rules.priceStepPercent ?? 2.5;
 
   if (!tickSession) {
     return (
@@ -134,7 +189,6 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
             {statusLabel(tickSession.status, tickSession.participantCount, tickSession.minParticipants)}
           </p>
         </div>
-        <AuctionRulesHelp />
       </div>
 
       {tickSession.status === "live" && (
@@ -200,7 +254,6 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
             <tr>
               <th className="px-3 py-2">{t("Seller")}</th>
               <th className="px-3 py-2">{t("Current")}</th>
-              <th className="px-3 py-2 hidden sm:table-cell">{t("Floor")}</th>
               <th className="px-3 py-2">{t("Status")}</th>
             </tr>
           </thead>
@@ -225,9 +278,6 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
                   <td className="px-3 py-2.5 font-semibold tabular-nums">
                     {formatMoney(p.currentPrice, currency)}
                   </td>
-                  <td className="hidden px-3 py-2.5 tabular-nums text-[var(--text-muted)] sm:table-cell">
-                    {formatMoney(p.floorPrice, currency)}
-                  </td>
                   <td className="px-3 py-2.5 capitalize text-[var(--text-muted)]">{t(p.status)}</td>
                 </tr>
               );
@@ -237,32 +287,87 @@ export default function AuctionRoom({ sessionId, mode, compact, onSessionLoaded 
       </div>
 
       {canAct && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={acting || (myParticipant?.currentPrice ?? 0) <= (myParticipant?.floorPrice ?? 0)}
-            onClick={() => void act("lower")}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-[#0d1b12] shadow-sm transition hover:opacity-90 disabled:opacity-40"
-          >
-            <span className="material-symbols-outlined text-lg">trending_down</span>
-            {t("Lower price")}
-          </button>
-          <button
-            type="button"
-            disabled={acting}
-            onClick={() => void act("hold")}
-            className="rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
-          >
-            {t("Hold")}
-          </button>
-          <button
-            type="button"
-            disabled={acting}
-            onClick={() => void act("withdraw")}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-500/10"
-          >
-            {t("Withdraw")}
-          </button>
+        <div className="space-y-3">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)]/50 p-4 space-y-4">
+            <div>
+              <p className="text-xs font-medium text-[var(--text-muted)]">
+                {t("Auto step ({percent}%)", { percent: stepPercent })}
+              </p>
+              <button
+                type="button"
+                disabled={acting || atFloor || stepTarget == null}
+                onClick={() => void act("lower")}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-primary bg-primary/10 px-4 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-primary/15 disabled:opacity-40 sm:w-auto"
+              >
+                <span className="material-symbols-outlined text-lg">trending_down</span>
+                {t("Lower by {percent}%", { percent: stepPercent })}
+                {stepTarget != null ? (
+                  <span className="font-normal text-[var(--text-muted)]">
+                    → {formatMoney(stepTarget, currency)}
+                  </span>
+                ) : null}
+              </button>
+            </div>
+
+            <div className="relative border-t border-[var(--border)] pt-4">
+              <span className="absolute -top-2.5 left-0 bg-[var(--surface-muted)] pr-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                {t("Or set your own price")}
+              </span>
+              <label className="block">
+                <span className="text-xs font-medium text-[var(--text-muted)]">
+                  {t("Lower to price ({currency})", { currency })}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={lowerTarget}
+                  onChange={(e) => {
+                    setLowerTarget(e.target.value);
+                    setLowerError("");
+                  }}
+                  className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm tabular-nums text-[var(--foreground)]"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={acting || atFloor}
+                onClick={submitLower}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-[#0d1b12] shadow-sm transition hover:opacity-90 disabled:opacity-40 sm:w-auto"
+              >
+                {t("Lower to price")}
+              </button>
+            </div>
+
+            {myParticipant?.floorPrice != null ? (
+              <p className="text-xs text-[var(--text-muted)]">
+                {t("Your floor: {amount}", {
+                  amount: formatMoney(myParticipant.floorPrice, currency),
+                })}{" "}
+                · {t("Current")}: {formatMoney(myParticipant.currentPrice, currency)}
+              </p>
+            ) : null}
+            {lowerError ? <p className="text-xs text-red-600">{lowerError}</p> : null}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={acting}
+              onClick={() => void act("hold")}
+              className="rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
+            >
+              {t("Hold")}
+            </button>
+            <button
+              type="button"
+              disabled={acting}
+              onClick={() => void act("withdraw")}
+              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-500/10"
+            >
+              {t("Withdraw")}
+            </button>
+          </div>
         </div>
       )}
 

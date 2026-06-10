@@ -108,6 +108,13 @@ export class CatalogRepository {
     return row;
   }
 
+  async findDetailBySlug(slug: string): Promise<CatalogDetailRow | null> {
+    return this.client.catalogProduct.findFirst({
+      where: { slug },
+      include: catalogDetailInclude
+    });
+  }
+
   async listPublished(query: ListPublishedRepoParams): Promise<CatalogListResult> {
     const page = normalizePage(query.page);
     const limit = normalizeLimit(query.limit);

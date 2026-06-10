@@ -448,6 +448,20 @@ export const i18nAdditions = {
     "Delivery details": "Данные доставки",
     "Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.":
       "Укажите имя, телефон и адрес. Оплата и доставка согласуются напрямую с продавцом.",
+    "Lower to price": "Понизить до цены",
+    "Lower to price ({currency})": "Понизить до цены ({currency})",
+    "Your floor: {amount}": "Ваш минимум: {amount}",
+    "Enter a valid target price.": "Введите корректную целевую цену.",
+    "Target price must be lower than your current price.": "Целевая цена должна быть ниже текущей.",
+    "Target price cannot be below your floor.": "Целевая цена не может быть ниже вашего минимума.",
+    "Could not lower price.": "Не удалось понизить цену.",
+    "Auto step ({percent}%)": "Авто-шаг ({percent}%)",
+    "Lower by {percent}%": "Снизить на {percent}%",
+    "Or set your own price": "Или своя цена",
+    "This listing is a draft — only you can see this preview. Publish it from My listings to show it in the catalog.":
+      "Это черновик — этот просмотр видите только вы. Опубликуйте товар в «Мои товары», чтобы он появился в каталоге.",
+    "This listing is archived and not shown in the public catalog.":
+      "Товар в архиве и не отображается в публичном каталоге.",
   },
   kk: {
     "Accept failed.": "Қабылдау сәтсіз аяқталды.",
@@ -899,5 +913,19 @@ export const i18nAdditions = {
     "Delivery details": "Жеткізу мәліметтері",
     "Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.":
       "Атыңызды, телефон мен мекенжайды енгізіңіз. Төлем мен жеткізу сатушымен тікелей келісіледі.",
+    "Lower to price": "Бағаны төмендету",
+    "Lower to price ({currency})": "Бағаға дейін төмендету ({currency})",
+    "Your floor: {amount}": "Сіздің минимум: {amount}",
+    "Enter a valid target price.": "Дұрыс мақсатты баға енгізіңіз.",
+    "Target price must be lower than your current price.": "Мақсатты баға ағымдағыдан төмен болуы керек.",
+    "Target price cannot be below your floor.": "Мақсатты баға минимумнан төмен болмауы керек.",
+    "Could not lower price.": "Бағаны төмендету сәтсіз аяқталды.",
+    "Auto step ({percent}%)": "Авто-қадам ({percent}%)",
+    "Lower by {percent}%": "{percent}% төмендету",
+    "Or set your own price": "Немесе өз бағаңыз",
+    "This listing is a draft — only you can see this preview. Publish it from My listings to show it in the catalog.":
+      "Бұл жоба — алдын ала қарауды тек сіз көресіз. Каталогта көрсету үшін «Менің тізімдерім» бөлімінен жариялаңыз.",
+    "This listing is archived and not shown in the public catalog.":
+      "Тауар мұрағатта және жалпы каталогта көрсетілмейді.",
   },
 } as const satisfies Record<"ru" | "kk", Record<string, string>>;

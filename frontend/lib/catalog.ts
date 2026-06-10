@@ -1,6 +1,18 @@
 import { apiFetchWithRefresh } from "@/lib/api";
 import { DEFAULT_CURRENCY } from "@/lib/currency";
 
+export function normalizeCatalogProductSlug(raw: string): string {
+  let s = raw.trim();
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(s)) {
+      s = decodeURIComponent(s);
+    }
+  } catch {
+    // keep original
+  }
+  return s.normalize("NFC");
+}
+
 /** Upper bound for the catalog price filter sliders (not a product price cap). */
 export const PRICE_FILTER_MAX = 1_000_000;
 
