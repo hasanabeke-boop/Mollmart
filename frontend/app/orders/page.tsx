@@ -87,10 +87,10 @@ export default function OrdersPage() {
           ? (order.lines[0]?.title ?? "Order")
           : `${order.lines[0]?.title ?? "Items"} +${order.lines.length - 1}`;
       const counterparty = isSellerView ? order.buyer.name : order.seller.name;
-      const counterpartyLabel = isSellerView ? "Buyer" : "Seller";
+      const counterpartyLabel = isSellerView ? t("Buyer") : t("Seller");
       return { order, thumb, title, counterparty, counterpartyLabel };
     });
-  }, [items, isSellerView]);
+  }, [items, isSellerView, t]);
 
   if (authLoading || (!user && !error)) {
     return <div className="app-page py-16 text-center text-[var(--text-muted)]">Loading…</div>;
@@ -171,7 +171,7 @@ export default function OrdersPage() {
                 className="app-card rounded-lg p-4 sm:p-5"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
-                  <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                     <div
                       className="size-14 shrink-0 rounded-lg border border-[var(--border-muted)] bg-[var(--surface-muted)] bg-cover bg-center sm:size-16"
                       style={thumb ? { backgroundImage: `url("${thumb}")` } : undefined}
@@ -179,24 +179,27 @@ export default function OrdersPage() {
                       aria-label={title}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-start gap-2 gap-y-1">
-                        <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug text-[var(--foreground)] sm:text-lg">
-                          {title}
-                        </h2>
-                        <StatusBadge tone={orderStatusTone(order.status)}>
-                          {t(ORDER_STATUS_LABELS[order.status as OrderStatus])}
-                        </StatusBadge>
-                      </div>
+                      <h2 className="min-w-0 text-base font-semibold leading-snug text-[var(--foreground)] sm:text-lg">
+                        {title}
+                      </h2>
                       <p className="mt-1.5 text-xs text-[var(--text-muted)] sm:text-sm">
                         {counterpartyLabel}: <span className="text-[var(--foreground)]">{counterparty}</span>
                         <span className="mx-2 text-[var(--border)]">·</span>
                         <span className="font-mono text-[11px] sm:text-xs">{order.id.slice(0, 12)}…</span>
                       </p>
                       <p className="mt-1 text-xs text-[var(--text-muted)] sm:hidden">{formatOrderDate(order.createdAt)}</p>
+                      <div className="mt-2 lg:hidden">
+                        <StatusBadge tone={orderStatusTone(order.status)}>
+                          {t(ORDER_STATUS_LABELS[order.status as OrderStatus])}
+                        </StatusBadge>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-muted)] pt-4 lg:shrink-0 lg:flex-nowrap lg:justify-end lg:gap-5 lg:border-t-0 lg:pt-0">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-muted)] pt-4 lg:shrink-0 lg:flex-nowrap lg:items-center lg:justify-end lg:gap-5 lg:border-t-0 lg:pt-0">
+                    <StatusBadge tone={orderStatusTone(order.status)} className="hidden shrink-0 lg:inline-flex">
+                      {t(ORDER_STATUS_LABELS[order.status as OrderStatus])}
+                    </StatusBadge>
                     <p className="hidden text-sm text-[var(--text-muted)] lg:block">{formatOrderDate(order.createdAt)}</p>
                     <p className="text-base font-semibold tabular-nums text-[var(--foreground)]">
                       {formatCatalogMoney(order.total, order.currency, 2)}

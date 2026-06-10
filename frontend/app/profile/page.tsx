@@ -751,7 +751,7 @@ function UserProfilePageContent() {
                 <div>
                   <h3 className="font-bold text-red-800">Delete account</h3>
                   <p className="mt-1 text-sm text-red-600">
-                    Permanently remove your account, profile, requests, offers, chats, products, and sessions.
+                    {t("Permanently remove your account, profile, requests, offers, chats, products, and sessions.")}
                   </p>
                 </div>
                 <button
@@ -771,18 +771,24 @@ function UserProfilePageContent() {
           <section className="bg-white rounded-2xl border border-[#e7f3eb] shadow-sm p-6 md:p-8">
             <h2 className="text-lg font-bold text-[#0d1b12] mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">category</span>
-              Recommendation categories
+              {t("Recommendation categories")}
             </h2>
             {prefsMode == null ? (
               <p className="text-sm text-slate-600 max-w-lg">
-                Recommendation categories are available once your account has a buyer or seller profile. If you think this is a mistake, try refreshing the page or contact support.
+                {t(
+                  "Recommendation categories are available once your account has a buyer or seller profile. If you think this is a mistake, try refreshing the page or contact support.",
+                )}
               </p>
             ) : (
               <>
                 <p className="text-sm text-[#4c9a66] mb-6 max-w-2xl">
                   {prefsMode === "buyer"
-                    ? "Pick categories you care about. They power the Recommendations view on the showcase page. If you clear everything, we still infer categories from your buyer requests when possible."
-                    : "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published showcase listings when possible."}
+                    ? t(
+                        "Pick categories you care about. They power the Recommendations view on the showcase page. If you clear everything, we still infer categories from your buyer requests when possible.",
+                      )
+                    : t(
+                        "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published showcase listings when possible.",
+                      )}
                 </p>
                 {prefError ? (
                   <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

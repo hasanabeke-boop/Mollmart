@@ -351,6 +351,61 @@ export const i18nAdditions = {
     "Seattle, WA": "Сиэтл, WA",
     "Need 50 custom t-shirts": "Нужно 50 футболок на заказ",
     "Looking for 200 branded T-shirts": "Ищу 200 брендированных футболок",
+    "Review seller offers and open chats after accepting the right match.":
+      "Просматривайте предложения продавцов и открывайте чаты после принятия подходящего.",
+    "Saw something you like in a seller showcase? Describe what you need and":
+      "Понравился товар в витрине продавца? Опишите, что вам нужно, и",
+    " — sellers compete with offers.":
+      " — продавцы будут конкурировать предложениями.",
+    "Only top-rated pros can respond to your request.":
+      "На ваш запрос могут отвечать только проверенные продавцы.",
+    "Accept an offer to open a chat and agree on details directly.":
+      "Примите предложение, чтобы открыть чат и согласовать детали напрямую.",
+    "Target price for one item in Kazakhstani tenge (KZT).":
+      "Целевая цена за одну единицу в тенге (KZT).",
+    "Must be in the future when you publish the request.":
+      "Должен быть в будущем на момент публикации запроса.",
+    "City / region": "Город / регион",
+    "Specifications": "Характеристики",
+    "Description / Specific Requirements": "Описание / конкретные требования",
+    "Include dimensions, materials, color preferences, and any other specific details that help sellers understand your needs.":
+      "Укажите размеры, материалы, цвет и другие детали, чтобы продавцы поняли ваш запрос.",
+    "Reference photos": "Фото для примера",
+    "Drag and drop up to {count} images, or click to choose. JPEG, PNG, WebP, or GIF — max 5 MB each. Images are stored securely and appear on the request board.":
+      "Перетащите до {count} изображений или нажмите для выбора. JPEG, PNG, WebP или GIF — до 5 МБ каждое. Фото хранятся безопасно и отображаются на доске запросов.",
+    "Drop images here or": "Перетащите сюда или",
+    "{used}/{max} used": "использовано {used}/{max}",
+    "By posting, you agree to Mollmart's Buyer Terms of Service.":
+      "Публикуя запрос, вы соглашаетесь с Условиями для покупателей Mollmart.",
+    "Payment and delivery are arranged directly between buyer and seller.":
+      "Оплата и доставка согласуются напрямую между покупателем и продавцом.",
+    "Order total {total} · Seller {seller}":
+      "Сумма заказа {total} · Продавец {seller}",
+    "List a product with price and stock. Buyers can add it to the cart and checkout like on a marketplace.":
+      "Добавьте товар с ценой и остатком. Покупатели смогут положить его в корзину и оформить заказ, как в обычном магазине.",
+    "Price & stock (required)": "Цена и остаток (обязательно)",
+    "Price (₸)": "Цена (₸)",
+    "Select category…": "Выберите категорию…",
+    "Drag and drop an image here, or click to choose a file (JPEG, PNG, WebP, GIF, max 5 MB).":
+      "Перетащите изображение сюда или нажмите для выбора (JPEG, PNG, WebP, GIF, до 5 МБ).",
+    "Or paste a direct HTTPS image URL:": "Или вставьте прямую HTTPS-ссылку на изображение:",
+    "Replace image — click or drop a new file": "Заменить изображение — нажмите или перетащите новый файл",
+    "Extra photos (gallery)": "Дополнительные фото (галерея)",
+    "Drop multiple images or click to add (same rules as main image).":
+      "Перетащите несколько изображений или нажмите для добавления (те же правила, что для главного).",
+    "Gallery image URLs (optional)": "URL изображений галереи (необязательно)",
+    "Recommendation categories": "Категории для рекомендаций",
+    "Recommendation categories are available once your account has a buyer or seller profile. If you think this is a mistake, try refreshing the page or contact support.":
+      "Категории для рекомендаций доступны после создания профиля покупателя или продавца. Если это ошибка, обновите страницу или обратитесь в поддержку.",
+    "Pick categories you care about. They power the Recommendations view on the showcase page. If you clear everything, we still infer categories from your buyer requests when possible.":
+      "Выберите интересующие категории — они влияют на рекомендации на странице витрины. Если ничего не выбрано, мы по возможности используем категории из ваших заявок.",
+    "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published showcase listings when possible.":
+      "Выберите категории для продажи — они влияют на вкладку «Рекомендации» при просмотре заявок. Если ничего не выбрано, мы используем категории из ваших опубликованных товаров.",
+    "Permanently remove your account, profile, requests, offers, chats, products, and sessions.":
+      "Безвозвратно удалить аккаунт, профиль, заявки, предложения, чаты, товары и сессии.",
+    "Price per unit (₸)": "Цена за единицу (₸)",
+    "e.g. Custom Oak Dining Table": "напр. обеденный стол из дуба на заказ",
+    "e.g. Berlin, Germany": "напр. Алматы, Казахстан",
   },
   kk: {
     "Accept failed.": "Қабылдау сәтсіз аяқталды.",
@@ -705,5 +760,60 @@ export const i18nAdditions = {
     "Seattle, WA": "Сиэтл, WA",
     "Need 50 custom t-shirts": "50 дана арнайы футболка кerek",
     "Looking for 200 branded T-shirts": "200 брендті футболка іздеймін",
+    "Review seller offers and open chats after accepting the right match.":
+      "Сатушы ұсыныстарын қарап, дұрыс ұсынысты қабылдағаннан кейін чат ашыңыз.",
+    "Saw something you like in a seller showcase? Describe what you need and":
+      "Сатушы витринasında ұнаған нәрсе көрдіңіз бе? Не керек екенін сипаттап,",
+    " — sellers compete with offers.":
+      " — сатушылар ұсыныстармен бәсекелеседі.",
+    "Only top-rated pros can respond to your request.":
+      "Сұранысыңызға тек тексерілген сатушылар жауап бере алады.",
+    "Accept an offer to open a chat and agree on details directly.":
+      "Чат ашу және мәліметтерді тікелей келісу үшін ұсынысты қабылдаңыз.",
+    "Target price for one item in Kazakhstani tenge (KZT).":
+      "Бір дана үшін мақсатты баға теңге (KZT) валютасында.",
+    "Must be in the future when you publish the request.":
+      "Сұраныс жарияланған сәтте болашақта болуы керек.",
+    "City / region": "Қала / аймақ",
+    "Specifications": "Сипаттамалар",
+    "Description / Specific Requirements": "Сипаттама / нақты талаптар",
+    "Include dimensions, materials, color preferences, and any other specific details that help sellers understand your needs.":
+      "Өлшем, материал, түс және сатушыларға сұранысыңызды түсіндіруге көмектесетін басқа мәліметтерді көрсетіңіз.",
+    "Reference photos": "Үлгі фото",
+    "Drag and drop up to {count} images, or click to choose. JPEG, PNG, WebP, or GIF — max 5 MB each. Images are stored securely and appear on the request board.":
+      "{count} суретке дейін сүйреп апарыңыз немесе таңдау үшін басыңыз. JPEG, PNG, WebP немесе GIF — әрқайсысы 5 МБ-тан кем. Суреттер қауіпсіз сақталады және сұраныс тақтасында көрінеді.",
+    "Drop images here or": "Суреттерді осында апарыңыз немесе",
+    "{used}/{max} used": "{used}/{max} пайдаланылды",
+    "By posting, you agree to Mollmart's Buyer Terms of Service.":
+      "Жариялау арқылы сіз Mollmart сатып алушы қызмет көрсету шарттарымен келісесіз.",
+    "Payment and delivery are arranged directly between buyer and seller.":
+      "Төлем мен жеткізу сатып алушы мен сатушы арасында тікелей келісіледі.",
+    "Order total {total} · Seller {seller}":
+      "Тапсырыс сомасы {total} · Сатушы {seller}",
+    "List a product with price and stock. Buyers can add it to the cart and checkout like on a marketplace.":
+      "Баға мен қалдықпен тауар қосыңыз. Сатып алушылар оны себетке салып, дүкен сияқты тапсырыс бере алады.",
+    "Price & stock (required)": "Баға және қалдық (міндетті)",
+    "Price (₸)": "Баға (₸)",
+    "Select category…": "Санат таңдаңыз…",
+    "Drag and drop an image here, or click to choose a file (JPEG, PNG, WebP, GIF, max 5 MB).":
+      "Суретті осында апарыңыз немесе файл таңдау үшін басыңыз (JPEG, PNG, WebP, GIF, 5 МБ-тан кем).",
+    "Or paste a direct HTTPS image URL:": "Немесе тікелей HTTPS сурет сілтемесін қойыңыз:",
+    "Replace image — click or drop a new file": "Суретті ауыстыру — басыңыз немесе жаңа файл апарыңыз",
+    "Extra photos (gallery)": "Қосымша фото (галерея)",
+    "Drop multiple images or click to add (same rules as main image).":
+      "Бірнеше сурет апарыңыз немесе қосу үшін басыңыз (негізгі суретпен бірдей ережелер).",
+    "Gallery image URLs (optional)": "Галерея сурет URL (міндетті емес)",
+    "Recommendation categories": "Ұсыныс санаттары",
+    "Recommendation categories are available once your account has a buyer or seller profile. If you think this is a mistake, try refreshing the page or contact support.":
+      "Ұсыныс санаттары сатып алушы немесе сатушы профилі болғаннан кейін қолжетімді. Қате деп ойласаңыз, бетті жаңартып немесе қолдауға хабарласыңыз.",
+    "Pick categories you care about. They power the Recommendations view on the showcase page. If you clear everything, we still infer categories from your buyer requests when possible.":
+      "Қызығатын санаттарды таңдаңыз — олар витрина бетіндегі ұсыныстарға әсер етеді. Ештеңе таңдалмаса, сатып алушы сұраныстарынан санаттарды анықтаймыз.",
+    "Pick categories you want to sell in. They power the Recommendations tab when you browse buyer requests. If you clear everything, we still use categories from your published showcase listings when possible.":
+      "Сатуға арналған санаттарды таңдаңыз — олар сұраныстарды шолу кезіндегі ұсыныстарға әсер етеді. Ештеңе таңдалмаса, жарияланған тізімдеріңізден санаттарды қолданамыз.",
+    "Permanently remove your account, profile, requests, offers, chats, products, and sessions.":
+      "Аккаунт, профиль, сұраныстар, ұсыныстар, чаттар, тауарлар және сессияларды толығымен жою.",
+    "Price per unit (₸)": "Бірлік бағасы (₸)",
+    "e.g. Custom Oak Dining Table": "мысалы, жеке дуб кестесі",
+    "e.g. Berlin, Germany": "мысалы, Алматы, Қазақстан",
   },
 } as const satisfies Record<"ru" | "kk", Record<string, string>>;

@@ -11,6 +11,7 @@ import { canUseSellerWorkspace } from "@/lib/workspace";
 import { uploadCatalogImage } from "@/lib/catalog";
 import { DEFAULT_CURRENCY } from "@/lib/currency";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Category = {
   id: string;
@@ -38,6 +39,7 @@ export default function NewCatalogProductPage() {
   const sellerWorkspace = canUseSellerWorkspace(user, activeRole);
   const router = useRouter();
   const categoryLabel = useCategoryLabel();
+  const { t } = useLanguage();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState("");
@@ -228,9 +230,9 @@ export default function NewCatalogProductPage() {
     >
     <div className="app-page app-page-narrow pb-16 sm:pb-20">
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-[var(--foreground)] sm:text-2xl">New product</h1>
+        <h1 className="text-xl font-bold text-[var(--foreground)] sm:text-2xl">{t("New product")}</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          List a product with price and stock. Buyers can add it to the cart and checkout like on a marketplace.
+          {t("List a product with price and stock. Buyers can add it to the cart and checkout like on a marketplace.")}
         </p>
       </div>
 
@@ -240,7 +242,7 @@ export default function NewCatalogProductPage() {
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Title</label>
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">{t("Title")}</label>
           <input
             required
             minLength={2}
@@ -251,10 +253,10 @@ export default function NewCatalogProductPage() {
         </div>
 
         <fieldset className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-4">
-          <legend className="px-1 text-sm font-bold text-[var(--foreground)]">Price &amp; stock (required)</legend>
+          <legend className="px-1 text-sm font-bold text-[var(--foreground)]">{t("Price & stock (required)")}</legend>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Price (₸)</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">{t("Price (₸)")}</label>
               <input
                 required
                 type="number"
@@ -267,7 +269,7 @@ export default function NewCatalogProductPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Quantity in stock</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">{t("Quantity in stock")}</label>
               <input
                 required
                 type="number"
@@ -283,7 +285,7 @@ export default function NewCatalogProductPage() {
         </fieldset>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Description</label>
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">{t("Description")}</label>
           <textarea
             required
             minLength={10}
@@ -295,14 +297,14 @@ export default function NewCatalogProductPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Category</label>
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">{t("Category")}</label>
           <select
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
           >
-            <option value="">Select category…</option>
+            <option value="">{t("Select category…")}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {categoryLabel(c)}
@@ -312,7 +314,7 @@ export default function NewCatalogProductPage() {
         </div>
 
         <div>
-          <span className="block text-sm font-medium text-slate-700 mb-2">Main image</span>
+          <span className="block text-sm font-medium text-slate-700 mb-2">{t("Main image")}</span>
           <input
             ref={mainInputRef}
             type="file"
@@ -347,16 +349,16 @@ export default function NewCatalogProductPage() {
             }`}
           >
             {uploadingMain ? (
-              <span className="text-slate-600">Uploading…</span>
+              <span className="text-slate-600">{t("Uploading...")}</span>
             ) : imageUrl.trim() || mainPreview ? (
-              <span className="text-slate-600">Replace image — click or drop a new file</span>
+              <span className="text-slate-600">{t("Replace image — click or drop a new file")}</span>
             ) : (
               <span className="text-slate-600">
-                Drag and drop an image here, or click to choose a file (JPEG, PNG, WebP, GIF, max 5 MB).
+                {t("Drag and drop an image here, or click to choose a file (JPEG, PNG, WebP, GIF, max 5 MB).")}
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-slate-500">Or paste a direct HTTPS image URL:</p>
+          <p className="mt-1 text-xs text-slate-500">{t("Or paste a direct HTTPS image URL:")}</p>
           <input
             type="url"
             value={imageUrl}
@@ -372,7 +374,7 @@ export default function NewCatalogProductPage() {
               <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                 <img
                   src={mainPreview ?? imageUrl.trim()}
-                  alt="Main image preview"
+                  alt={t("Main image preview")}
                   className="mx-auto max-h-64 w-full object-contain"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
@@ -401,7 +403,7 @@ export default function NewCatalogProductPage() {
         </div>
 
         <div>
-          <span className="block text-sm font-medium text-slate-700 mb-2">Extra photos (gallery)</span>
+          <span className="block text-sm font-medium text-slate-700 mb-2">{t("Extra photos (gallery)")}</span>
           <input
             ref={galleryInputRef}
             type="file"
@@ -437,10 +439,10 @@ export default function NewCatalogProductPage() {
             }`}
           >
             {uploadingGallery ? (
-              <span className="text-slate-600">Uploading…</span>
+              <span className="text-slate-600">{t("Uploading...")}</span>
             ) : (
               <span className="text-slate-600">
-                Drop multiple images or click to add (same rules as main image).
+                {t("Drop multiple images or click to add (same rules as main image).")}
               </span>
             )}
           </div>
@@ -474,12 +476,12 @@ export default function NewCatalogProductPage() {
               ))}
             </div>
           )}
-          <label className="mt-3 block text-sm font-medium text-slate-700">Gallery image URLs (optional)</label>
+          <label className="mt-3 block text-sm font-medium text-slate-700">{t("Gallery image URLs (optional)")}</label>
           <textarea
             rows={2}
             value={galleryUrlLines}
             onChange={(e) => setGalleryUrlLines(e.target.value)}
-            placeholder="One HTTPS URL per line"
+            placeholder={t("One HTTPS URL per line")}
             className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:ring-primary font-mono text-xs"
           />
           {pendingGalleryLineUrls.length > 0 && (

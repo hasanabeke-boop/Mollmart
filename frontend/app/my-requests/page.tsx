@@ -471,7 +471,7 @@ export default function MyRequestsPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">My Requests</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)] sm:text-base">
-              Review seller offers and open chats after accepting the right match.
+              {t("Review seller offers and open chats after accepting the right match.")}
             </p>
           </div>
           <Link

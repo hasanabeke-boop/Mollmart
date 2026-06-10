@@ -112,7 +112,10 @@ export default function OrderTrackingPage() {
             <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-sm">
               <h1 className="text-2xl font-black text-[var(--foreground)] mb-1">{t("Tracking")}</h1>
               <p className="text-sm text-[var(--text-muted)] mb-6">
-                Order total {formatCatalogMoney(order.total, order.currency, 2)} · Seller {order.seller.name}
+                {t("Order total {total} · Seller {seller}", {
+                  total: formatCatalogMoney(order.total, order.currency, 2),
+                  seller: order.seller.name,
+                })}
               </p>
 
               <ol className="space-y-4">

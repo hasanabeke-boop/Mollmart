@@ -514,11 +514,12 @@ function CreateProductRequestContent() {
         <div className="lg:col-span-4 space-y-6">
           <div>
             <h1 className="mb-4 text-2xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-3xl">
-              Post a Request
+              {t("Post a Request")}
             </h1>
             <p className="text-slate-600 leading-relaxed">
-              Saw something you like in a seller showcase? Describe what you need and{" "}
-              <span className="font-semibold text-slate-800">name your price</span> — sellers compete with offers.
+              {t("Saw something you like in a seller showcase? Describe what you need and")}{" "}
+              <span className="font-semibold text-slate-800">{t("name your price")}</span>
+              {t(" — sellers compete with offers.")}
             </p>
           </div>
 
@@ -530,9 +531,9 @@ function CreateProductRequestContent() {
                 </span>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">Verified Sellers</h3>
+                <h3 className="font-bold text-slate-900">{t("Verified Sellers")}</h3>
                 <p className="text-sm text-slate-500">
-                  Only top-rated pros can respond to your request.
+                  {t("Only top-rated pros can respond to your request.")}
                 </p>
               </div>
             </div>
@@ -543,9 +544,9 @@ function CreateProductRequestContent() {
                 </span>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">Direct Negotiation</h3>
+                <h3 className="font-bold text-slate-900">{t("Direct Negotiation")}</h3>
                 <p className="text-sm text-slate-500">
-                  Accept an offer to open a chat and agree on details directly.
+                  {t("Accept an offer to open a chat and agree on details directly.")}
                 </p>
               </div>
             </div>
@@ -586,13 +587,13 @@ function CreateProductRequestContent() {
                   1
                 </span>
                 <h2 className="text-xl font-bold text-slate-800">
-                  Basic Information
+                  {t("Basic Information")}
                 </h2>
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-700">
-                  What are you looking for?
+                  {t("What are you looking for?")}
                 </label>
                 <input
                   type="text"
@@ -606,7 +607,7 @@ function CreateProductRequestContent() {
                       ? "border-red-400 focus:ring-2 focus:ring-red-400"
                       : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   }`}
-                  placeholder="e.g. Custom Oak Dining Table"
+                  placeholder={t("e.g. Custom Oak Dining Table")}
                 />
                 {errors.title && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
@@ -621,7 +622,7 @@ function CreateProductRequestContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Category
+                    {t("Category")}
                   </label>
                   <div className="relative">
                     <select
@@ -638,7 +639,7 @@ function CreateProductRequestContent() {
                           : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     >
-                      <option value="">{categoriesLoading ? "Loading categories…" : "Select a category"}</option>
+                      <option value="">{categoriesLoading ? t("Loading categories…") : t("Select a category")}</option>
                       {catalogCategories.map((c) => (
                         <option key={c.id} value={c.id}>
                           {categoryLabel(c)}
@@ -662,7 +663,7 @@ function CreateProductRequestContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">Quantity</label>
+                  <label className="block text-sm font-semibold text-slate-700">{t("Quantity")}</label>
                   <input
                     type="number"
                     value={quantity}
@@ -688,7 +689,7 @@ function CreateProductRequestContent() {
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Price per unit (₸)
+                    {t("Price per unit (₸)")}
                   </label>
                   <input
                     type="number"
@@ -708,7 +709,7 @@ function CreateProductRequestContent() {
                     step={0.01}
                   />
                   <p className="text-xs text-slate-400">
-                    Target price for one item in Kazakhstani tenge (KZT).
+                    {t("Target price for one item in Kazakhstani tenge (KZT).")}
                   </p>
                   {errors.budget && (
                     <p className="text-xs text-red-500 flex items-center gap-1">
@@ -748,8 +749,8 @@ function CreateProductRequestContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Deadline{" "}
-                    <span className="font-normal text-slate-400">(optional)</span>
+                    {t("Deadline")}{" "}
+                    <span className="font-normal text-slate-400">({t("(optional)")})</span>
                   </label>
                   <input
                     type="datetime-local"
@@ -758,20 +759,20 @@ function CreateProductRequestContent() {
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                   />
                   <p className="text-xs text-slate-400">
-                    Must be in the future when you publish the request.
+                    {t("Must be in the future when you publish the request.")}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    City / region{" "}
-                    <span className="font-normal text-slate-400">(optional)</span>
+                    {t("City / region")}{" "}
+                    <span className="font-normal text-slate-400">({t("(optional)")})</span>
                   </label>
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value.slice(0, 150))}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. Berlin, Germany"
+                    placeholder={t("e.g. Berlin, Germany")}
                   />
                 </div>
               </div>
@@ -786,14 +787,14 @@ function CreateProductRequestContent() {
                   2
                 </span>
                 <h2 className="text-xl font-bold text-slate-800">
-                  Specifications
+                  {t("Specifications")}
                 </h2>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Description / Specific Requirements
+                    {t("Description / Specific Requirements")}
                   </label>
                   <span
                     className={`text-xs font-medium ${
@@ -821,7 +822,9 @@ function CreateProductRequestContent() {
                       ? "border-red-400 focus:ring-2 focus:ring-red-400"
                       : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   }`}
-                  placeholder="Include dimensions, materials, color preferences, and any other specific details that help sellers understand your needs."
+                  placeholder={t(
+                    "Include dimensions, materials, color preferences, and any other specific details that help sellers understand your needs.",
+                  )}
                   rows={5}
                 />
                 {errors.description && (
@@ -836,12 +839,14 @@ function CreateProductRequestContent() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-700">
-                  Reference photos{" "}
-                  <span className="font-normal text-slate-400">(optional)</span>
+                  {t("Reference photos")}{" "}
+                  <span className="font-normal text-slate-400">({t("(optional)")})</span>
                 </label>
                 <p className="text-xs text-slate-500">
-                  Drag and drop up to {MAX_REQUEST_PHOTOS} images, or click to choose. JPEG, PNG, WebP,
-                  or GIF — max 5 MB each. Images are stored securely and appear on the request board.
+                  {t(
+                    "Drag and drop up to {count} images, or click to choose. JPEG, PNG, WebP, or GIF — max 5 MB each. Images are stored securely and appear on the request board.",
+                    { count: MAX_REQUEST_PHOTOS },
+                  )}
                 </p>
                 <input
                   ref={photosInputRef}
@@ -907,10 +912,11 @@ function CreateProductRequestContent() {
                     <span className="flex flex-col items-center gap-2">
                       <span className="material-symbols-outlined text-[28px] text-slate-400">add_photo_alternate</span>
                       <span>
-                        Drop images here or <span className="font-semibold text-blue-600">click to browse</span>
+                        {t("Drop images here or")}{" "}
+                        <span className="font-semibold text-blue-600">{t("click to browse")}</span>
                       </span>
                       <span className="text-xs text-slate-400">
-                        {attachments.length}/{MAX_REQUEST_PHOTOS} used
+                        {t("{used}/{max} used", { used: attachments.length, max: MAX_REQUEST_PHOTOS })}
                       </span>
                     </span>
                   )}
@@ -964,16 +970,16 @@ function CreateProductRequestContent() {
                 className="w-full bg-[#607afb] hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
-                  <span>Saving...</span>
+                  <span>{t("Saving...")}</span>
                 ) : (
                   <>
-                    <span>Save as draft</span>
+                    <span>{t("Save as draft")}</span>
                     <span className="material-symbols-outlined text-[20px]">save</span>
                   </>
                 )}
               </button>
               <p className="text-center text-xs text-slate-400 mt-4">
-                By posting, you agree to Mollmart&apos;s Buyer Terms of Service.
+                {t("By posting, you agree to Mollmart's Buyer Terms of Service.")}
               </p>
             </div>
           </form>

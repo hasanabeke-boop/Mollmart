@@ -11,13 +11,15 @@ const toneClass: Record<StatusTone, string> = {
 export function StatusBadge({
   children,
   tone = "default",
+  className = "",
 }: {
   children: ReactNode;
   tone?: StatusTone;
+  className?: string;
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide ${toneClass[tone]}`}
+      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide ${toneClass[tone]} ${className}`}
     >
       {children}
     </span>
