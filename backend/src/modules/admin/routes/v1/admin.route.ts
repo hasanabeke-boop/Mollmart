@@ -52,6 +52,8 @@ export function createAdminRouter(controller: AdminController): Router {
   router.post('/admin/users/:userId/block', validate(blockUserSchema), asyncHandler(controller.blockUser));
   router.post('/admin/users/:userId/unblock', validate(userIdParamSchema), asyncHandler(controller.unblockUser));
   router.get('/admin/dashboard/summary', asyncHandler(controller.getDashboardSummary));
+  router.get('/admin/reports/overview', asyncHandler(controller.getPlatformReport));
+  router.get('/admin/database/stats', asyncHandler(controller.getDatabaseStats));
 
   router.get(
     '/admin/catalog-orders',

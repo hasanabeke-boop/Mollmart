@@ -79,3 +79,27 @@ POST https://mollmart.onrender.com/api/v1/auth/login
 ```
 
 There is no `/api/auth/register` route in this backend.
+
+## Database monitoring and wipe (Render Shell)
+
+From the Render dashboard, open the **mollmart** web service → **Shell**, then run:
+
+```bash
+npm run db:status:prod
+```
+
+This prints JSON with database size, per-table row estimates, and key entity totals.
+
+To wipe all application data (truncates public tables, re-seeds default categories; does **not** delete R2 upload files):
+
+```bash
+DB_WIPE_CONFIRM=WIPE_MOLLMART_DATA npm run db:wipe:prod
+```
+
+The wipe command refuses to run without the exact `DB_WIPE_CONFIRM` phrase.
+
+Admins can also view live database stats in the web UI at `/admin/monitoring` (requires admin login). The API endpoint is:
+
+```text
+GET https://mollmart.onrender.com/api/v1/admin/database/stats
+```

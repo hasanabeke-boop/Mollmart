@@ -14,7 +14,12 @@ import {
 import prisma from '../../../config/prisma';
 import { sortCategoriesWithOtherLast } from '../../../shared/categorySort';
 import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
-import { AdminDashboardSummary, ContentFlagUpsertInput, ModerationCaseListQuery } from '../types/admin';
+import {
+  AdminDashboardSummary,
+  AdminPlatformReport,
+  ContentFlagUpsertInput,
+  ModerationCaseListQuery
+} from '../types/admin';
 
 const moderationCaseInclude = {
   actions: {
@@ -39,7 +44,10 @@ export interface AdminRepositoryLike {
     createdBy: string;
     assignedTo?: string;
   }): Promise<ModerationCaseWithActions>;
-  listModerationCases(query: ModerationCaseListQuery): Promise<ModerationCaseWithActions[]>;
+  listModerationCases(query: ModerationCaseListQuery): Promise<{
+    items: ModerationCaseWithActions[];
+    meta: ReturnType<typeof buildPageMeta>;
+  }>;
   findModerationCaseById(id: string): Promise<ModerationCaseWithActions | null>;
   updateModerationCase(
     id: string,
@@ -73,6 +81,7 @@ export interface AdminRepositoryLike {
   blockUser(userId: string, reason: string, blockedBy: string): Promise<BlockedUser>;
   unblockUser(userId: string): Promise<BlockedUser | null>;
   getDashboardSummary(): Promise<AdminDashboardSummary>;
+  getPlatformReport(): Promise<AdminPlatformReport>;
   listRequestsForAdmin(page: number, limit: number, q?: string): Promise<{
     items: Array<{
       id: string;
@@ -154,17 +163,29 @@ export class AdminRepository implements AdminRepositoryLike {
     });
   }
 
-  async listModerationCases(query: ModerationCaseListQuery): Promise<ModerationCaseWithActions[]> {
-    return this.client.moderationCase.findMany({
-      where: {
-        ...(query.status !== undefined ? { status: query.status } : {}),
-        ...(query.targetType !== undefined ? { targetType: query.targetType } : {})
-      },
-      include: moderationCaseInclude,
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+  async listModerationCases(query: ModerationCaseListQuery): Promise<{
+    items: ModerationCaseWithActions[];
+    meta: ReturnType<typeof buildPageMeta>;
+  }> {
+    const page = normalizePage(query.page ?? 1);
+    const limit = normalizeLimit(query.limit ?? 20);
+    const where: Prisma.ModerationCaseWhereInput = {
+      ...(query.status !== undefined ? { status: query.status } : {}),
+      ...(query.targetType !== undefined ? { targetType: query.targetType } : {})
+    };
+
+    const [items, total] = await Promise.all([
+      this.client.moderationCase.findMany({
+        where,
+        include: moderationCaseInclude,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      this.client.moderationCase.count({ where })
+    ]);
+
+    return { items, meta: buildPageMeta(page, limit, total) };
   }
 
   async findModerationCaseById(id: string): Promise<ModerationCaseWithActions | null> {
@@ -381,7 +402,8 @@ export class AdminRepository implements AdminRepositoryLike {
       flaggedUsers,
       openCases,
       inReviewCases,
-      resolvedCases
+      resolvedCases,
+      dismissedCases
     ] = await Promise.all([
       this.client.blockedUser.count({
         where: {
@@ -439,6 +461,11 @@ export class AdminRepository implements AdminRepositoryLike {
         where: {
           status: 'resolved'
         }
+      }),
+      this.client.moderationCase.count({
+        where: {
+          status: 'dismissed'
+        }
       })
     ]);
 
@@ -462,12 +489,104 @@ export class AdminRepository implements AdminRepositoryLike {
       moderation: {
         openCases,
         inReviewCases,
-        resolvedCases
+        resolvedCases,
+        dismissedCases
       },
       categories: {
         total: totalCategories,
         active: activeCategories
       }
+    };
+  }
+
+  async getPlatformReport(): Promise<AdminPlatformReport> {
+    const summary = await this.getDashboardSummary();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const openOrderStatuses = ['paid', 'in_progress', 'awaiting_confirmation'] as const;
+
+    const [
+      totalUsers,
+      activeUsers,
+      suspendedUsers,
+      buyers,
+      sellers,
+      admins,
+      totalRequests,
+      publishedRequests,
+      totalOffers,
+      catalogProducts,
+      publishedProducts,
+      catalogOrders,
+      requestDealOrders,
+      openCatalogOrders,
+      openRequestDealOrders,
+      conversations,
+      notifications,
+      usersLast7Days,
+      requestsLast7Days,
+      catalogOrdersLast7Days,
+      requestDealOrdersLast7Days,
+      completedCatalogOrders,
+      completedRequestDealOrders
+    ] = await Promise.all([
+      this.client.user.count(),
+      this.client.user.count({ where: { status: 'active' } }),
+      this.client.user.count({ where: { status: 'suspended' } }),
+      this.client.user.count({ where: { role: 'buyer' } }),
+      this.client.user.count({ where: { role: 'seller' } }),
+      this.client.user.count({ where: { role: 'admin' } }),
+      this.client.request.count(),
+      this.client.request.count({ where: { status: 'published' } }),
+      this.client.offer.count(),
+      this.client.catalogProduct.count(),
+      this.client.catalogProduct.count({ where: { status: 'published' } }),
+      this.client.catalogOrder.count(),
+      this.client.requestDealOrder.count(),
+      this.client.catalogOrder.count({ where: { status: { in: [...openOrderStatuses] } } }),
+      this.client.requestDealOrder.count({ where: { status: { in: [...openOrderStatuses] } } }),
+      this.client.conversation.count(),
+      this.client.notification.count(),
+      this.client.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      this.client.request.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      this.client.catalogOrder.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      this.client.requestDealOrder.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      this.client.catalogOrder.count({ where: { status: 'completed' } }),
+      this.client.requestDealOrder.count({ where: { status: 'completed' } })
+    ]);
+
+    return {
+      ...summary,
+      platform: {
+        totalUsers,
+        activeUsers,
+        blockedUsers: summary.users.blocked,
+        suspendedUsers,
+        buyers,
+        sellers,
+        admins,
+        totalRequests,
+        publishedRequests,
+        totalOffers,
+        catalogProducts,
+        publishedProducts,
+        catalogOrders,
+        requestDealOrders,
+        openCatalogOrders,
+        openRequestDealOrders,
+        conversations,
+        notifications
+      },
+      recent: {
+        usersLast7Days,
+        requestsLast7Days,
+        catalogOrdersLast7Days,
+        requestDealOrdersLast7Days
+      },
+      revenue: {
+        completedCatalogOrders,
+        completedRequestDealOrders
+      },
+      checkedAt: new Date().toISOString()
     };
   }
 

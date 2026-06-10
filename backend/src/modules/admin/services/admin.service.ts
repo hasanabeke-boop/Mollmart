@@ -110,7 +110,7 @@ export class AdminService {
     return { id: moderationCase.id, status: moderationCase.status };
   }
 
-  async listModerationCases(query: ModerationCaseListQuery): Promise<ModerationCaseWithActions[]> {
+  async listModerationCases(query: ModerationCaseListQuery) {
     return this.adminRepository.listModerationCases(query);
   }
 
@@ -218,6 +218,10 @@ export class AdminService {
 
   async getDashboardSummary() {
     return this.adminRepository.getDashboardSummary();
+  }
+
+  async getPlatformReport() {
+    return this.adminRepository.getPlatformReport();
   }
 
   async listRequests(page: number, limit: number, q?: string) {

@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 import AdminService from '../services/admin.service';
 import ShopService from '../../shop/services/shop.service';
 import DealService from '../../deal/services/deal.service';
+import { getDatabaseStats } from '../../../lib/databaseOps';
 import { ModerationCaseListQuery } from '../types/admin';
 
 export class AdminController {
@@ -61,6 +62,16 @@ export class AdminController {
   getDashboardSummary = async (_req: Request, res: Response): Promise<void> => {
     const summary = await this.adminService.getDashboardSummary();
     res.status(httpStatus.OK).json(summary);
+  };
+
+  getPlatformReport = async (_req: Request, res: Response): Promise<void> => {
+    const report = await this.adminService.getPlatformReport();
+    res.status(httpStatus.OK).json(report);
+  };
+
+  getDatabaseStats = async (_req: Request, res: Response): Promise<void> => {
+    const stats = await getDatabaseStats();
+    res.status(httpStatus.OK).json(stats);
   };
 
   listCatalogOrders = async (req: Request, res: Response): Promise<void> => {

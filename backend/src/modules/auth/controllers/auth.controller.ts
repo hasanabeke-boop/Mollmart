@@ -20,6 +20,7 @@ import {
   createRefreshToken
 } from '../utils/generateTokens.util';
 import config from '../../../config/config';
+import { buildPageMeta, normalizeLimit, normalizePage } from '../../request/utils/pagination';
 
 import {
   clearRefreshTokenCookieConfig,
@@ -991,26 +992,37 @@ export const handleAdminListUsers = async (req: TypedRequest, res: Response) => 
     typeof req.query['role'] === 'string' ? req.query['role'] : undefined;
   const status =
     typeof req.query['status'] === 'string' ? req.query['status'] : undefined;
+  const page = normalizePage(Number(req.query['page'] ?? 1));
+  const limit = normalizeLimit(Number(req.query['limit'] ?? 20));
 
-  const users = await prismaClient.user.findMany({
-    where: {
-      ...(search.length > 0
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } }
-            ]
-          }
-        : {}),
-      ...(role != null ? { role: role as 'buyer' | 'seller' | 'admin' } : {}),
-      ...(status != null ? { status: status as 'active' | 'blocked' | 'suspended' } : {})
-    },
-    select: activeUserSelect,
-    orderBy: adminUserOrderBy
-  });
+  const where = {
+    ...(search.length > 0
+      ? {
+          OR: [
+            { id: search },
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } }
+          ]
+        }
+      : {}),
+    ...(role != null ? { role: role as 'buyer' | 'seller' | 'admin' } : {}),
+    ...(status != null ? { status: status as 'active' | 'blocked' | 'suspended' } : {})
+  };
+
+  const [users, total] = await Promise.all([
+    prismaClient.user.findMany({
+      where,
+      select: activeUserSelect,
+      orderBy: adminUserOrderBy,
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prismaClient.user.count({ where })
+  ]);
 
   return res.status(httpStatus.OK).json({
-    users: users.map(serializeUser)
+    users: users.map(serializeUser),
+    meta: buildPageMeta(page, limit, total)
   });
 };
 

@@ -17,7 +17,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node --files --project tsconfig.json src/scripts/seed.ts",
-    "prisma:seed:prod": "node dist/scripts/seed.js"
+    "prisma:seed:prod": "node dist/scripts/seed.js",
+    "db:status": "ts-node --files --project tsconfig.json src/scripts/db-status.ts",
+    "db:status:prod": "node dist/scripts/db-status.js",
+    "db:wipe": "ts-node --files --project tsconfig.json src/scripts/db-wipe.ts",
+    "db:wipe:prod": "node dist/scripts/db-wipe.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1046.0",

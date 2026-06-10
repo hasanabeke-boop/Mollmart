@@ -34,7 +34,9 @@ export const moderationCaseCreateSchema = {
 export const moderationCaseListSchema = {
   query: Joi.object({
     status: Joi.string().valid('open', 'in_review', 'resolved', 'dismissed').optional(),
-    targetType: Joi.string().valid('request', 'offer', 'user', 'catalog_product').optional()
+    targetType: Joi.string().valid('request', 'offer', 'user', 'catalog_product').optional(),
+    page: Joi.number().integer().min(1).default(1).custom(normalizePage),
+    limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit)
   })
 };
 
