@@ -8,9 +8,11 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrders, type ShopOrder } from "@/lib/shop";
+import { fetchOrderCancellationRequest } from "@/lib/orderCancellation";
+import { isTerminalOrderStatus, ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
+import OrderCancellationActions from "@/components/orders/OrderCancellationActions";
 import { orderStatusTone, StatusBadge } from "@/components/ui/StatusBadge";
 import { useLanguage } from "@/context/LanguageContext";
-import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
 
 const STATUS_TABS: { id: "all" | OrderStatus; labelKey: string }[] = [
   { id: "all", labelKey: "All orders" },
@@ -42,6 +44,9 @@ export default function OrdersPage() {
   const [meta, setMeta] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pendingCancellationOrderIds, setPendingCancellationOrderIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -52,6 +57,22 @@ export default function OrdersPage() {
       const data = await fetchMyOrders(page, PAGE_SIZE, status);
       setItems(data.items ?? []);
       setMeta(data.meta ?? { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+
+      const openOrders = (data.items ?? []).filter(
+        (o) => !isTerminalOrderStatus(o.status as OrderStatus),
+      );
+      const pending = new Set<string>();
+      await Promise.all(
+        openOrders.map(async (o) => {
+          try {
+            const req = await fetchOrderCancellationRequest(o.id);
+            if (req?.status === "pending") pending.add(o.id);
+          } catch {
+            /* ignore per-order lookup errors */
+          }
+        }),
+      );
+      setPendingCancellationOrderIds(pending);
     } catch (e: unknown) {
       const err = e as Error & { status?: number };
       setError(err.message || "Failed to load orders");
@@ -215,6 +236,17 @@ export default function OrdersPage() {
                       {actionLabel}
                       {!canTrack && <span className="material-symbols-outlined text-base">arrow_forward</span>}
                     </Link>
+                    {!isTerminalOrderStatus(order.status as OrderStatus) ? (
+                      <OrderCancellationActions
+                        compact
+                        orderId={order.id}
+                        orderStatus={order.status as OrderStatus}
+                        hasPendingRequest={pendingCancellationOrderIds.has(order.id)}
+                        onSubmitted={() => {
+                          setPendingCancellationOrderIds((prev) => new Set(prev).add(order.id));
+                        }}
+                      />
+                    ) : null}
                   </div>
                 </div>
               </article>

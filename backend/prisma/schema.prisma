@@ -179,6 +179,17 @@ enum CatalogOrderStatus {
   cancelled
 }
 
+enum OrderCancellationKind {
+  catalog
+  request_deal
+}
+
+enum OrderCancellationStatus {
+  pending
+  approved
+  rejected
+}
+
 model Account {
   id                String   @id @default(cuid())
   userId            String
@@ -238,6 +249,8 @@ model User {
   requestDealsAsBuyer    RequestDealOrder[] @relation("RequestDealBuyer")
   requestDealsAsSeller   RequestDealOrder[] @relation("RequestDealSeller")
   auctionParticipants  AuctionParticipant[] @relation("SellerAuctionParticipants")
+  orderCancellationRequests OrderCancellationRequest[] @relation("CancellationRequester")
+  reviewedCancellationRequests OrderCancellationRequest[] @relation("CancellationReviewer")
 }
 
 model RefreshToken {
@@ -678,6 +691,26 @@ model RequestDealOrder {
   @@index([buyerId, createdAt(sort: Desc)])
   @@index([sellerId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+}
+
+model OrderCancellationRequest {
+  id            String                   @id @default(cuid())
+  orderKind     OrderCancellationKind
+  orderId       String
+  requestedById String
+  reason        String                   @db.Text
+  status        OrderCancellationStatus  @default(pending)
+  reviewedById  String?
+  reviewedAt    DateTime?
+  adminNote     String?                  @db.Text
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  requestedBy   User                     @relation("CancellationRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy    User?                    @relation("CancellationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([orderKind, orderId])
+  @@index([requestedById, createdAt(sort: Desc)])
 }
 
 model ModerationCase {

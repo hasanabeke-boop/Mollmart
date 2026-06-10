@@ -476,7 +476,7 @@ export const uiTranslations = {
     "Seller started fulfillment or shipped the item": "Продавец начал выполнение или отправил товар",
     "Delivered or service done — waiting for buyer confirmation":
       "Товар доставлен или услуга выполнена — ждём подтверждения покупателя",
-    "Buyer confirmed — funds credited to seller": "Покупатель подтвердил — деньги зачислены продавцу",
+    "Buyer confirmed — funds credited to seller": "Покупатель подтвердил",
     "Order was cancelled": "Заказ отменён",
     "Tracking number (optional)": "Трек-номер (необязательно)",
     "Carrier (optional)": "Перевозчик (необязательно)",
@@ -1140,7 +1140,7 @@ export const uiTranslations = {
     "Seller started fulfillment or shipped the item": "Сатушы орындауды бастады немесе тауарды жіберді",
     "Delivered or service done — waiting for buyer confirmation":
       "Тауар жеткізілді немесе қызмет орындалды — сатып алушы растауын күтеміз",
-    "Buyer confirmed — funds credited to seller": "Сатып алушы растады — қаражат сатушыға аудалды",
+    "Buyer confirmed — funds credited to seller": "Сатып алушы растады",
     "Order was cancelled": "Тапсырыс болдырылмады",
     "Tracking number (optional)": "Трек нөмірі (міндетті емес)",
     "Carrier (optional)": "Тасымалдаушы (міндетті емес)",

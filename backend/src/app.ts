@@ -19,6 +19,7 @@ import auctionRoutes from './modules/auction/routes/v1';
 import offerRoutes from './modules/offer/routes/v1';
 import profileRoutes from './modules/profile/routes/v1';
 import requestRoutes from './modules/request/routes/v1';
+import orderCancellationRoutes from './modules/order-cancellation/routes/v1';
 import config from './config/config';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logger';
@@ -97,6 +98,7 @@ app.use('/api/v1', notificationRoutes);
 app.use('/api/v1/catalog', catalogRoutes);
 app.use('/api/v1/shop', shopRoutes);
 app.use('/api/v1', dealRoutes);
+app.use('/api/v1', orderCancellationRoutes);
 app.use('/api/v1', auctionRoutes);
 
 app.get('/secret', isAuth, (_req, res) => {

@@ -8,6 +8,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { formatCatalogMoney } from "@/lib/catalog";
 import { resolveUploadedAssetUrl } from "@/lib/api";
 import { fetchMyOrder, patchOrderStatus, type ShopOrder } from "@/lib/shop";
+import { fetchOrderCancellationRequest } from "@/lib/orderCancellation";
+import OrderCancellationActions from "@/components/orders/OrderCancellationActions";
 import {
   isTerminalOrderStatus,
   nextOrderAction,
@@ -29,6 +31,7 @@ export default function OrderDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
+  const [hasPendingCancellation, setHasPendingCancellation] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -47,6 +50,16 @@ export default function OrderDetailsPage() {
           setOrder(data);
           setTrackingNumber(data.trackingNumber ?? "");
           setCarrier(data.carrier ?? "");
+          if (!isTerminalOrderStatus(data.status as OrderStatus)) {
+            try {
+              const req = await fetchOrderCancellationRequest(id);
+              setHasPendingCancellation(req?.status === "pending");
+            } catch {
+              setHasPendingCancellation(false);
+            }
+          } else {
+            setHasPendingCancellation(false);
+          }
         }
       } catch (e: unknown) {
         const err = e as Error & { status?: number };
@@ -217,7 +230,16 @@ export default function OrderDetailsPage() {
 
             {status === "cancelled" ? (
               <p className="text-xs text-[var(--text-muted)] mt-4">{t("Only admins can cancel orders.")}</p>
-            ) : null}
+            ) : (
+              <div className="mt-6">
+                <OrderCancellationActions
+                  orderId={order.id}
+                  orderStatus={status}
+                  hasPendingRequest={hasPendingCancellation}
+                  onSubmitted={() => setHasPendingCancellation(true)}
+                />
+              </div>
+            )}
           </div>
 
           <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-6 shadow-sm">

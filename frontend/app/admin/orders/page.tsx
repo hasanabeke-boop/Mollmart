@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import ModalPortal from "@/components/ui/ModalPortal";
 import { formatCatalogMoney } from "@/lib/catalog";
 import {
   deleteAdminCatalogOrder,
@@ -14,13 +15,22 @@ import {
   patchAdminRequestDealOrder,
   type RequestDealOrder,
 } from "@/lib/requestDeals";
+import {
+  approveCancellationRequest,
+  fetchAdminCancellationRequests,
+  rejectCancellationRequest,
+  type OrderCancellationRequest,
+} from "@/lib/orderCancellation";
 import type { ShopOrder } from "@/lib/shop";
+import { useLanguage } from "@/context/LanguageContext";
+
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
 
-type OrderTab = "catalog" | "deals";
+type OrderTab = "catalog" | "deals" | "cancellations";
 type AnyOrder = ShopOrder | RequestDealOrder;
 
 export default function AdminOrdersPage() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<OrderTab>("catalog");
   const [items, setItems] = useState<AnyOrder[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
@@ -31,11 +41,34 @@ export default function AdminOrdersPage() {
   const [deleteTarget, setDeleteTarget] = useState<AnyOrder | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { trackingNumber: string; carrier: string }>>({});
+  const [cancellationItems, setCancellationItems] = useState<OrderCancellationRequest[]>([]);
+  const [cancellationMeta, setCancellationMeta] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+  });
+  const [cancellationStatus, setCancellationStatus] = useState<
+    "pending" | "approved" | "rejected" | "all"
+  >("pending");
+  const [reviewTarget, setReviewTarget] = useState<OrderCancellationRequest | null>(null);
+  const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
+  const [adminNote, setAdminNote] = useState("");
+  const [reviewing, setReviewing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
+      if (tab === "cancellations") {
+        const status = cancellationStatus === "all" ? undefined : cancellationStatus;
+        const data = await fetchAdminCancellationRequests(page, 20, status);
+        setCancellationItems(data.items ?? []);
+        setCancellationMeta(data.meta ?? { page: 1, limit: 20, total: 0, totalPages: 1 });
+        setItems([]);
+        return;
+      }
+
       const data =
         tab === "catalog"
           ? await fetchAdminCatalogOrders(page, 20)
@@ -53,10 +86,11 @@ export default function AdminOrdersPage() {
     } catch (e: unknown) {
       setError((e as Error).message || "Failed to load orders");
       setItems([]);
+      setCancellationItems([]);
     } finally {
       setLoading(false);
     }
-  }, [page, tab]);
+  }, [page, tab, cancellationStatus]);
 
   useEffect(() => {
     void load();
@@ -122,6 +156,33 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const openReview = (item: OrderCancellationRequest, action: "approve" | "reject") => {
+    setReviewTarget(item);
+    setReviewAction(action);
+    setAdminNote("");
+  };
+
+  const runReview = async () => {
+    if (!reviewTarget || !reviewAction) return;
+    setReviewing(true);
+    setError("");
+    try {
+      if (reviewAction === "approve") {
+        await approveCancellationRequest(reviewTarget.id, adminNote);
+      } else {
+        await rejectCancellationRequest(reviewTarget.id, adminNote);
+      }
+      setReviewTarget(null);
+      setReviewAction(null);
+      setAdminNote("");
+      await load();
+    } catch (e: unknown) {
+      setError((e as Error).message || "Review failed");
+    } finally {
+      setReviewing(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-8">
@@ -160,12 +221,132 @@ export default function AdminOrdersPage() {
         >
           Request deals
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setTab("cancellations");
+            setPage(1);
+          }}
+          className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
+            tab === "cancellations"
+              ? "bg-red-600 text-white"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          {t("Cancellation requests")}
+        </button>
       </div>
+
+      {tab === "cancellations" ? (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {(["pending", "approved", "rejected", "all"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setCancellationStatus(s);
+                setPage(1);
+              }}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                cancellationStatus === s
+                  ? "bg-amber-600 text-white"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {s === "all" ? t("All") : t(s === "pending" ? "Pending" : s === "approved" ? "Approved" : "Rejected")}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {error ? (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
       ) : null}
 
+      {tab === "cancellations" ? (
+        <div className="overflow-x-auto rounded-xl border border-[#e7f3eb] bg-white shadow-sm">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+              <tr>
+                <th className="px-4 py-3">{t("Order")}</th>
+                <th className="px-4 py-3">{t("Requested by")}</th>
+                <th className="px-4 py-3">{t("Reason")}</th>
+                <th className="px-4 py-3">{t("Status")}</th>
+                <th className="px-4 py-3 w-40" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    Loading…
+                  </td>
+                </tr>
+              ) : cancellationItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    {t("No cancellation requests found.")}
+                  </td>
+                </tr>
+              ) : (
+                cancellationItems.map((item) => (
+                  <tr key={item.id} className="align-top hover:bg-gray-50/80">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-[#0d1b12]">{item.order?.title ?? "—"}</p>
+                      <p className="font-mono text-[11px] text-gray-500 break-all max-w-[180px] mt-1">
+                        {item.orderId}
+                      </p>
+                      {item.order ? (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatCatalogMoney(item.order.total, item.order.currency, 2)} ·{" "}
+                          {item.orderKind === "catalog" ? t("Shop order") : t("Request deal")}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{item.requestedBy.name}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 max-w-xs">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.reason}</p>
+                      {item.adminNote ? (
+                        <p className="text-xs text-gray-500 mt-2">
+                          {t("Admin note")}: {item.adminNote}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-semibold uppercase">{t(item.status === "pending" ? "Pending" : item.status === "approved" ? "Approved" : "Rejected")}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.status === "pending" ? (
+                        <div className="flex flex-col gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openReview(item, "approve")}
+                            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700"
+                          >
+                            {t("Approve cancellation")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openReview(item, "reject")}
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+                          >
+                            {t("Reject request")}
+                          </button>
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
       <div className="overflow-x-auto rounded-xl border border-[#e7f3eb] bg-white shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase text-gray-500">
@@ -288,10 +469,14 @@ export default function AdminOrdersPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
         <span>
-          Page {meta.page} / {Math.max(1, meta.totalPages)} · {meta.total} orders
+          Page {(tab === "cancellations" ? cancellationMeta : meta).page} /{" "}
+          {Math.max(1, tab === "cancellations" ? cancellationMeta.totalPages : meta.totalPages)} ·{" "}
+          {tab === "cancellations" ? cancellationMeta.total : meta.total}{" "}
+          {tab === "cancellations" ? t("requests") : "orders"}
         </span>
         <div className="flex gap-2">
           <button
@@ -304,7 +489,7 @@ export default function AdminOrdersPage() {
           </button>
           <button
             type="button"
-            disabled={page >= meta.totalPages}
+            disabled={page >= (tab === "cancellations" ? cancellationMeta.totalPages : meta.totalPages)}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border border-gray-200 px-3 py-1 disabled:opacity-40"
           >
@@ -329,6 +514,69 @@ export default function AdminOrdersPage() {
         }}
         onConfirm={runDelete}
       />
+
+      {reviewTarget != null && reviewAction != null ? (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+            onClick={() => !reviewing && (setReviewTarget(null), setReviewAction(null), setAdminNote(""))}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-gray-900">
+                {reviewAction === "approve"
+                  ? t("Approve cancellation?")
+                  : t("Reject cancellation request?")}
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                {reviewAction === "approve"
+                  ? t("The order will be cancelled immediately.")
+                  : t("The order will stay active. The requester will see your decision.")}
+              </p>
+              <label className="mt-4 block">
+                <span className="text-xs font-medium text-gray-600">{t("Admin note (optional)")}</span>
+                <textarea
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder={t("Note visible to the requester…")}
+                />
+              </label>
+              <div className="mt-6 flex gap-2">
+                <button
+                  type="button"
+                  disabled={reviewing}
+                  onClick={() => {
+                    setReviewTarget(null);
+                    setReviewAction(null);
+                    setAdminNote("");
+                  }}
+                  className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  {t("Cancel")}
+                </button>
+                <button
+                  type="button"
+                  disabled={reviewing}
+                  onClick={() => void runReview()}
+                  className={`flex-1 rounded-lg py-2.5 text-sm font-bold text-white disabled:opacity-50 ${
+                    reviewAction === "approve" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {reviewing
+                    ? t("Submitting…")
+                    : reviewAction === "approve"
+                      ? t("Approve cancellation")
+                      : t("Reject request")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      ) : null}
     </div>
   );
 }
