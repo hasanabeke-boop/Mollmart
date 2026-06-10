@@ -90,7 +90,7 @@ export default function ShowcaseDetailPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1440px] px-4 py-16 text-center text-slate-500">
+      <div className="mx-auto max-w-[1440px] px-4 py-16 text-center text-[var(--text-muted)]">
         {t("Loading…")}
       </div>
     );
@@ -99,7 +99,7 @@ export default function ShowcaseDetailPage() {
   if (error || !product) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-slate-700 mb-4">{error || t("Listing unavailable.")}</p>
+        <p className="mb-4 text-[var(--foreground)]">{error || t("Listing unavailable.")}</p>
         <Link href="/products" className="text-primary font-semibold hover:underline">
           {t("Back to catalog")}
         </Link>
@@ -131,22 +131,22 @@ export default function ShowcaseDetailPage() {
 
   return (
     <div className="app-page app-page-wide max-w-[90rem]">
-      <div className="flex flex-wrap gap-2 pb-6 px-4">
-        <Link href="/" className="text-[#4c9a66] text-sm font-medium hover:underline">
+      <div className="flex flex-wrap gap-2 px-4 pb-6">
+        <Link href="/" className="text-sm font-medium text-primary hover:underline">
           {t("Home")}
         </Link>
-        <span className="text-[#4c9a66] text-sm font-medium">/</span>
-        <Link href="/products" className="text-[#4c9a66] text-sm font-medium hover:underline">
+        <span className="text-sm font-medium text-primary">/</span>
+        <Link href="/products" className="text-sm font-medium text-primary hover:underline">
           {t("Catalog")}
         </Link>
         {product.category && (
           <>
-            <span className="text-[#4c9a66] text-sm font-medium">/</span>
-            <span className="text-[#0d1b12] text-sm font-medium">{categoryLabel(product.category)}</span>
+            <span className="text-sm font-medium text-primary">/</span>
+            <span className="text-sm font-medium text-[var(--foreground)]">{categoryLabel(product.category)}</span>
           </>
         )}
-        <span className="text-[#4c9a66] text-sm font-medium">/</span>
-        <span className="text-[#0d1b12] text-sm font-medium line-clamp-1">{product.title}</span>
+        <span className="text-sm font-medium text-primary">/</span>
+        <span className="line-clamp-1 text-sm font-medium text-[var(--foreground)]">{product.title}</span>
       </div>
 
       {(isDraftPreview || isArchivedPreview) && (
@@ -173,7 +173,7 @@ export default function ShowcaseDetailPage() {
                 style={{ backgroundImage: `url("${mainImage}")` }}
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-slate-400">{t("No image")}</div>
+              <div className="flex h-full items-center justify-center text-[var(--text-muted)]">{t("No image")}</div>
             )}
           </div>
 
@@ -184,8 +184,10 @@ export default function ShowcaseDetailPage() {
                   key={`${img}-${index}`}
                   type="button"
                   onClick={() => setActiveIndex(index)}
-                  className={`shrink-0 size-20 md:size-24 rounded-lg bg-white p-2 border ${
-                    activeIndex === index ? "border-primary" : "border-transparent hover:border-[#e7f3eb]"
+                  className={`shrink-0 size-20 rounded-lg border bg-[var(--surface)] p-2 md:size-24 ${
+                    activeIndex === index
+                      ? "border-primary"
+                      : "border-transparent hover:border-[var(--border)]"
                   }`}
                 >
                   <div
@@ -201,22 +203,28 @@ export default function ShowcaseDetailPage() {
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             {product.category && (
-              <span className="px-2 py-1 rounded bg-[#e7f3eb] text-[#4c9a66] text-xs font-bold uppercase tracking-wider w-fit">
+              <span className="w-fit rounded bg-primary/15 px-2 py-1 text-xs font-bold uppercase tracking-wider text-primary">
                 {categoryLabel(product.category)}
               </span>
             )}
-            <h1 className="text-[#0d1b12] text-3xl md:text-4xl font-bold leading-tight">{product.title}</h1>
+            <h1 className="text-3xl font-bold leading-tight text-[var(--foreground)] md:text-4xl">{product.title}</h1>
           </div>
 
           <div className="app-card rounded-xl p-4 sm:p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">{t("Price")}</p>
-                <p className="text-3xl font-black text-[#0d1b12]">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">{t("Price")}</p>
+                <p className="text-3xl font-black text-[var(--foreground)]">
                   {formatCatalogMoney(product.price, product.currency, 2)}
                 </p>
               </div>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  inStock
+                    ? "bg-green-500/15 text-green-700 dark:text-green-400"
+                    : "bg-red-500/15 text-red-700 dark:text-red-400"
+                }`}
+              >
                 {inStock
                   ? t("{count} in stock", { count: product.quantity })
                   : t("Out of stock")}
@@ -226,12 +234,12 @@ export default function ShowcaseDetailPage() {
 
           <div className="app-card flex flex-col gap-3 rounded-xl p-4 sm:flex-row">
             <div className="flex items-center gap-3 flex-1">
-              <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-[#0d1b12]">
+              <div className="flex size-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-[var(--foreground)]">
                 {product.seller.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-col">
-                <p className="text-[#0d1b12] font-bold text-sm">{product.seller.name}</p>
-                <p className="text-xs text-[#4c9a66]">{t("Seller")}</p>
+                <p className="text-sm font-bold text-[var(--foreground)]">{product.seller.name}</p>
+                <p className="text-xs text-[var(--text-muted)]">{t("Seller")}</p>
               </div>
             </div>
             <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[200px]">
@@ -259,23 +267,25 @@ export default function ShowcaseDetailPage() {
                   </button>
                   <Link
                     href={user ? requestHref : `/login?returnUrl=${encodeURIComponent(requestHref)}`}
-                    className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
+                    className="flex min-h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-center text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
                   >
                     {t("Request something like this")}
                   </Link>
                   <Link
                     href="/cart"
-                    className="min-h-10 px-4 rounded-lg border border-[#cfe7d7] bg-white text-[#0d1b12] text-sm font-bold hover:bg-[#f6faf7] flex items-center justify-center text-center"
+                    className="flex min-h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-center text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
                   >
                     {t("View cart")}
                   </Link>
-                  {cartMessage ? <p className="text-xs text-[#4c9a66] text-center sm:text-right">{cartMessage}</p> : null}
+                  {cartMessage ? (
+                    <p className="text-center text-xs text-primary sm:text-right">{cartMessage}</p>
+                  ) : null}
                 </>
               )}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#e7f3eb] text-[#0d1b12]/80 text-sm space-y-3 whitespace-pre-wrap">
+          <div className="space-y-3 whitespace-pre-wrap border-t border-[var(--border)] pt-4 text-sm leading-relaxed text-[var(--foreground)]">
             {product.description}
           </div>
 
