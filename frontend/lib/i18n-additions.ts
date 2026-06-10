@@ -436,6 +436,15 @@ export const i18nAdditions = {
     "Closed": "Закрыто",
     "pcs": "шт.",
     "view order": "посмотреть заказ",
+    "Draft saved": "Черновик сохранён",
+    "\"{title}\" is saved as a draft. Sellers don't see it until you publish from My Requests.":
+      "«{title}» сохранён как черновик. Продавцы не увидят его, пока вы не опубликуете в «Мои запросы».",
+    "You can edit or delete the draft anytime. Publish when you're ready for offers.":
+      "Черновик можно редактировать или удалить в любой момент. Опубликуйте, когда будете готовы получать предложения.",
+    "Open My Requests": "Открыть «Мои запросы»",
+    "Post Another": "Создать ещё",
+    "{count} attached": "прикреплено: {count}",
+    "₸ KZT": "₸ KZT",
     "Delivery details": "Данные доставки",
     "Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.":
       "Укажите имя, телефон и адрес. Оплата и доставка согласуются напрямую с продавцом.",
@@ -878,6 +887,15 @@ export const i18nAdditions = {
     "Closed": "Жабық",
     "pcs": "дана",
     "view order": "тапсырысты көру",
+    "Draft saved": "Жоба сақталды",
+    "\"{title}\" is saved as a draft. Sellers don't see it until you publish from My Requests.":
+      "«{title}» жоба ретінде сақталды. «Менің сұраныстарым» бөлімінен жарияламайынша сатушылар көрмейді.",
+    "You can edit or delete the draft anytime. Publish when you're ready for offers.":
+      "Жобаны кез келген уақытта өңдеу немесе жоюға болады. Ұсыныстарға дайын болғанда жариялаңыз.",
+    "Open My Requests": "«Менің сұраныстарым» ашу",
+    "Post Another": "Тағы бірін жасау",
+    "{count} attached": "қосылған: {count}",
+    "₸ KZT": "₸ KZT",
     "Delivery details": "Жеткізу мәліметтері",
     "Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.":
       "Атыңызды, телефон мен мекенжайды енгізіңіз. Төлем мен жеткізу сатушымен тікелей келісіледі.",

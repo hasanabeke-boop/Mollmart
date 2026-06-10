@@ -337,28 +337,27 @@ function CreateProductRequestContent() {
             </span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 mb-3">
-            Draft saved
+            {t("Draft saved")}
           </h1>
           <p className="text-slate-500 mb-2 text-lg">
-            &ldquo;{title}&rdquo; is saved as a{" "}
-            <span className="font-bold text-slate-800">draft</span>. Sellers
-            don&apos;t see it until you publish from{" "}
-            <span className="font-semibold text-slate-700">My Requests</span>.
+            {t(
+              '"{title}" is saved as a draft. Sellers don\'t see it until you publish from My Requests.',
+              { title },
+            )}
           </p>
           <p className="text-slate-400 text-sm mb-8">
-            You can edit or delete the draft anytime. Publish when you&apos;re
-            ready for offers.
+            {t("You can edit or delete the draft anytime. Publish when you're ready for offers.")}
           </p>
 
           <div className="bg-slate-50 rounded-2xl p-6 mb-8 text-left space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-slate-500">Title</span>
+              <span className="text-sm text-slate-500">{t("Title")}</span>
               <span className="text-sm font-semibold text-slate-900">
                 {title}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-500">Category</span>
+              <span className="text-sm text-slate-500">{t("Category")}</span>
               <span className="text-sm font-semibold text-slate-900">
                 {(() => {
                   const row = catalogCategories.find((c) => c.id === category);
@@ -367,11 +366,11 @@ function CreateProductRequestContent() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-500">Quantity</span>
+              <span className="text-sm text-slate-500">{t("Quantity")}</span>
               <span className="text-sm font-semibold text-slate-900">{quantity}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-500">Price per unit</span>
+              <span className="text-sm text-slate-500">{t("Price per unit")}</span>
               <span className="text-sm font-semibold text-slate-900">
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
@@ -381,12 +380,12 @@ function CreateProductRequestContent() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-500">Currency</span>
-              <span className="text-sm font-semibold text-slate-900">₸ KZT</span>
+              <span className="text-sm text-slate-500">{t("Currency")}</span>
+              <span className="text-sm font-semibold text-slate-900">{t("₸ KZT")}</span>
             </div>
             {deadlineLocal && (
               <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500 shrink-0">Deadline</span>
+                <span className="text-sm text-slate-500 shrink-0">{t("Deadline")}</span>
                 <span className="text-sm font-semibold text-slate-900 text-right">
                   {new Date(deadlineLocal).toLocaleString(undefined, {
                     dateStyle: "medium",
@@ -397,7 +396,7 @@ function CreateProductRequestContent() {
             )}
             {location.trim() && (
               <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500 shrink-0">Location</span>
+                <span className="text-sm text-slate-500 shrink-0">{t("Location")}</span>
                 <span className="text-sm font-semibold text-slate-900 text-right">
                   {location.trim()}
                 </span>
@@ -405,7 +404,7 @@ function CreateProductRequestContent() {
             )}
             {createdId && (
               <div className="flex justify-between">
-                <span className="text-sm text-slate-500">Request ID</span>
+                <span className="text-sm text-slate-500">{t("Request ID")}</span>
                 <span className="text-sm font-semibold text-slate-900">
                   {createdId}
                 </span>
@@ -413,9 +412,9 @@ function CreateProductRequestContent() {
             )}
             {attachments.length > 0 && (
               <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500 shrink-0">Photos</span>
+                <span className="text-sm text-slate-500 shrink-0">{t("Photos")}</span>
                 <span className="text-sm font-semibold text-slate-900 text-right">
-                  {attachments.length} attached
+                  {t("{count} attached", { count: attachments.length })}
                 </span>
               </div>
             )}
@@ -429,7 +428,7 @@ function CreateProductRequestContent() {
               <span className="material-symbols-outlined text-[20px]">
                 inventory_2
               </span>
-              Open My Requests
+              {t("Open My Requests")}
             </Link>
             <button
               type="button"
@@ -439,7 +438,7 @@ function CreateProductRequestContent() {
               <span className="material-symbols-outlined text-[20px]">
                 add
               </span>
-              Post Another
+              {t("Post Another")}
             </button>
           </div>
         </div>

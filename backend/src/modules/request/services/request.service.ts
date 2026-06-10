@@ -166,6 +166,15 @@ export class RequestService {
       await this.requestEventPublisher.publishRequestUpdated(updatedRequest);
     }
 
+    if (
+      this.onPublished != null &&
+      input.auctionEnabled === true &&
+      !current.auctionEnabled &&
+      updatedRequest.status !== 'draft'
+    ) {
+      await this.onPublished(updatedRequest.id);
+    }
+
     return updatedRequest;
   }
 

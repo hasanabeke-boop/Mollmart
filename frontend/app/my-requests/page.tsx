@@ -16,6 +16,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
+import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
@@ -297,7 +298,7 @@ export default function MyRequestsPage() {
         if (max !== undefined) body.budgetMax = max;
         body.deadlineAt = deadlineLocal ? new Date(deadlineLocal).toISOString() : "";
         body.location = location.trim();
-        if (editRequest.status === "draft") {
+        if (!restricted) {
           body.auctionEnabled = auctionEnabled;
         }
       }
@@ -832,21 +833,30 @@ export default function MyRequestsPage() {
                   placeholder="City or region"
                 />
               </div>
-              {editRequest?.status === "draft" && (
-                <label className="flex items-start gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={auctionEnabled}
-                    onChange={(e) => setAuctionEnabled(e.target.checked)}
-                    className="mt-0.5 rounded border-slate-300"
-                  />
-                  <span>
-                    {t("Enable reverse auction after publish")}
-                    <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                      {t("Sellers can join a live price competition. Platform rules apply automatically.")}
-                    </span>
-                  </span>
-                </label>
+              {editRequest && !restricted && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={auctionEnabled}
+                        onChange={(e) => setAuctionEnabled(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold text-slate-800">
+                          {t("Enable reverse auction")}
+                        </span>
+                        <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                          {t(
+                            "Optional. After you publish, sellers can join a live auction and compete by lowering price. Platform rules (timing, minimum sellers, price steps) apply automatically — you do not configure them here.",
+                          )}
+                        </span>
+                      </span>
+                    </label>
+                    <AuctionRulesHelp />
+                  </div>
+                </div>
               )}
             </div>
 
