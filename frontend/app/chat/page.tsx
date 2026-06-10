@@ -20,6 +20,12 @@ import { fieldInputClassName } from "@/components/ui/fieldStyles";
 import ShippingFields from "@/components/shipping/ShippingFields";
 import { EMPTY_SHIPPING, validateShipping } from "@/lib/shipping";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
+import {
+  OFFER_STATUS_LABEL,
+  PROPOSAL_STATUS_LABEL,
+  REQUEST_STATUS_LABEL,
+  translateStatusLabel,
+} from "@/lib/dealStatusLabels";
 
 const panelInputClass = fieldInputClassName;
 
@@ -754,17 +760,19 @@ function ChatPageContent() {
             </button>
           </div>
           <section className="border-b border-[var(--border)] p-6">
-            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Request</h2>
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t("Request")}</h2>
             <div className="space-y-3">
               <h3 className="text-lg font-bold leading-tight text-[var(--foreground)]">{active.request.title}</h3>
               <div className="grid min-w-0 grid-cols-2 gap-2 text-sm">
                 <div className="rounded-lg bg-[var(--surface-muted)] p-3">
-                  <p className="text-xs text-[var(--text-muted)]">Budget</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t("Budget")}</p>
                   <p className="font-bold text-[var(--foreground)]">{formatBudget(active)}</p>
                 </div>
                 <div className="rounded-lg bg-[var(--surface-muted)] p-3">
-                  <p className="text-xs text-[var(--text-muted)]">Status</p>
-                  <p className="font-bold capitalize text-[var(--foreground)]">{active.request.status || "active"}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t("Status")}</p>
+                  <p className="font-bold text-[var(--foreground)]">
+                    {translateStatusLabel(active.request.status || "active", REQUEST_STATUS_LABEL, t)}
+                  </p>
                 </div>
               </div>
               {active.request.location && (
@@ -778,7 +786,7 @@ function ChatPageContent() {
 
           {active.offer && (
             <section className="border-b border-[var(--border)] p-6">
-              <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Offer</h2>
+              <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t("Offer")}</h2>
               <div className="rounded-lg border border-[var(--border)] p-4">
                 {(() => {
                   const qty = normalizeRequestQuantity(active.request.quantity);
@@ -787,13 +795,13 @@ function ChatPageContent() {
                   return (
                     <>
                       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                        Price per unit · qty {qty}
+                        {t("Price per unit · qty {qty}", { qty })}
                       </p>
                       <p className="mt-1 text-2xl font-semibold text-[var(--foreground)]">
                         {formatCurrency(unit, active.offer.currency)}
                       </p>
                       <p className="mt-2 text-sm text-[var(--text-muted)]">
-                        Order total:{" "}
+                        {t("Order total:")}{" "}
                         <span className="font-bold text-[var(--foreground)]">
                           {formatCurrency(total, active.offer.currency)}
                         </span>
@@ -801,23 +809,24 @@ function ChatPageContent() {
                     </>
                   );
                 })()}
-                <p className="mt-1 text-sm font-semibold capitalize text-[var(--text-muted)]">{active.offer.status}</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--text-muted)]">
+                  {translateStatusLabel(active.offer.status, OFFER_STATUS_LABEL, t)}
+                </p>
               </div>
             </section>
           )}
 
           <section className="border-b border-[var(--border)] p-6">
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Price &amp; order</h2>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t("Price & order")}</h2>
             {dealLoading && !dealState ? (
-              <p className="text-sm text-[var(--text-muted)]">Loading deal…</p>
+              <p className="text-sm text-[var(--text-muted)]">{t("Loading deal…")}</p>
             ) : dealState ? (
               <div className="space-y-4">
                 {dealState.orderId ? (
                   <div className="space-y-3">
                     <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-200">
-                      Paid —{" "}
                       <Link className="font-bold underline" href={`/orders/${dealState.orderId}`}>
-                        view order
+                        {t("Paid — view order")}
                       </Link>
                     </div>
                     {dealState.orderShipping &&
@@ -826,7 +835,7 @@ function ChatPageContent() {
                       dealState.orderShipping.address) ? (
                       <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-sm">
                         <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">
-                          {isSellerOnThread ? "Buyer delivery details" : "Your delivery details"}
+                          {isSellerOnThread ? t("Buyer delivery details") : t("Your delivery details")}
                         </p>
                         {dealState.orderShipping.name ? (
                           <p className="font-semibold text-[var(--foreground)]">{dealState.orderShipping.name}</p>
@@ -848,7 +857,8 @@ function ChatPageContent() {
                 {dealState.initialOffer && !dealState.orderId && (
                   <div className="space-y-2">
                     <p className="text-xs text-[var(--text-muted)]">
-                      Seller offer: {formatCurrency(dealState.initialOffer.unitPrice, dealState.initialOffer.currency)}{" "}
+                      {t("Seller offer:")}{" "}
+                      {formatCurrency(dealState.initialOffer.unitPrice, dealState.initialOffer.currency)}{" "}
                       × {dealState.initialOffer.quantity} ={" "}
                       <span className="font-bold text-[var(--foreground)]">
                         {formatCurrency(dealState.initialOffer.totalPrice, dealState.initialOffer.currency)}
@@ -872,14 +882,15 @@ function ChatPageContent() {
                       }}
                       className="flex-1 rounded-lg bg-primary py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
                     >
-                      Use offer total
+                      {t("Use offer total")}
                     </button>
                   </div>
                 )}
                 <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3">
                   <p className="text-xs text-[var(--text-muted)] mb-1">
-                    Your counter (order total
-                    {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""})
+                    {dealState.requestQuantity > 1
+                      ? t("Your counter (order total · {count} pcs)", { count: dealState.requestQuantity })
+                      : t("Your counter (order total)")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <input
@@ -914,17 +925,17 @@ function ChatPageContent() {
                       }}
                       className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
                     >
-                      Offer
+                      {t("Offer")}
                     </button>
                   </div>
                 </div>
                 {dealState.agreedPrice != null && dealState.agreedCurrency && !dealState.orderId ? (
                   <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
                     <p className="font-bold text-[var(--foreground)]">
-                      Agreed total: {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
+                      {t("Agreed total")}: {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
                       {dealState.requestQuantity > 1 ? (
                         <span className="block text-xs font-normal text-[var(--text-muted)]">
-                          {dealState.requestQuantity} pcs
+                          {dealState.requestQuantity} {t("pcs")}
                         </span>
                       ) : null}
                     </p>
@@ -934,24 +945,26 @@ function ChatPageContent() {
                         className="mt-2 w-full rounded-lg bg-primary py-2 text-xs font-semibold text-white hover:opacity-90"
                         onClick={() => setOrderOpen(true)}
                       >
-                        Submit delivery details
+                        {t("Submit delivery details")}
                       </button>
                     ) : isSellerOnThread ? (
                       <p className="mt-2 text-xs text-[var(--text-muted)]">
-                        Waiting for the buyer to submit delivery details and create the order.
+                        {t("Waiting for the buyer to submit delivery details and create the order.")}
                       </p>
                     ) : (
-                      <p className="mt-2 text-xs text-[var(--text-muted)]">Waiting for buyer to submit delivery details…</p>
+                      <p className="mt-2 text-xs text-[var(--text-muted)]">
+                        {t("Waiting for buyer to submit delivery details…")}
+                      </p>
                     )}
                   </div>
                 ) : null}
                 <div>
                   <p className="mb-2 text-xs font-semibold text-[var(--text-muted)]">
-                    Recent proposals <span className="font-normal">(order totals)</span>
+                    {t("Recent proposals (order totals)")}
                   </p>
                   <ul className="max-h-40 space-y-2 overflow-y-auto text-sm">
                     {dealState.proposals.length === 0 ? (
-                      <li className="text-[var(--text-muted)]">No price proposals yet.</li>
+                      <li className="text-[var(--text-muted)]">{t("No price proposals yet.")}</li>
                     ) : (
                       dealState.proposals.map((p) => {
                         const mine = p.proposerId === user?.id;
@@ -964,7 +977,9 @@ function ChatPageContent() {
                             <span className="truncate">
                               {formatCurrency(p.amount, p.currency)}{" "}
                               <span className="text-xs text-[var(--text-muted)]">
-                                {mine ? "(you)" : ""} · {p.status}
+                                {mine
+                                  ? `${t("(you)")} · ${translateStatusLabel(p.status, PROPOSAL_STATUS_LABEL, t)}`
+                                  : translateStatusLabel(p.status, PROPOSAL_STATUS_LABEL, t)}
                               </span>
                             </span>
                             {canAccept ? (
@@ -984,7 +999,7 @@ function ChatPageContent() {
                                   }
                                 }}
                               >
-                                Accept
+                                {t("Accept")}
                               </button>
                             ) : null}
                           </li>
@@ -995,25 +1010,27 @@ function ChatPageContent() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-[var(--text-muted)]">Deal tools unavailable.</p>
+              <p className="text-sm text-[var(--text-muted)]">{t("Deal tools unavailable.")}</p>
             )}
           </section>
 
           <section className="p-6">
             <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              {active.role === "seller" ? "Seller" : "Buyer"}
+              {active.role === "seller" ? t("Seller") : t("Buyer")}
             </h2>
             <div className="mb-5 flex items-center gap-4">
               <Avatar name={active.name} src={active.avatarUrl} size="lg" />
               <div className="min-w-0">
                 <h3 className="truncate text-lg font-bold text-[var(--foreground)]">{active.name}</h3>
-                <p className="text-sm capitalize text-[var(--text-muted)]">{active.role}</p>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {active.role === "seller" ? t("Seller") : t("Buyer")}
+                </p>
               </div>
             </div>
             <div className="space-y-3 text-sm">
               {active.details.businessType && (
                 <div className="flex justify-between gap-3 border-b border-dashed border-[var(--border)] pb-2">
-                  <span className="text-[var(--text-muted)]">Business</span>
+                  <span className="text-[var(--text-muted)]">{t("Business")}</span>
                   <span className="font-medium text-[var(--foreground)]">{active.details.businessType}</span>
                 </div>
               )}
@@ -1030,15 +1047,19 @@ function ChatPageContent() {
       {orderOpen && active && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="app-card max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl p-6 shadow-[var(--shadow-card)]">
-            <h3 className="mb-1 text-lg font-bold text-[var(--foreground)]">Delivery details</h3>
+            <h3 className="mb-1 text-lg font-bold text-[var(--foreground)]">{t("Delivery details")}</h3>
             {dealState?.agreedPrice != null && dealState.agreedCurrency && (
               <p className="mb-2 text-base font-bold text-[var(--foreground)]">
                 {formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}
-                {dealState.requestQuantity > 1 ? ` · ${dealState.requestQuantity} pcs` : ""}
+                {dealState.requestQuantity > 1
+                  ? ` · ${dealState.requestQuantity} ${t("pcs")}`
+                  : ""}
               </p>
             )}
             <p className="mb-4 text-sm text-[var(--text-muted)]">
-              Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.
+              {t(
+                "Enter your name, phone, and address. Payment and delivery are arranged directly with the seller.",
+              )}
             </p>
             <ShippingFields
               value={shippingForm}
@@ -1054,7 +1075,7 @@ function ChatPageContent() {
                   setShippingForm(EMPTY_SHIPPING);
                 }}
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 type="button"
@@ -1081,7 +1102,7 @@ function ChatPageContent() {
                   }
                 }}
               >
-                {dealBusy ? "Processing…" : "Create order"}
+                {dealBusy ? t("Processing…") : t("Create order")}
               </button>
             </div>
           </div>
