@@ -342,6 +342,30 @@ export class DealService {
         include: dealOrderShopInclude
       });
 
+      const request = await tx.request.findUnique({
+        where: { id: conv.requestId },
+        select: { status: true }
+      });
+      if (request != null && request.status !== 'closed' && request.status !== 'cancelled') {
+        await tx.request.update({
+          where: { id: conv.requestId },
+          data: {
+            status: 'closed',
+            closedAt: new Date()
+          }
+        });
+        await tx.requestStatusHistory.create({
+          data: {
+            requestId: conv.requestId,
+            actorId: user.id,
+            fromStatus: request.status,
+            toStatus: 'closed',
+            action: 'closed',
+            note: 'Closed after buyer placed order'
+          }
+        });
+      }
+
       return created;
     });
 

@@ -386,6 +386,8 @@ function ChatPageContent() {
     if (!activeId || dealLoading || !dealState) return;
     if (!dealState.orderId) {
       setDealPanelOpen(true);
+    } else {
+      setDealPanelOpen(false);
     }
   }, [activeId, dealLoading, dealState]);
 
@@ -735,9 +737,9 @@ function ChatPageContent() {
         <aside
           className={`${
             dealPanelOpen
-              ? "fixed inset-x-0 bottom-0 z-50 flex max-h-[min(78dvh,720px)] w-full flex-col rounded-t-2xl shadow-2xl"
+              ? "fixed inset-x-0 bottom-0 z-50 flex max-h-[min(78dvh,720px)] w-full flex-col rounded-t-2xl shadow-2xl lg:relative lg:inset-auto lg:bottom-auto lg:z-auto lg:max-h-none lg:w-80 lg:rounded-none lg:shadow-none"
               : "hidden"
-          } shrink-0 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] lg:relative lg:flex lg:max-h-none lg:w-80 lg:max-w-none lg:rounded-none lg:shadow-none`}
+          } shrink-0 flex-col overflow-x-hidden overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] lg:flex lg:w-80 lg:min-w-0 lg:max-w-none`}
         >
           <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[var(--border)] lg:hidden" />
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 lg:hidden">
@@ -755,7 +757,7 @@ function ChatPageContent() {
             <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Request</h2>
             <div className="space-y-3">
               <h3 className="text-lg font-bold leading-tight text-[var(--foreground)]">{active.request.title}</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid min-w-0 grid-cols-2 gap-2 text-sm">
                 <div className="rounded-lg bg-[var(--surface-muted)] p-3">
                   <p className="text-xs text-[var(--text-muted)]">Budget</p>
                   <p className="font-bold text-[var(--foreground)]">{formatBudget(active)}</p>
@@ -1080,6 +1082,8 @@ function ChatPageContent() {
                   try {
                     await placeRequestOrderConversation(active.id, shippingForm);
                     await loadDealState(active.id);
+                    await loadConversations({ silent: true });
+                    setDealPanelOpen(false);
                     setOrderOpen(false);
                     setShippingForm(EMPTY_SHIPPING);
                   } catch (e) {
