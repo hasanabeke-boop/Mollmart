@@ -19,12 +19,18 @@ import {
   AdminRepositoryLike,
   ModerationCaseWithActions
 } from '../repositories/admin.repository';
+import AdminContentRepository from '../repositories/admin-content.repository';
 import { AdminEventPublisherLike } from './admin-event.service';
+import type {
+  AdminContentActionInput,
+  AdminListQuery
+} from '../types/admin';
 
 export class AdminService {
   constructor(
     private readonly adminRepository: AdminRepositoryLike,
-    private readonly adminEventPublisher: AdminEventPublisherLike
+    private readonly adminEventPublisher: AdminEventPublisherLike,
+    private readonly adminContentRepository: AdminContentRepository = new AdminContentRepository()
   ) {}
 
   async createCategory(user: AuthUser, input: CreateCategoryInput): Promise<Category> {
@@ -233,6 +239,52 @@ export class AdminService {
     if (!deleted) {
       throw notFound('Request not found');
     }
+  }
+
+  async hideContent(user: AuthUser, input: AdminContentActionInput) {
+    try {
+      return await this.adminContentRepository.hideContent(user.id, input);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Hide failed';
+      throw badRequest(msg);
+    }
+  }
+
+  async unhideContent(user: AuthUser, input: Pick<AdminContentActionInput, 'targetType' | 'targetId'>) {
+    try {
+      return await this.adminContentRepository.unhideContent(user.id, input);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unhide failed';
+      throw badRequest(msg);
+    }
+  }
+
+  async deleteContent(_user: AuthUser, input: Pick<AdminContentActionInput, 'targetType' | 'targetId'>) {
+    try {
+      await this.adminContentRepository.deleteContent(input);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Delete failed';
+      if (msg.includes('auth/admin/users')) {
+        throw badRequest(msg);
+      }
+      throw notFound(msg);
+    }
+  }
+
+  async listCatalogProductsAdmin(query: AdminListQuery) {
+    return this.adminContentRepository.listCatalogProducts(query);
+  }
+
+  async listOffersAdmin(query: AdminListQuery) {
+    return this.adminContentRepository.listOffers(query);
+  }
+
+  async listAuctionsAdmin(query: AdminListQuery) {
+    return this.adminContentRepository.listAuctions(query);
+  }
+
+  async deleteCategory(_user: AuthUser, categoryId: string): Promise<void> {
+    await this.adminContentRepository.deleteContent({ targetType: 'category', targetId: categoryId });
   }
 }
 

@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from "react";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AdminEntityActions } from "@/components/admin/AdminEntityActions";
 import { searchInputClassName } from "@/components/ui/SearchField";
-import { deleteAdminRequest, fetchAdminRequests, type AdminRequestRow } from "@/lib/admin";
+import { fetchAdminRequests, type AdminRequestRow } from "@/lib/admin";
 
 export default function AdminRequestsPage() {
   const [items, setItems] = useState<AdminRequestRow[]>([]);
@@ -13,8 +13,6 @@ export default function AdminRequestsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<AdminRequestRow | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,21 +32,6 @@ export default function AdminRequestsPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const runDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    setError("");
-    try {
-      await deleteAdminRequest(deleteTarget.id);
-      setDeleteTarget(null);
-      await load();
-    } catch (e: unknown) {
-      setError((e as Error).message || "Delete failed");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -131,17 +114,19 @@ export default function AdminRequestsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">{r.status}</span>
+                    {r.isHidden ? <span className="ml-2 text-[10px] font-bold text-red-600">BLOCKED</span> : null}
                   </td>
                   <td className="px-4 py-3">{r.offersCount}</td>
                   <td className="px-4 py-3">{r.dealOrdersCount}</td>
                   <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(r)}
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
+                    <AdminEntityActions
+                      targetType="request"
+                      targetId={r.id}
+                      isHidden={r.isHidden}
+                      label={r.title}
+                      onDone={load}
+                      compact
+                    />
                   </td>
                 </tr>
               ))
@@ -174,22 +159,6 @@ export default function AdminRequestsPage() {
         </div>
       </div>
 
-      <ConfirmModal
-        open={deleteTarget != null}
-        title="Delete this request?"
-        description={
-          deleteTarget
-            ? `“${deleteTarget.title}” and all related offers, conversations, and deal orders will be permanently removed.`
-            : ""
-        }
-        confirmLabel="Delete"
-        variant="danger"
-        loading={deleting}
-        onClose={() => {
-          if (!deleting) setDeleteTarget(null);
-        }}
-        onConfirm={runDelete}
-      />
     </div>
   );
 }

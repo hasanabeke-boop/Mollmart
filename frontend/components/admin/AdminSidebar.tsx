@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-type AdminNavId = "dashboard" | "categories" | "requests" | "moderation" | "users" | "orders" | "monitoring";
+type AdminNavId =
+  | "dashboard"
+  | "categories"
+  | "requests"
+  | "catalog"
+  | "offers"
+  | "auctions"
+  | "moderation"
+  | "users"
+  | "orders"
+  | "monitoring";
 
 const NAV_ITEMS: {
   id: AdminNavId;
@@ -14,6 +24,9 @@ const NAV_ITEMS: {
   { id: "dashboard", icon: "dashboard", label: "Dashboard", href: "/admin" },
   { id: "categories", icon: "category", label: "Categories", href: "/admin/categories" },
   { id: "requests", icon: "description", label: "Buyer requests", href: "/admin/requests" },
+  { id: "catalog", icon: "inventory_2", label: "Catalog", href: "/admin/catalog" },
+  { id: "offers", icon: "local_offer", label: "Offers", href: "/admin/offers" },
+  { id: "auctions", icon: "gavel", label: "Auctions", href: "/admin/auctions" },
   { id: "orders", icon: "receipt_long", label: "Orders", href: "/admin/orders" },
   { id: "monitoring", icon: "monitoring", label: "Monitoring", href: "/admin/monitoring" },
   { id: "moderation", icon: "gavel", label: "Moderation", href: "/admin/moderation" },

@@ -366,9 +366,17 @@ export class OfferRepository implements OfferRepositoryLike {
     requestId: string,
     query: OfferRequestListQuery
   ): Promise<RequestListResult<OfferWithRelations>> {
+    const hiddenOfferIds = (
+      await this.client.contentFlag.findMany({
+        where: { targetType: 'offer', status: 'hidden' },
+        select: { targetId: true }
+      })
+    ).map((row) => row.targetId);
+
     const where: Prisma.OfferWhereInput = {
       requestId,
-      ...(query.status != null ? { status: query.status } : {})
+      ...(query.status != null ? { status: query.status } : {}),
+      ...(hiddenOfferIds.length > 0 ? { id: { notIn: hiddenOfferIds } } : {})
     };
 
     const [items, total] = await Promise.all([

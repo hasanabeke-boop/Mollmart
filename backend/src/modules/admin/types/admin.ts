@@ -116,3 +116,76 @@ export interface ContentFlagUpsertInput {
   hiddenBy?: string | null;
   hiddenAt?: Date | null;
 }
+
+export type AdminEntityTargetType = ModerationTargetType | 'category' | 'auction';
+
+export interface ModerationTargetDetails {
+  exists: boolean;
+  label: string;
+  subtitle?: string | null;
+  status?: string | null;
+  imageUrl?: string | null;
+  publicPath?: string | null;
+  isHidden?: boolean;
+  owner?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    role?: string;
+  } | null;
+  extra?: Record<string, string | number | boolean | null>;
+}
+
+export interface AdminContentActionInput {
+  targetType: AdminEntityTargetType;
+  targetId: string;
+  reason?: string;
+}
+
+export interface AdminCatalogProductRow {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  price: number;
+  currency: string;
+  quantity: number;
+  imageUrl: string;
+  createdAt: string;
+  isHidden: boolean;
+  seller: { id: string; name: string; email: string | null };
+  category: { id: string; name: string; slug: string };
+}
+
+export interface AdminOfferRow {
+  id: string;
+  requestId: string;
+  requestTitle: string;
+  price: number;
+  currency: string;
+  status: string;
+  message: string;
+  createdAt: string;
+  isHidden: boolean;
+  seller: { id: string; name: string; email: string | null };
+}
+
+export interface AdminAuctionRow {
+  id: string;
+  requestId: string;
+  requestTitle: string;
+  status: string;
+  participantCount: number;
+  currentRound: number;
+  leaderPrice: number | null;
+  currency: string;
+  createdAt: string;
+  buyer: { id: string; name: string; email: string | null };
+}
+
+export interface AdminListQuery {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: string;
+}

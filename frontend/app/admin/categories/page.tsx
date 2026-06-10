@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminEntityActions } from "@/components/admin/AdminEntityActions";
 import { apiFetchWithRefresh } from "@/lib/api";
 
 type Category = {
@@ -105,13 +106,23 @@ export default function CategoriesPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setModal({ mode: "edit", category: cat })}
-                        className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex flex-col items-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setModal({ mode: "edit", category: cat })}
+                          className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <AdminEntityActions
+                          targetType="category"
+                          targetId={cat.id}
+                          isHidden={!cat.isActive}
+                          label={cat.name}
+                          onDone={load}
+                          compact
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

@@ -88,3 +88,31 @@ export const blockUserSchema = {
     reason: Joi.string().trim().min(5).max(3000).required()
   })
 };
+
+export const adminListQuerySchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1).custom(normalizePage),
+    limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit),
+    q: Joi.string().trim().max(200).optional(),
+    status: Joi.string().trim().max(40).optional()
+  })
+};
+
+export const adminContentActionSchema = {
+  body: Joi.object({
+    targetType: Joi.string()
+      .valid('request', 'offer', 'user', 'catalog_product', 'category', 'auction')
+      .required(),
+    targetId: Joi.string().trim().required(),
+    reason: Joi.string().trim().max(3000).optional()
+  })
+};
+
+export const adminContentTargetParamSchema = {
+  params: Joi.object({
+    targetType: Joi.string()
+      .valid('request', 'offer', 'user', 'catalog_product', 'category', 'auction')
+      .required(),
+    targetId: Joi.string().trim().required()
+  })
+};

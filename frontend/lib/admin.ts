@@ -14,6 +14,7 @@ export type AdminRequestRow = {
   createdAt: string;
   publishedAt: string | null;
   categoryId: string;
+  isHidden?: boolean;
   buyer: { id: string; name: string; email: string };
 };
 
@@ -200,4 +201,167 @@ export async function deleteAdminRequestOrder(id: string): Promise<void> {
     method: "DELETE",
     service: "admin",
   });
+}
+
+export type AdminEntityTargetType =
+  | "request"
+  | "offer"
+  | "user"
+  | "catalog_product"
+  | "category"
+  | "auction";
+
+export type ModerationTargetDetails = {
+  exists: boolean;
+  label: string;
+  subtitle?: string | null;
+  status?: string | null;
+  imageUrl?: string | null;
+  publicPath?: string | null;
+  isHidden?: boolean;
+  owner?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    role?: string;
+  } | null;
+  extra?: Record<string, string | number | boolean | null>;
+};
+
+export type ModerationCaseEnriched = {
+  id: string;
+  targetType: AdminEntityTargetType;
+  targetId: string;
+  reason: string;
+  status: "open" | "in_review" | "resolved" | "dismissed";
+  createdBy: string;
+  assignedTo: string | null;
+  resolutionNote: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  target: ModerationTargetDetails;
+  actions: Array<{
+    id: string;
+    actionType: string;
+    actorId: string;
+    note: string | null;
+    createdAt: string;
+  }>;
+};
+
+export type AdminCatalogProductRow = {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  price: number;
+  currency: string;
+  quantity: number;
+  imageUrl: string;
+  createdAt: string;
+  isHidden: boolean;
+  seller: { id: string; name: string; email: string | null };
+  category: { id: string; name: string; slug: string };
+};
+
+export type AdminOfferRow = {
+  id: string;
+  requestId: string;
+  requestTitle: string;
+  price: number;
+  currency: string;
+  status: string;
+  message: string;
+  createdAt: string;
+  isHidden: boolean;
+  seller: { id: string; name: string; email: string | null };
+};
+
+export type AdminAuctionRow = {
+  id: string;
+  requestId: string;
+  requestTitle: string;
+  status: string;
+  participantCount: number;
+  currentRound: number;
+  leaderPrice: number | null;
+  currency: string;
+  createdAt: string;
+  buyer: { id: string; name: string; email: string | null };
+};
+
+export async function hideAdminContent(
+  targetType: AdminEntityTargetType,
+  targetId: string,
+  reason?: string,
+): Promise<void> {
+  await apiFetchWithRefresh("/api/v1/admin/content/hide", {
+    method: "POST",
+    service: "admin",
+    body: JSON.stringify({ targetType, targetId, reason }),
+  });
+}
+
+export async function unhideAdminContent(
+  targetType: AdminEntityTargetType,
+  targetId: string,
+): Promise<void> {
+  await apiFetchWithRefresh("/api/v1/admin/content/unhide", {
+    method: "POST",
+    service: "admin",
+    body: JSON.stringify({ targetType, targetId }),
+  });
+}
+
+export async function deleteAdminContent(
+  targetType: AdminEntityTargetType,
+  targetId: string,
+): Promise<void> {
+  await apiFetchWithRefresh(
+    `/api/v1/admin/content/${encodeURIComponent(targetType)}/${encodeURIComponent(targetId)}`,
+    { method: "DELETE", service: "admin" },
+  );
+}
+
+export async function deleteAdminCategory(id: string): Promise<void> {
+  await apiFetchWithRefresh(`/api/v1/admin/categories/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    service: "admin",
+  });
+}
+
+export async function fetchAdminCatalogProducts(
+  page = 1,
+  limit = 20,
+  q?: string,
+  status?: string,
+): Promise<{ items: AdminCatalogProductRow[]; meta: PageMeta }> {
+  const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q?.trim()) qs.set("q", q.trim());
+  if (status) qs.set("status", status);
+  return apiFetchWithRefresh(`/api/v1/admin/catalog-products?${qs.toString()}`, { service: "admin" });
+}
+
+export async function fetchAdminOffers(
+  page = 1,
+  limit = 20,
+  q?: string,
+  status?: string,
+): Promise<{ items: AdminOfferRow[]; meta: PageMeta }> {
+  const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q?.trim()) qs.set("q", q.trim());
+  if (status) qs.set("status", status);
+  return apiFetchWithRefresh(`/api/v1/admin/offers?${qs.toString()}`, { service: "admin" });
+}
+
+export async function fetchAdminAuctions(
+  page = 1,
+  limit = 20,
+  q?: string,
+  status?: string,
+): Promise<{ items: AdminAuctionRow[]; meta: PageMeta }> {
+  const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q?.trim()) qs.set("q", q.trim());
+  if (status) qs.set("status", status);
+  return apiFetchWithRefresh(`/api/v1/admin/auctions?${qs.toString()}`, { service: "admin" });
 }
