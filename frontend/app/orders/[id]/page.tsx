@@ -278,7 +278,9 @@ export default function OrderDetailsPage() {
                 {order.shippingName ? <span className="font-bold block mb-1">{order.shippingName}</span> : null}
                 {order.shippingAddress}
                 {order.shippingPhone ? (
-                  <span className="text-[var(--text-muted)] mt-2 block">Phone: {order.shippingPhone}</span>
+                  <span className="text-[var(--text-muted)] mt-2 block">
+                    {t("Phone")}: {order.shippingPhone}
+                  </span>
                 ) : null}
               </address>
             ) : (
@@ -290,15 +292,11 @@ export default function OrderDetailsPage() {
             <h3 className="text-lg font-bold text-[var(--foreground)] mb-4">{t("Order summary")}</h3>
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Subtotal</span>
+                <span className="text-[var(--text-muted)]">{t("Subtotal")}</span>
                 <span>{formatCatalogMoney(order.subtotal, order.currency, 2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Handling</span>
-                <span>{formatCatalogMoney(order.shippingAmount, order.currency, 2)}</span>
-              </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-[var(--border-muted)]">
-                <span>Total</span>
+                <span>{t("Total")}</span>
                 <span>{formatCatalogMoney(order.total, order.currency, 2)}</span>
               </div>
             </div>
