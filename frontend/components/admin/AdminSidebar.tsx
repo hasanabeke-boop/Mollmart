@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-type AdminNavId = "dashboard" | "categories" | "requests" | "moderation" | "users" | "orders";
+type AdminNavId = "dashboard" | "categories" | "requests" | "moderation" | "users" | "orders" | "monitoring";
 
 const NAV_ITEMS: {
   id: AdminNavId;
@@ -15,6 +15,7 @@ const NAV_ITEMS: {
   { id: "categories", icon: "category", label: "Categories", href: "/admin/categories" },
   { id: "requests", icon: "description", label: "Buyer requests", href: "/admin/requests" },
   { id: "orders", icon: "receipt_long", label: "Orders", href: "/admin/orders" },
+  { id: "monitoring", icon: "monitoring", label: "Monitoring", href: "/admin/monitoring" },
   { id: "moderation", icon: "gavel", label: "Moderation", href: "/admin/moderation" },
   { id: "users", icon: "group", label: "Users", href: "/admin/users" },
 ];

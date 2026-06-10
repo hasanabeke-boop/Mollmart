@@ -3,22 +3,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { formatCatalogMoney } from "@/lib/catalog";
-import { deleteAdminRequestOrder } from "@/lib/admin";
+import {
+  deleteAdminCatalogOrder,
+  deleteAdminRequestOrder,
+  fetchAdminCatalogOrders,
+  patchAdminCatalogOrder,
+} from "@/lib/admin";
 import {
   fetchAdminRequestDealOrders,
   patchAdminRequestDealOrder,
   type RequestDealOrder,
 } from "@/lib/requestDeals";
+import type { ShopOrder } from "@/lib/shop";
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
 
+type OrderTab = "catalog" | "deals";
+type AnyOrder = ShopOrder | RequestDealOrder;
+
 export default function AdminOrdersPage() {
-  const [items, setItems] = useState<RequestDealOrder[]>([]);
+  const [tab, setTab] = useState<OrderTab>("catalog");
+  const [items, setItems] = useState<AnyOrder[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<RequestDealOrder | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AnyOrder | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { trackingNumber: string; carrier: string }>>({});
 
@@ -26,7 +36,10 @@ export default function AdminOrdersPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchAdminRequestDealOrders(page, 20);
+      const data =
+        tab === "catalog"
+          ? await fetchAdminCatalogOrders(page, 20)
+          : await fetchAdminRequestDealOrders(page, 20);
       setItems(data.items ?? []);
       setMeta(data.meta ?? { page: 1, limit: 20, total: 0, totalPages: 1 });
       const next: typeof drafts = {};
@@ -43,7 +56,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, tab]);
 
   useEffect(() => {
     void load();
@@ -55,10 +68,15 @@ export default function AdminOrdersPage() {
     setSavingId(orderId);
     setError("");
     try {
-      await patchAdminRequestDealOrder(orderId, {
+      const body = {
         trackingNumber: d.trackingNumber.trim() || null,
         carrier: d.carrier.trim() || null,
-      });
+      };
+      if (tab === "catalog") {
+        await patchAdminCatalogOrder(orderId, body);
+      } else {
+        await patchAdminRequestDealOrder(orderId, body);
+      }
       await load();
     } catch (e: unknown) {
       setError((e as Error).message || "Save failed");
@@ -67,12 +85,16 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const cancelOrder = async (order: RequestDealOrder) => {
+  const cancelOrder = async (order: AnyOrder) => {
     if (order.status === "cancelled" || order.status === "completed") return;
     setSavingId(order.id);
     setError("");
     try {
-      await patchAdminRequestDealOrder(order.id, { status: "cancelled" });
+      if (tab === "catalog") {
+        await patchAdminCatalogOrder(order.id, { status: "cancelled" });
+      } else {
+        await patchAdminRequestDealOrder(order.id, { status: "cancelled" });
+      }
       await load();
     } catch (e: unknown) {
       setError((e as Error).message || "Cancel failed");
@@ -86,7 +108,11 @@ export default function AdminOrdersPage() {
     setDeleting(true);
     setError("");
     try {
-      await deleteAdminRequestOrder(deleteTarget.id);
+      if (tab === "catalog") {
+        await deleteAdminCatalogOrder(deleteTarget.id);
+      } else {
+        await deleteAdminRequestOrder(deleteTarget.id);
+      }
       setDeleteTarget(null);
       await load();
     } catch (e: unknown) {
@@ -101,9 +127,39 @@ export default function AdminOrdersPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-black text-[#0d1b12]">Orders</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Request-deal orders from demo payment. Sellers and buyers advance status; admins can cancel or edit tracking
-          details.
+          Shop checkout orders and request-deal orders. Admins can cancel open orders or edit tracking details.
         </p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setTab("catalog");
+            setPage(1);
+          }}
+          className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
+            tab === "catalog"
+              ? "bg-red-600 text-white"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Shop orders
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setTab("deals");
+            setPage(1);
+          }}
+          className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
+            tab === "deals"
+              ? "bg-red-600 text-white"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          Request deals
+        </button>
       </div>
 
       {error ? (
@@ -133,7 +189,7 @@ export default function AdminOrdersPage() {
             ) : items.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                  No orders found.
+                  No {tab === "catalog" ? "shop" : "request deal"} orders found.
                 </td>
               </tr>
             ) : (
@@ -144,6 +200,12 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-3">
                       <p className="font-mono text-[11px] text-gray-500 break-all max-w-[140px]">{o.id}</p>
                       <p className="text-xs text-gray-400 mt-1">{new Date(o.createdAt).toLocaleString()}</p>
+                      {tab === "catalog" && o.lines.length > 0 ? (
+                        <p className="text-[10px] text-gray-400 mt-1 truncate max-w-[160px]">
+                          {o.lines[0].title}
+                          {o.lines.length > 1 ? ` +${o.lines.length - 1}` : ""}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-[#0d1b12]">{o.buyer.name}</p>
@@ -256,7 +318,7 @@ export default function AdminOrdersPage() {
         title="Delete this order?"
         description={
           deleteTarget
-            ? `Order ${deleteTarget.id} will be permanently removed. The related chat or request is not deleted.`
+            ? `Order ${deleteTarget.id} will be permanently removed. Related chat or request data is not deleted.`
             : ""
         }
         confirmLabel="Delete"

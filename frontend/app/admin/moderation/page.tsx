@@ -49,6 +49,8 @@ type ModalState =
 
 export default function ModerationPage() {
   const [cases, setCases] = useState<ModerationCase[]>([]);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<CaseStatus | "">("");
   const [filterType, setFilterType] = useState<TargetType | "">("");
@@ -57,22 +59,30 @@ export default function ModerationPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (filterStatus) params.set("status", filterStatus);
       if (filterType) params.set("targetType", filterType);
-      const qs = params.toString();
 
-      const data = await apiFetchWithRefresh<ModerationCase[]>(
-        `/api/v1/admin/moderation/cases${qs ? `?${qs}` : ""}`,
-        { service: "admin" },
-      );
-      setCases(Array.isArray(data) ? data : []);
+      const data = await apiFetchWithRefresh<{
+        items?: ModerationCase[];
+        meta?: typeof meta;
+      } | ModerationCase[]>(`/api/v1/admin/moderation/cases?${params.toString()}`, {
+        service: "admin",
+      });
+
+      if (Array.isArray(data)) {
+        setCases(data);
+        setMeta({ page: 1, limit: 20, total: data.length, totalPages: 1 });
+      } else {
+        setCases(data.items ?? []);
+        setMeta(data.meta ?? { page: 1, limit: 20, total: 0, totalPages: 1 });
+      }
     } catch {
       setCases([]);
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterType]);
+  }, [filterStatus, filterType, page]);
 
   useEffect(() => {
     load();
@@ -104,7 +114,10 @@ export default function ModerationPage() {
       <div className="flex flex-wrap gap-3">
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as CaseStatus | "")}
+          onChange={(e) => {
+            setPage(1);
+            setFilterStatus(e.target.value as CaseStatus | "");
+          }}
           className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none"
         >
           <option value="">All statuses</option>
@@ -115,7 +128,10 @@ export default function ModerationPage() {
         </select>
         <select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value as TargetType | "")}
+          onChange={(e) => {
+            setPage(1);
+            setFilterType(e.target.value as TargetType | "");
+          }}
           className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none"
         >
           <option value="">All types</option>
@@ -197,6 +213,30 @@ export default function ModerationPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center justify-between text-sm text-gray-600">
+        <span>
+          Page {meta.page} / {Math.max(1, meta.totalPages)} · {meta.total} cases
+        </span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="rounded border border-gray-200 px-3 py-1 disabled:opacity-40"
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            disabled={page >= meta.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded border border-gray-200 px-3 py-1 disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {modal.mode === "create" && (

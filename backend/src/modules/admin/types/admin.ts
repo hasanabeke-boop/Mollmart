@@ -30,6 +30,8 @@ export interface UpdateModerationCaseInput {
 export interface ModerationCaseListQuery {
   status?: ModerationCaseStatus;
   targetType?: ModerationTargetType;
+  page?: number;
+  limit?: number;
 }
 
 export interface SubmitContentReportInput {
@@ -63,11 +65,46 @@ export interface AdminDashboardSummary {
     openCases: number;
     inReviewCases: number;
     resolvedCases: number;
+    dismissedCases: number;
   };
   categories: {
     total: number;
     active: number;
   };
+}
+
+export interface AdminPlatformReport extends AdminDashboardSummary {
+  platform: {
+    totalUsers: number;
+    activeUsers: number;
+    blockedUsers: number;
+    suspendedUsers: number;
+    buyers: number;
+    sellers: number;
+    admins: number;
+    totalRequests: number;
+    publishedRequests: number;
+    totalOffers: number;
+    catalogProducts: number;
+    publishedProducts: number;
+    catalogOrders: number;
+    requestDealOrders: number;
+    openCatalogOrders: number;
+    openRequestDealOrders: number;
+    conversations: number;
+    notifications: number;
+  };
+  recent: {
+    usersLast7Days: number;
+    requestsLast7Days: number;
+    catalogOrdersLast7Days: number;
+    requestDealOrdersLast7Days: number;
+  };
+  revenue: {
+    completedCatalogOrders: number;
+    completedRequestDealOrders: number;
+  };
+  checkedAt: string;
 }
 
 export interface ContentFlagUpsertInput {

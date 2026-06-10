@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { normalizeLimit, normalizePage } from '../../request/utils/pagination';
 import type {
   AdminUpdateUserRequestBody,
   ChangePasswordRequestBody,
@@ -53,7 +54,9 @@ export const adminUserListSchema = {
   query: Joi.object().keys({
     search: Joi.string().trim().allow(''),
     role: Joi.string().valid('buyer', 'seller', 'admin'),
-    status: Joi.string().valid('active', 'blocked', 'suspended')
+    status: Joi.string().valid('active', 'blocked', 'suspended'),
+    page: Joi.number().integer().min(1).default(1).custom(normalizePage),
+    limit: Joi.number().integer().min(1).max(100).default(20).custom(normalizeLimit)
   })
 };
 
