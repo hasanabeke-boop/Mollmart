@@ -1,7 +1,7 @@
 export type AuctionRules = {
   enabled: boolean;
   minParticipants: number;
-  scheduleDelayMinutes: number;
+  scheduleDelaySeconds: number;
   roundDurationSeconds: number;
   roundPauseSeconds: number;
   priceStepPercent: number;

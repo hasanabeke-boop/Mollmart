@@ -268,7 +268,7 @@ export class AuctionService {
   }
 
   private async scheduleSession(sessionId: string): Promise<AuctionSessionFull> {
-    const scheduledAt = addMinutes(new Date(), auctionRules.scheduleDelayMinutes);
+    const scheduledAt = addSeconds(new Date(), auctionRules.scheduleDelaySeconds);
     const session = await this.repo.updateSession(sessionId, {
       status: 'scheduled',
       scheduledAt

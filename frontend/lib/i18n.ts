@@ -326,8 +326,8 @@ export const uiTranslations = {
     "Trading starts only after at least {min} sellers register. Until then the request stays open for registration.":
       "Торги начинаются только после регистрации минимум {min} продавцов. До этого заявка остаётся открытой для регистрации.",
     "Fixed start delay": "Фиксированная задержка старта",
-    "When the {min}th seller joins, live trading is scheduled {minutes} minutes later so everyone can prepare.":
-      "Когда присоединяется {min}-й продавец, живые торги назначаются через {minutes} мин., чтобы все успели подготовиться.",
+    "When the {min}th seller joins, live trading starts in {seconds} seconds so everyone can prepare.":
+      "Когда присоединяется {min}-й продавец, торги начнутся через {seconds} сек., чтобы все успели подготовиться.",
     "Round timer": "Таймер раунда",
     "Each round lasts {seconds} seconds. Lower your price or hold — if you do nothing, your price is held automatically.":
       "Каждый раунд длится {seconds} сек. Снизьте цену или удержите — если ничего не делать, цена удерживается автоматически.",
@@ -989,8 +989,8 @@ export const uiTranslations = {
     "Trading starts only after at least {min} sellers register. Until then the request stays open for registration.":
       "Сауда кемінде {min} сатушы тіркелгеннен кейін ғана басталады. Сол уақытқа дейін тіркелу ашық.",
     "Fixed start delay": "Белгіленген кідіріс",
-    "When the {min}th seller joins, live trading is scheduled {minutes} minutes later so everyone can prepare.":
-      "{min}-ші сатушы қосылғанда, тікелей сауда {minutes} минуттан кейін жоспарланады.",
+    "When the {min}th seller joins, live trading starts in {seconds} seconds so everyone can prepare.":
+      "{min}-ші сатушы қосылғанда, сауда {seconds} секундтан кейін басталады.",
     "Round timer": "Раунд таймері",
     "Each round lasts {seconds} seconds. Lower your price or hold — if you do nothing, your price is held automatically.":
       "Әр раунд {seconds} секунд. Бағаны төмендетіңіз немесе ұстаңыз — еш нәрсе істемесеніз, баға автоматты сақталады.",

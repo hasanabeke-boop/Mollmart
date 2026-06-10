@@ -3,7 +3,7 @@ export const auctionRules = {
   enabled: true,
   minParticipants: 3,
   /** After the 3rd seller joins, auction starts after this delay. */
-  scheduleDelayMinutes: 3,
+  scheduleDelaySeconds: 30,
   /** Each bidding round length. */
   roundDurationSeconds: 45,
   /** Pause between rounds (buyers/sellers see results). */
@@ -36,7 +36,7 @@ export const auctionRulesTooltips = [
   {
     id: 'schedule',
     title: 'Fixed start delay',
-    body: `When the 3rd seller joins, live trading is scheduled ${auctionRules.scheduleDelayMinutes} minutes later so everyone can prepare.`,
+    body: `When the 3rd seller joins, live trading is scheduled ${auctionRules.scheduleDelaySeconds} seconds later so everyone can prepare.`,
   },
   {
     id: 'rounds',

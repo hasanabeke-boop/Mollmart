@@ -24,8 +24,8 @@ export function buildAuctionTooltips(t: TranslateFn, rules: AuctionRules): Aucti
       id: "schedule",
       title: t("Fixed start delay"),
       body: t(
-        "When the {min}th seller joins, live trading is scheduled {minutes} minutes later so everyone can prepare.",
-        { min, minutes: rules.scheduleDelayMinutes },
+        "When the {min}th seller joins, live trading starts in {seconds} seconds so everyone can prepare.",
+        { min, seconds: rules.scheduleDelaySeconds },
       ),
     },
     {
