@@ -470,13 +470,13 @@ export const uiTranslations = {
       "Отметьте, что вы начали выполнение или отправили заказ.",
     "Buyer will confirm receipt to complete the order.":
       "Покупатель подтвердит получение для завершения заказа.",
-    "Funds will be credited to the seller after confirmation.":
-      "После подтверждения средства будут зачислены продавцу.",
+    "The order will be completed after you confirm.":
+      "После подтверждения завершится заказ",
     "Order created": "Заказ создан",
     "Seller started fulfillment or shipped the item": "Продавец начал выполнение или отправил товар",
     "Delivered or service done — waiting for buyer confirmation":
       "Товар доставлен или услуга выполнена — ждём подтверждения покупателя",
-    "Buyer confirmed — funds credited to seller": "Покупатель подтвердил",
+    "Buyer confirmed": "Покупатель подтвердил",
     "Order was cancelled": "Заказ отменён",
     "Tracking number (optional)": "Трек-номер (необязательно)",
     "Carrier (optional)": "Перевозчик (необязательно)",
@@ -1134,13 +1134,13 @@ export const uiTranslations = {
       "Орындауды бастағаныңызды немесе тапсырысты жібергеніңізді белгілеңіз.",
     "Buyer will confirm receipt to complete the order.":
       "Сатып алушы тапсырысты аяқтау үшін қабылдауды растайды.",
-    "Funds will be credited to the seller after confirmation.":
-      "Растаудан кейін қаражат сатушыға аударылады.",
+    "The order will be completed after you confirm.":
+      "Растаудан кейін тапсырыс аяқталады.",
     "Order created": "Тапсырыс жасалды",
     "Seller started fulfillment or shipped the item": "Сатушы орындауды бастады немесе тауарды жіберді",
     "Delivered or service done — waiting for buyer confirmation":
       "Тауар жеткізілді немесе қызмет орындалды — сатып алушы растауын күтеміз",
-    "Buyer confirmed — funds credited to seller": "Сатып алушы растады",
+    "Buyer confirmed": "Сатып алушы растады",
     "Order was cancelled": "Тапсырыс болдырылмады",
     "Tracking number (optional)": "Трек нөмірі (міндетті емес)",
     "Carrier (optional)": "Тасымалдаушы (міндетті емес)",

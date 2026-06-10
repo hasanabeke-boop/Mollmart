@@ -25,7 +25,7 @@ export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
   paid: "Order created",
   in_progress: "Seller started fulfillment or shipped the item",
   awaiting_confirmation: "Delivered or service done — waiting for buyer confirmation",
-  completed: "Buyer confirmed — funds credited to seller",
+  completed: "Buyer confirmed",
   cancelled: "Order was cancelled",
 };
 
@@ -59,7 +59,7 @@ export function nextOrderAction(
     return {
       status: "completed",
       label: "Confirm receipt",
-      hint: "Funds will be credited to the seller after confirmation.",
+      hint: "The order will be completed after you confirm.",
     };
   }
   return null;
