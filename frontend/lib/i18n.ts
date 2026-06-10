@@ -448,7 +448,7 @@ export const uiTranslations = {
     "Orders from paid request deals and catalog checkout. Open one to see details and tracking.":
       "Заказы из сделок по заявкам и каталога. Откройте для деталей и отслеживания.",
     "All orders": "Все заказы",
-    "Paid (Created)": "Оплачен (создан)",
+    "Created": "Создан",
     "In progress": "В работе",
     "Awaiting confirmation": "Ожидает подтверждения",
     "Completed": "Завершён",
@@ -465,7 +465,7 @@ export const uiTranslations = {
       "Покупатель подтвердит получение для завершения заказа.",
     "Funds will be credited to the seller after confirmation.":
       "После подтверждения средства будут зачислены продавцу.",
-    "Order created after payment": "Заказ создан после оплаты",
+    "Order created": "Заказ создан",
     "Seller started fulfillment or shipped the item": "Продавец начал выполнение или отправил товар",
     "Delivered or service done — waiting for buyer confirmation":
       "Товар доставлен или услуга выполнена — ждём подтверждения покупателя",
@@ -1106,7 +1106,7 @@ export const uiTranslations = {
     "Orders from paid request deals and catalog checkout. Open one to see details and tracking.":
       "Сұраныс мәмілелері мен каталог тапсырыстары. Толығырақ және бақылау үшін ашыңыз.",
     "All orders": "Барлық тапсырыстар",
-    "Paid (Created)": "Төленген (жасалған)",
+    "Created": "Жасалған",
     "In progress": "Орындалуда",
     "Awaiting confirmation": "Растау күтілуде",
     "Completed": "Аяқталған",
@@ -1123,7 +1123,7 @@ export const uiTranslations = {
       "Сатып алушы тапсырысты аяқтау үшін қабылдауды растайды.",
     "Funds will be credited to the seller after confirmation.":
       "Растаудан кейін қаражат сатушыға аударылады.",
-    "Order created after payment": "Тапсырыс төлемнен кейін жасалды",
+    "Order created": "Тапсырыс жасалды",
     "Seller started fulfillment or shipped the item": "Сатушы орындауды бастады немесе тауарды жіберді",
     "Delivered or service done — waiting for buyer confirmation":
       "Тауар жеткізілді немесе қызмет орындалды — сатып алушы растауын күтеміз",

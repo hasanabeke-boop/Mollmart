@@ -14,7 +14,7 @@ export const ORDER_STATUSES: OrderStatus[] = [
 ];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  paid: "Paid (Created)",
+  paid: "Created",
   in_progress: "In progress",
   awaiting_confirmation: "Awaiting confirmation",
   completed: "Completed",
@@ -22,7 +22,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
-  paid: "Order created after payment",
+  paid: "Order created",
   in_progress: "Seller started fulfillment or shipped the item",
   awaiting_confirmation: "Delivered or service done — waiting for buyer confirmation",
   completed: "Buyer confirmed — funds credited to seller",

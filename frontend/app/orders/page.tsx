@@ -14,7 +14,7 @@ import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orderStatus";
 
 const STATUS_TABS: { id: "all" | OrderStatus; labelKey: string }[] = [
   { id: "all", labelKey: "All orders" },
-  { id: "paid", labelKey: "Paid (Created)" },
+  { id: "paid", labelKey: "Created" },
   { id: "in_progress", labelKey: "In progress" },
   { id: "awaiting_confirmation", labelKey: "Awaiting confirmation" },
   { id: "completed", labelKey: "Completed" },
