@@ -18,8 +18,10 @@ import {
   AdminDashboardSummary,
   AdminPlatformReport,
   ContentFlagUpsertInput,
-  ModerationCaseListQuery
+  ModerationCaseListQuery,
+  ModerationTargetDetails
 } from '../types/admin';
+import { resolveModerationTargets, targetKey } from '../lib/resolveModerationTarget';
 
 const moderationCaseInclude = {
   actions: {
@@ -31,6 +33,10 @@ const moderationCaseInclude = {
 
 export type ModerationCaseWithActions = ModerationCase & {
   actions: ModerationAction[];
+};
+
+export type ModerationCaseEnriched = ModerationCaseWithActions & {
+  target: ModerationTargetDetails;
 };
 
 export interface AdminRepositoryLike {
@@ -45,7 +51,7 @@ export interface AdminRepositoryLike {
     assignedTo?: string;
   }): Promise<ModerationCaseWithActions>;
   listModerationCases(query: ModerationCaseListQuery): Promise<{
-    items: ModerationCaseWithActions[];
+    items: ModerationCaseEnriched[];
     meta: ReturnType<typeof buildPageMeta>;
   }>;
   findModerationCaseById(id: string): Promise<ModerationCaseWithActions | null>;
@@ -164,7 +170,7 @@ export class AdminRepository implements AdminRepositoryLike {
   }
 
   async listModerationCases(query: ModerationCaseListQuery): Promise<{
-    items: ModerationCaseWithActions[];
+    items: ModerationCaseEnriched[];
     meta: ReturnType<typeof buildPageMeta>;
   }> {
     const page = normalizePage(query.page ?? 1);
@@ -185,7 +191,22 @@ export class AdminRepository implements AdminRepositoryLike {
       this.client.moderationCase.count({ where })
     ]);
 
-    return { items, meta: buildPageMeta(page, limit, total) };
+    const targets = await resolveModerationTargets(
+      this.client,
+      items.map((item) => ({ targetType: item.targetType, targetId: item.targetId }))
+    );
+
+    return {
+      items: items.map((item) => ({
+        ...item,
+        target: targets[targetKey(item.targetType, item.targetId)] ?? {
+          exists: false,
+          label: 'Unknown target',
+          subtitle: item.targetId
+        }
+      })),
+      meta: buildPageMeta(page, limit, total)
+    };
   }
 
   async findModerationCaseById(id: string): Promise<ModerationCaseWithActions | null> {
@@ -308,6 +329,28 @@ export class AdminRepository implements AdminRepositoryLike {
       return { id: row.id, ownerId: row.sellerId };
     }
 
+    if (targetType === ModerationTargetType.offer) {
+      const row = await this.client.offer.findUnique({
+        where: { id: targetId },
+        select: { id: true, sellerId: true, status: true }
+      });
+      if (row == null || row.status === 'withdrawn') {
+        return null;
+      }
+      return { id: row.id, ownerId: row.sellerId };
+    }
+
+    if (targetType === ModerationTargetType.user) {
+      const row = await this.client.user.findUnique({
+        where: { id: targetId },
+        select: { id: true, status: true }
+      });
+      if (row == null || row.status === 'blocked') {
+        return null;
+      }
+      return { id: row.id, ownerId: row.id };
+    }
+
     return null;
   }
 
@@ -333,6 +376,32 @@ export class AdminRepository implements AdminRepositoryLike {
           data: { status: hidden ? 'archived' : 'published' }
         })
         .catch(() => undefined);
+      return;
+    }
+
+    if (targetType === ModerationTargetType.offer) {
+      await this.client.offer
+        .update({
+          where: { id: targetId },
+          data: {
+            status: hidden ? 'withdrawn' : 'submitted',
+            withdrawnAt: hidden ? new Date() : null
+          }
+        })
+        .catch(() => undefined);
+      return;
+    }
+
+    if (targetType === ModerationTargetType.user) {
+      await this.client.user
+        .update({
+          where: { id: targetId },
+          data: { status: hidden ? 'blocked' : 'active' }
+        })
+        .catch(() => undefined);
+      if (hidden) {
+        await this.client.refreshToken.deleteMany({ where: { userId: targetId } }).catch(() => undefined);
+      }
     }
   }
 
@@ -618,8 +687,8 @@ export class AdminRepository implements AdminRepositoryLike {
       this.client.request.count({ where })
     ]);
 
-    return {
-      items: items.map((row) => ({
+    const itemsWithHidden = await Promise.all(
+      items.map(async (row) => ({
         id: row.id,
         title: row.title,
         status: row.status,
@@ -631,8 +700,18 @@ export class AdminRepository implements AdminRepositoryLike {
         createdAt: row.createdAt.toISOString(),
         publishedAt: row.publishedAt?.toISOString() ?? null,
         categoryId: row.categoryId,
+        isHidden:
+          row.status === 'cancelled' ||
+          (await this.client.contentFlag.findFirst({
+            where: { targetType: 'request', targetId: row.id, status: 'hidden' },
+            select: { id: true }
+          })) != null,
         buyer: row.buyer
-      })),
+      }))
+    );
+
+    return {
+      items: itemsWithHidden,
       meta: buildPageMeta(p, l, total)
     };
   }
@@ -654,6 +733,16 @@ export class AdminRepository implements AdminRepositoryLike {
     ).map((o) => o.id);
 
     await this.client.$transaction(async (tx) => {
+      await tx.moderationCase.deleteMany({
+        where: {
+          OR: [
+            { targetType: 'request', targetId: requestId },
+            ...(offerIds.length > 0
+              ? [{ targetType: 'offer' as const, targetId: { in: offerIds } }]
+              : [])
+          ]
+        }
+      });
       await tx.contentFlag.deleteMany({
         where: {
           OR: [

@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
           title: "Orders",
           value: p!.catalogOrders + p!.requestDealOrders,
           subtitle: `${p!.openCatalogOrders + p!.openRequestDealOrders} open · +${r!.catalogOrdersLast7Days + r!.requestDealOrdersLast7Days} (7d)`,
-          href: "/admin/orders",
+          href: "/admin/catalog",
         },
         {
           icon: "gavel",

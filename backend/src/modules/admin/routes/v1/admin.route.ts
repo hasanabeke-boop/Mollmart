@@ -12,7 +12,10 @@ import {
   adminRequestOrderPatchSchema
 } from '../../../deal/validators/deal.validation';
 import {
+  adminContentActionSchema,
+  adminContentTargetParamSchema,
   adminIdParamSchema,
+  adminListQuerySchema,
   adminRequestListSchema,
   blockUserSchema,
   categoryCreateSchema,
@@ -32,6 +35,23 @@ export function createAdminRouter(controller: AdminController): Router {
   router.post('/admin/categories', validate(categoryCreateSchema), asyncHandler(controller.createCategory));
   router.get('/admin/categories', asyncHandler(controller.listCategories));
   router.patch('/admin/categories/:id', validate(categoryUpdateSchema), asyncHandler(controller.updateCategory));
+  router.delete('/admin/categories/:id', validate(adminIdParamSchema), asyncHandler(controller.deleteCategory));
+
+  router.post('/admin/content/hide', validate(adminContentActionSchema), asyncHandler(controller.hideContent));
+  router.post('/admin/content/unhide', validate(adminContentActionSchema), asyncHandler(controller.unhideContent));
+  router.delete(
+    '/admin/content/:targetType/:targetId',
+    validate(adminContentTargetParamSchema),
+    asyncHandler(controller.deleteContent)
+  );
+
+  router.get(
+    '/admin/catalog-products',
+    validate(adminListQuerySchema),
+    asyncHandler(controller.listCatalogProducts)
+  );
+  router.get('/admin/offers', validate(adminListQuerySchema), asyncHandler(controller.listOffers));
+  router.get('/admin/auctions', validate(adminListQuerySchema), asyncHandler(controller.listAuctions));
 
   router.post(
     '/admin/moderation/cases',

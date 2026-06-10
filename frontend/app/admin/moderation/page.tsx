@@ -1,29 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminEntityActions } from "@/components/admin/AdminEntityActions";
+import { ModerationTargetCard } from "@/components/admin/ModerationTargetCard";
 import { apiFetchWithRefresh } from "@/lib/api";
+import type { ModerationCaseEnriched } from "@/lib/admin";
 
-type ModerationAction = {
-  id: string;
-  actionType: string;
-  actorId: string;
-  note: string | null;
-  createdAt: string;
-};
-
-type ModerationCase = {
-  id: string;
-  targetType: "request" | "offer" | "user" | "catalog_product";
-  targetId: string;
-  reason: string;
-  status: "open" | "in_review" | "resolved" | "dismissed";
-  createdBy: string;
-  assignedTo: string | null;
-  resolutionNote: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
-  actions: ModerationAction[];
-};
+type ModerationCase = ModerationCaseEnriched;
 
 type CaseStatus = "open" | "in_review" | "resolved" | "dismissed";
 type TargetType = "request" | "offer" | "user" | "catalog_product";
@@ -98,7 +81,7 @@ export default function ModerationPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-[#0d1b12]">Moderation</h1>
-          <p className="mt-1 text-[#4c9a66]">Review and manage flagged content.</p>
+          <p className="mt-1 text-[#4c9a66]">Review reported content with full target details, block, or delete.</p>
         </div>
         <button
           type="button"
@@ -144,14 +127,12 @@ export default function ModerationPage() {
 
       {/* Table */}
       <div className="rounded-xl border border-[#e7f3eb] bg-white shadow-sm overflow-x-auto">
-        <table className="w-full text-left min-w-[700px]">
+        <table className="w-full text-left min-w-[960px]">
           <thead>
             <tr className="bg-gray-50 border-b border-[#e7f3eb]">
-              <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Type</th>
-              <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Target ID</th>
+              <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Reported content</th>
               <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Reason</th>
-              <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Status</th>
-              <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Assigned</th>
+              <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Case</th>
               <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66]">Created</th>
               <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#4c9a66] text-right">Actions</th>
             </tr>
@@ -160,53 +141,57 @@ export default function ModerationPage() {
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={7} className="px-5 py-4">
+                  <td colSpan={5} className="px-5 py-4">
                     <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
                   </td>
                 </tr>
               ))
             ) : cases.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">
+                <td colSpan={5} className="px-5 py-12 text-center text-sm text-gray-400">
                   No moderation cases found.
                 </td>
               </tr>
             ) : (
               cases.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={c.id} className="hover:bg-gray-50 transition-colors align-top">
                   <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0d1b12] capitalize">
-                      <span className="material-symbols-outlined text-[16px] text-gray-400">
-                        {c.targetType === "request"
-                          ? "description"
-                          : c.targetType === "offer"
-                            ? "local_offer"
-                            : c.targetType === "catalog_product"
-                              ? "inventory_2"
-                              : "person"}
-                      </span>
-                      {c.targetType}
-                    </span>
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 capitalize">{c.targetType.replace(/_/g, " ")}</p>
+                    <ModerationTargetCard target={c.target ?? { exists: false, label: c.targetId, subtitle: c.targetId }} />
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-gray-500 font-mono max-w-[120px] truncate">{c.targetId}</td>
-                  <td className="px-5 py-3.5 text-sm text-gray-600 max-w-[200px] truncate">{c.reason}</td>
+                  <td className="px-5 py-3.5 text-sm text-gray-600 max-w-[220px]">
+                    <p className="line-clamp-4">{c.reason}</p>
+                    <p className="mt-2 font-mono text-[10px] text-gray-400">{c.targetId}</p>
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${STATUS_STYLES[c.status]}`}>
                       {STATUS_LABELS[c.status]}
                     </span>
+                    <p className="mt-2 text-xs text-gray-500">Assigned: {c.assignedTo || "—"}</p>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-gray-500">{c.assignedTo || "—"}</td>
                   <td className="px-5 py-3.5 text-sm text-gray-500">
-                    {new Date(c.createdAt).toLocaleDateString()}
+                    {new Date(c.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setModal({ mode: "update", caseItem: c })}
-                      className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-                    >
-                      Manage
-                    </button>
+                  <td className="px-5 py-3.5">
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setModal({ mode: "update", caseItem: c })}
+                        className="text-sm font-medium text-red-600 hover:text-red-800"
+                      >
+                        Manage case
+                      </button>
+                      {c.targetType !== "auction" && c.targetType !== "category" ? (
+                        <AdminEntityActions
+                          targetType={c.targetType}
+                          targetId={c.targetId}
+                          isHidden={c.target?.isHidden}
+                          label={c.target?.label}
+                          onDone={load}
+                          compact
+                        />
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -415,22 +400,19 @@ function UpdateCaseModal({
           </button>
         </div>
 
-        {/* Case info */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="text-gray-400">Type:</span>{" "}
-              <span className="font-medium capitalize">{caseItem.targetType}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Target:</span>{" "}
-              <span className="font-mono text-xs">{caseItem.targetId.slice(0, 12)}...</span>
-            </div>
-            <div className="col-span-2">
-              <span className="text-gray-400">Reason:</span>{" "}
-              <span className="text-gray-700">{caseItem.reason}</span>
-            </div>
-          </div>
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Reported content</p>
+          <ModerationTargetCard target={caseItem.target ?? { exists: false, label: caseItem.targetId }} />
+          <p className="text-sm text-gray-700"><span className="text-gray-400">Reason:</span> {caseItem.reason}</p>
+          {caseItem.targetType !== "auction" && caseItem.targetType !== "category" ? (
+            <AdminEntityActions
+              targetType={caseItem.targetType}
+              targetId={caseItem.targetId}
+              isHidden={caseItem.target?.isHidden}
+              label={caseItem.target?.label}
+              onDone={onSaved}
+            />
+          ) : null}
         </div>
 
         {/* History */}

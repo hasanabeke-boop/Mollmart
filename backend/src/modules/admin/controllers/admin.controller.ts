@@ -146,6 +146,44 @@ export class AdminController {
     await this.adminService.deleteRequest(req.user!, req.params.id);
     res.status(httpStatus.NO_CONTENT).send();
   };
+
+  hideContent = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.adminService.hideContent(req.user!, req.body);
+    res.status(httpStatus.OK).json(result);
+  };
+
+  unhideContent = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.adminService.unhideContent(req.user!, req.body);
+    res.status(httpStatus.OK).json(result);
+  };
+
+  deleteContent = async (req: Request, res: Response): Promise<void> => {
+    await this.adminService.deleteContent(req.user!, {
+      targetType: req.params.targetType as never,
+      targetId: req.params.targetId
+    });
+    res.status(httpStatus.NO_CONTENT).send();
+  };
+
+  listCatalogProducts = async (req: Request, res: Response): Promise<void> => {
+    const data = await this.adminService.listCatalogProductsAdmin(req.query as never);
+    res.status(httpStatus.OK).json(data);
+  };
+
+  listOffers = async (req: Request, res: Response): Promise<void> => {
+    const data = await this.adminService.listOffersAdmin(req.query as never);
+    res.status(httpStatus.OK).json(data);
+  };
+
+  listAuctions = async (req: Request, res: Response): Promise<void> => {
+    const data = await this.adminService.listAuctionsAdmin(req.query as never);
+    res.status(httpStatus.OK).json(data);
+  };
+
+  deleteCategory = async (req: Request, res: Response): Promise<void> => {
+    await this.adminService.deleteCategory(req.user!, req.params.id);
+    res.status(httpStatus.NO_CONTENT).send();
+  };
 }
 
 export default AdminController;
