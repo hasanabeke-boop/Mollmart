@@ -411,7 +411,33 @@ export class DealService {
       orderBy: { createdAt: 'desc' }
     });
     if (offer == null) {
-      throw badRequest('Winning offer not found — refresh the auction page');
+      const winnerParticipant = await prisma.auctionParticipant.findUnique({
+        where: {
+          sessionId_sellerId: {
+            sessionId: session.id,
+            sellerId: session.winnerSellerId
+          }
+        }
+      });
+      if (winnerParticipant == null || session.winningPrice == null) {
+        throw badRequest('Winning bid data not found — refresh the auction page');
+      }
+      const message =
+        winnerParticipant.message?.trim() ||
+        'Winning bid from reverse auction — ready to fulfill per agreed terms.';
+      offer = await offerRepo.create(
+        {
+          requestId,
+          sellerId: session.winnerSellerId,
+          price: Number(session.winningPrice),
+          currency: winnerParticipant.currency,
+          message,
+          ...(winnerParticipant.deliveryDays != null
+            ? { deliveryDays: winnerParticipant.deliveryDays }
+            : {})
+        },
+        user.id
+      );
     }
 
     if (offer.status !== 'accepted') {

@@ -2,7 +2,6 @@ import { auctionRules } from '../../../config/auctionRules';
 import prisma from '../../../config/prisma';
 import { AuthUser } from '../../request/types/express';
 import { badRequest, conflict, forbidden, notFound } from '../../request/utils/apiError';
-import OfferRepository from '../../offer/repositories/offer.repository';
 import { computeOfferLineTotal, normalizeRequestQuantity } from '../../../shared/offerPricing';
 import AuctionRepository, {
   AuctionSessionFull,
@@ -65,10 +64,7 @@ function maskSellerName(name: string, sellerId: string, viewerId?: string): stri
 }
 
 export class AuctionService {
-  constructor(
-    private readonly repo: AuctionRepository,
-    private readonly offerRepository: OfferRepository = new OfferRepository()
-  ) {}
+  constructor(private readonly repo: AuctionRepository) {}
 
   getRules() {
     return auctionRules;
@@ -583,22 +579,6 @@ export class AuctionService {
     }
 
     await this.repo.updateParticipant(leader.id, { status: 'winner' });
-
-    const message =
-      leader.message?.trim() ||
-      'Winning bid from reverse auction — ready to fulfill per agreed terms.';
-
-    await this.offerRepository.create(
-      {
-        requestId: session.requestId,
-        sellerId: leader.sellerId,
-        price: toNumber(leader.currentPrice),
-        currency: leader.currency,
-        message,
-        ...(leader.deliveryDays != null ? { deliveryDays: leader.deliveryDays } : {})
-      },
-      session.request.buyerId
-    );
 
     const ended = await this.repo.updateSession(session.id, {
       status: 'ended',

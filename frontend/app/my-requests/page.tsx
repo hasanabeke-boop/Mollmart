@@ -17,6 +17,7 @@ import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import RoleGate from "@/components/auth/RoleGate";
 import AuctionRulesHelp from "@/components/auction/AuctionRulesHelp";
+import { fetchAuctionByRequestId } from "@/lib/auctionApi";
 import { canUseBuyerWorkspace } from "@/lib/workspace";
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from "@/lib/currency";
 import { computeOfferLineTotal } from "@/lib/offerPricing";
@@ -146,6 +147,9 @@ export default function MyRequestsPage() {
   const buyerWorkspace = canUseBuyerWorkspace(user, activeRole);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [offersByRequest, setOffersByRequest] = useState<Record<string, OfferItem[]>>({});
+  const [auctionWinnerPendingByRequest, setAuctionWinnerPendingByRequest] = useState<
+    Record<string, boolean>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -219,6 +223,40 @@ export default function MyRequestsPage() {
     }
     loadRequests();
   }, [loadRequests, authLoading, user, buyerWorkspace]);
+
+  useEffect(() => {
+    if (!requests.length) {
+      setAuctionWinnerPendingByRequest({});
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const pending: Record<string, boolean> = {};
+      await Promise.all(
+        requests
+          .filter(
+            (r) =>
+              r.auctionEnabled &&
+              r.status !== "draft" &&
+              !["accepted", "closed", "cancelled"].includes(r.status),
+          )
+          .map(async (r) => {
+            try {
+              const auction = await fetchAuctionByRequestId(r.id);
+              if (auction.canPayAsBuyer) pending[r.id] = true;
+            } catch {
+              /* auction may not exist yet */
+            }
+          }),
+      );
+      if (!cancelled) setAuctionWinnerPendingByRequest(pending);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requests]);
 
   useEffect(() => {
     let cancelled = false;
@@ -388,7 +426,6 @@ export default function MyRequestsPage() {
   };
 
   const loadOffers = async (requestId: string) => {
-    if (offersByRequest[requestId]) return;
     try {
       const data = await apiFetchWithRefresh<{ items?: OfferItem[]; data?: OfferItem[] }>(
         `/api/v1/offers/request/${requestId}`,
@@ -398,6 +435,19 @@ export default function MyRequestsPage() {
         ...prev,
         [requestId]: data.items || data.data || (Array.isArray(data) ? data : []),
       }));
+
+      const request = requests.find((r) => r.id === requestId);
+      if (request?.auctionEnabled) {
+        try {
+          const auction = await fetchAuctionByRequestId(requestId);
+          setAuctionWinnerPendingByRequest((prev) => ({
+            ...prev,
+            [requestId]: Boolean(auction.canPayAsBuyer),
+          }));
+        } catch {
+          /* ignore */
+        }
+      }
     } catch (err: unknown) {
       const msg = (err as Error).message || "Failed to load offers.";
       setError(msg);
@@ -626,6 +676,15 @@ export default function MyRequestsPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--border-muted)] pt-3">
+                  {auctionWinnerPendingByRequest[request.id] ? (
+                    <Link
+                      href={`/auctions/${request.id}`}
+                      className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-xs font-semibold text-primary hover:bg-primary/15"
+                    >
+                      <span className="material-symbols-outlined text-base">gavel</span>
+                      {t("Accept winning bid on auction page")}
+                    </Link>
+                  ) : null}
                   {request.auctionEnabled &&
                     request.status !== "draft" &&
                     !["accepted", "closed", "cancelled"].includes(request.status) && (
@@ -649,6 +708,11 @@ export default function MyRequestsPage() {
 
                 {offersByRequest[request.id] && (
                   <div className="mt-3 flex flex-col gap-2">
+                    {auctionWinnerPendingByRequest[request.id] ? (
+                      <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-[var(--text-muted)]">
+                        {t("The auction winner is not listed here. Use the auction page to accept the bid and place your order.")}
+                      </p>
+                    ) : null}
                     {offers.length === 0 ? (
                       <p className="rounded-lg bg-[var(--surface-muted)] px-3 py-2.5 text-xs text-[var(--text-muted)]">
                         No offers yet.

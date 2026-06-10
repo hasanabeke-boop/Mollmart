@@ -1,4 +1,5 @@
 import config from '../../../config/config';
+import prisma from '../../../config/prisma';
 import { AuthUser } from '../types/express';
 import { CreateOfferInput, OfferListQuery, OfferRequestListQuery, UpdateOfferInput } from '../types/offer';
 import { badRequest, conflict, forbidden, notFound } from '../utils/apiError';
@@ -133,7 +134,63 @@ export class OfferService {
       throw forbidden('You can only view offers for your own requests');
     }
 
-    return this.offerRepository.listByRequest(query.requestId, query);
+    return this.offerRepository.listByRequest(query.requestId, query).then(async (result) => {
+      const items = await this.filterPendingAuctionWinnerOffers(query.requestId, result.items);
+      return { ...result, items };
+    });
+  }
+
+  private async filterPendingAuctionWinnerOffers<T extends { sellerId: string; status: string }>(
+    requestId: string,
+    items: T[]
+  ): Promise<T[]> {
+    const session = await prisma.auctionSession.findUnique({
+      where: { requestId },
+      select: { status: true, winnerSellerId: true }
+    });
+    if (session?.status !== 'ended' || session.winnerSellerId == null) {
+      return items;
+    }
+
+    const order = await prisma.requestDealOrder.findFirst({
+      where: { requestId },
+      select: { id: true }
+    });
+    if (order != null) {
+      return items;
+    }
+
+    return items.filter(
+      (offer) =>
+        !(
+          offer.sellerId === session.winnerSellerId &&
+          ['submitted', 'updated'].includes(offer.status)
+        )
+    );
+  }
+
+  private async isPendingAuctionWinningOffer(
+    requestId: string,
+    sellerId: string,
+    offerStatus: string
+  ): Promise<boolean> {
+    if (!['submitted', 'updated'].includes(offerStatus)) {
+      return false;
+    }
+
+    const session = await prisma.auctionSession.findUnique({
+      where: { requestId },
+      select: { status: true, winnerSellerId: true }
+    });
+    if (session?.status !== 'ended' || session.winnerSellerId !== sellerId) {
+      return false;
+    }
+
+    const order = await prisma.requestDealOrder.findFirst({
+      where: { requestId },
+      select: { id: true }
+    });
+    return order == null;
   }
 
   async acceptOffer(user: AuthUser, offerId: string): Promise<OfferWithRelations> {
@@ -166,6 +223,12 @@ export class OfferService {
 
     if (!['submitted', 'updated'].includes(target.status)) {
       throw badRequest(`Offer cannot be accepted while in "${target.status}" status`);
+    }
+
+    if (await this.isPendingAuctionWinningOffer(target.requestId, target.sellerId, target.status)) {
+      throw badRequest(
+        'This is the auction winning bid. Accept it on the auction page to submit delivery details and place the order.'
+      );
     }
 
     let result;

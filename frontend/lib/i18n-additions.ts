@@ -2,6 +2,9 @@ export const i18nAdditions = {
   ru: {
     "Accept failed.": "Не удалось принять.",
     "Accept offer & submit details": "Принять предложение и указать данные",
+    "Accept winning bid on auction page": "Принять победную ставку на странице аукциона",
+    "The auction winner is not listed here. Use the auction page to accept the bid and place your order.":
+      "Победитель аукциона не показывается в списке офферов. Примите ставку и оформите заказ на странице аукциона.",
     "Accepted": "Принято",
     "Account created": "Аккаунт создан",
     "Active": "Активный",
@@ -492,6 +495,9 @@ export const i18nAdditions = {
   kk: {
     "Accept failed.": "Қабылдау сәтсіз аяқталды.",
     "Accept offer & submit details": "Ұсынысты қабылдап, мәліметтерді жіберу",
+    "Accept winning bid on auction page": "Жеңімпаз ставканы аукцион бетінде қабылдау",
+    "The auction winner is not listed here. Use the auction page to accept the bid and place your order.":
+      "Аукцион жеңімпазы мұндағы ұсыныстар тізімінде көрсетілмейді. Ставканы қабылдап, тапсырысты аукцион бетінде рәсімдеңіз.",
     "Accepted": "Қабылданды",
     "Account created": "Аккаунт жасалды",
     "Active": "Белсенді",
