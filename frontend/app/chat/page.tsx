@@ -370,6 +370,25 @@ function ChatPageContent() {
     );
   }, [conversations, search]);
 
+  const pendingProposalCount = useMemo(() => {
+    if (!dealState || !user?.id) return 0;
+    return dealState.proposals.filter(
+      (proposal) => proposal.status === "pending" && proposal.proposerId !== user.id,
+    ).length;
+  }, [dealState, user?.id]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    setDealPanelOpen(false);
+  }, [activeId]);
+
+  useEffect(() => {
+    if (!activeId || dealLoading || !dealState) return;
+    if (!dealState.orderId) {
+      setDealPanelOpen(true);
+    }
+  }, [activeId, dealLoading, dealState]);
+
   const sendMessage = async () => {
     if (!active || !user?.id) return;
     const text = input.trim();
@@ -559,16 +578,57 @@ function ChatPageContent() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="min-h-10 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] lg:hidden"
-                  onClick={() => (showOrderCta ? setOrderOpen(true) : setDealPanelOpen(true))}
+                  className="min-h-10 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-semibold text-[var(--foreground)] lg:hidden"
+                  onClick={() => setDealPanelOpen((open) => !open)}
                 >
-                  {showOrderCta ? t("Order") : t("Deal")}
+                  {dealPanelOpen ? t("Hide deal panel") : t("Price & deal")}
+                  {!dealPanelOpen && pendingProposalCount > 0 ? (
+                    <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+                      {pendingProposalCount}
+                    </span>
+                  ) : null}
                 </button>
+                {showOrderCta ? (
+                  <button
+                    type="button"
+                    className="min-h-10 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white lg:hidden"
+                    onClick={() => setOrderOpen(true)}
+                  >
+                    {t("Order")}
+                  </button>
+                ) : null}
                 <span className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-xs font-medium capitalize text-[var(--text-muted)]">
                   {active.status}
                 </span>
               </div>
             </header>
+
+            {!dealPanelOpen && (
+              <div className="border-b border-primary/20 bg-primary/8 px-4 py-3 lg:hidden">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                  onClick={() => setDealPanelOpen(true)}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{t("Price & counter-offers")}</p>
+                    <p className="truncate text-xs text-[var(--text-muted)]">
+                      {dealState?.agreedPrice != null && dealState.agreedCurrency
+                        ? `${t("Agreed total")}: ${formatCurrency(dealState.agreedPrice, dealState.agreedCurrency)}`
+                        : t("Send or accept a price proposal")}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {pendingProposalCount > 0 ? (
+                      <span className="flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+                        {pendingProposalCount}
+                      </span>
+                    ) : null}
+                    <span className="material-symbols-outlined text-[var(--text-muted)]">chevron_right</span>
+                  </div>
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 lg:px-6">
@@ -674,11 +734,14 @@ function ChatPageContent() {
       {active && (
         <aside
           className={`${
-            dealPanelOpen ? "fixed inset-y-0 right-0 z-50 flex w-full max-w-none shadow-2xl" : "hidden"
-          } shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] lg:relative lg:flex lg:w-80 lg:max-w-none`}
+            dealPanelOpen
+              ? "fixed inset-x-0 bottom-0 z-50 flex max-h-[min(78dvh,720px)] w-full flex-col rounded-t-2xl shadow-2xl"
+              : "hidden"
+          } shrink-0 overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] lg:relative lg:flex lg:max-h-none lg:w-80 lg:max-w-none lg:rounded-none lg:shadow-none`}
         >
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[var(--border)] lg:hidden" />
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 lg:hidden">
-            <p className="text-sm font-semibold text-[var(--foreground)]">{t("Deal")}</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">{t("Price & counter-offers")}</p>
             <button
               type="button"
               className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
