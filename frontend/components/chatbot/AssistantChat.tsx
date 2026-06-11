@@ -19,7 +19,7 @@ function roleSubtitle(role: string | undefined, t: (text: string) => string) {
 
 export default function AssistantChat({ variant = "page", onClose }: AssistantChatProps) {
   const compact = variant === "panel";
-  const { user, assistantRole, t, messages, input, setInput, suggestions, loading, error, sendMessage } =
+  const { user, assistantRole, t, messages, input, setInput, suggestions, loading, error, sendMessage, reset } =
     useChatbot();
 
   if (variant === "panel") {
@@ -36,6 +36,16 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={reset}
+              disabled={loading}
+              className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40"
+              aria-label={t("New conversation")}
+              title={t("New conversation")}
+            >
+              <span className="material-symbols-outlined text-[18px]">edit_square</span>
+            </button>
             <Link
               href="/chatbot"
               className="flex size-10 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
@@ -82,12 +92,22 @@ export default function AssistantChat({ variant = "page", onClose }: AssistantCh
       <header className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-5 lg:px-8">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <AiMark size="lg" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-lg font-semibold text-[var(--foreground)]">{t("Mollmart Assistant")}</h1>
             <p className="truncate text-sm text-[var(--text-muted)]">
               {roleSubtitle(assistantRole === "guest" ? user?.role : assistantRole, t)}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={reset}
+            disabled={loading}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40"
+            title={t("New conversation")}
+          >
+            <span className="material-symbols-outlined text-[16px]">edit_square</span>
+            <span className="hidden sm:inline">{t("New conversation")}</span>
+          </button>
         </div>
       </header>
 

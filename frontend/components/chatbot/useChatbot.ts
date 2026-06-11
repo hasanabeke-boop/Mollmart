@@ -10,30 +10,30 @@ import type { ChatbotHistoryItem, ChatbotReply, ChatMessage } from "./types";
 
 /** Aligned with backend MOLLMART_FAQ — chips map to FAQ keyword matching */
 const guestStarterPrompts = [
+  "What is Mollmart and how does it work?",
   "How do I create and publish a buyer request?",
-  "How do sellers find buyer requests?",
-  "How do chat and demo payment work?",
-  "How do I register and log in?",
+  "How do sellers find and respond to requests?",
+  "How do I sign up and get started?",
 ] as const;
 
 const promptsByRole = {
   buyer: [
-    "How do I accept a seller offer?",
-    "Why does my request have no offers?",
-    "How do chat and demo payment work?",
-    "What happens after I accept an offer?",
+    "How do I post a new buyer request?",
+    "How do I compare and accept seller offers?",
+    "How does the chat and deal process work?",
+    "How do I track my orders and payments?",
   ],
   seller: [
-    "How do sellers find buyer requests?",
-    "How do I send a strong seller offer?",
-    "Why can a seller send only one offer per request?",
-    "How do reverse auctions work on Mollmart?",
+    "How do I browse and find buyer requests?",
+    "How do I submit a compelling offer?",
+    "How do auctions work on the platform?",
+    "How do I manage my showcase listings?",
   ],
   admin: [
-    "What can admins do in Mollmart?",
-    "How does moderation work?",
-    "Where are request-deal orders?",
-    "What do notifications cover?",
+    "How do I manage and moderate users?",
+    "How does request and offer moderation work?",
+    "How do I manage product categories?",
+    "How do I view and manage all orders?",
   ],
 } as const;
 
@@ -58,10 +58,10 @@ function resolveAssistantRole(
 }
 
 function welcomeKeyForRole(role: AssistantRole): string {
-  if (role === "buyer") return "Assistant welcome buyer";
-  if (role === "seller") return "Assistant welcome seller";
-  if (role === "admin") return "Assistant welcome admin";
-  return "Assistant welcome guest";
+  if (role === "buyer") return "Hello! I'm Mollmart Assistant. Ask about requests, offers, chat, or demo payment.";
+  if (role === "seller") return "Hello! I'm Mollmart Assistant. Ask about buyer requests, offers, showcase, or auctions.";
+  if (role === "admin") return "Hello! I'm Mollmart Assistant. Ask about users, moderation, categories, or orders.";
+  return "Hello! I'm Mollmart Assistant. Ask how the platform works for buyers and sellers.";
 }
 
 function createWelcomeMessage(t: (text: string) => string, role: AssistantRole): ChatMessage {

@@ -1,14 +1,36 @@
 "use client";
 
-import { FormEvent, useEffect, useRef } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ChatMessage } from "./types";
 
 function timeLabel(value: string) {
-  return new Date(value).toLocaleTimeString("en-US", {
+  return new Date(value).toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function CopyButton({ text, t }: { text: string; t: (s: string) => string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [text]);
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handleCopy()}
+      className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+      title={copied ? t("Copied!") : t("Copy")}
+    >
+      <span className="material-symbols-outlined text-[13px]">{copied ? "check" : "content_copy"}</span>
+      <span>{copied ? t("Copied!") : t("Copy")}</span>
+    </button>
+  );
 }
 
 function TypingIndicator() {
@@ -77,7 +99,10 @@ export function MessageList({ messages, loading, t, compact }: MessageListProps)
                   </Link>
                 )}
               </div>
-              <span className="px-0.5 text-[10px] text-[var(--text-muted)]">{timeLabel(message.createdAt)}</span>
+              <div className="flex items-center gap-1 px-0.5">
+                <span className="text-[10px] text-[var(--text-muted)]">{timeLabel(message.createdAt)}</span>
+                {!mine && <CopyButton text={message.content} t={t} />}
+              </div>
             </div>
           </div>
         );

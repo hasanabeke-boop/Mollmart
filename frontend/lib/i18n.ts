@@ -614,16 +614,30 @@ export const uiTranslations = {
       "Помощь по пользователям, модерации, категориям и заказам",
     "Help with Mollmart buyer and seller workflows":
       "Помощь по процессам покупателя и продавца в Mollmart",
-    "Assistant welcome buyer":
+    "Hello! I'm Mollmart Assistant. Ask about requests, offers, chat, or demo payment.":
       "Здравствуйте! Я помощник Mollmart. Спросите о заявках, предложениях, чате или демо-оплате.",
-    "Assistant welcome seller":
+    "Hello! I'm Mollmart Assistant. Ask about buyer requests, offers, showcase, or auctions.":
       "Здравствуйте! Я помощник Mollmart. Спросите о заявках покупателей, предложениях, витрине или аукционах.",
-    "Assistant welcome admin":
+    "Hello! I'm Mollmart Assistant. Ask about users, moderation, categories, or orders.":
       "Здравствуйте! Я помощник Mollmart. Спросите о пользователях, модерации, категориях или заказах.",
-    "Assistant welcome guest":
+    "Hello! I'm Mollmart Assistant. Ask how the platform works for buyers and sellers.":
       "Здравствуйте! Я помощник Mollmart. Спросите, как работает платформа для покупателей и продавцов.",
+    "What is Mollmart and how does it work?": "Что такое Mollmart и как это работает?",
     "How do I create and publish a buyer request?": "Как создать и опубликовать заявку покупателя?",
-    "How do sellers find buyer requests?": "Как продавцы находят заявки покупателей?",
+    "How do sellers find and respond to requests?": "Как продавцы находят заявки и отвечают на них?",
+    "How do I sign up and get started?": "Как зарегистрироваться и начать работу?",
+    "How do I post a new buyer request?": "Как опубликовать новую заявку покупателя?",
+    "How do I compare and accept seller offers?": "Как сравнить и принять предложения продавцов?",
+    "How does the chat and deal process work?": "Как работает чат и процесс заключения сделки?",
+    "How do I track my orders and payments?": "Как отслеживать свои заказы и оплаты?",
+    "How do I browse and find buyer requests?": "Как просматривать и находить заявки покупателей?",
+    "How do I submit a compelling offer?": "Как отправить привлекательное предложение?",
+    "How do auctions work on the platform?": "Как работают аукционы на платформе?",
+    "How do I manage my showcase listings?": "Как управлять своими товарами в витрине?",
+    "How do I manage and moderate users?": "Как управлять и модерировать пользователей?",
+    "How does request and offer moderation work?": "Как работает модерация заявок и предложений?",
+    "How do I manage product categories?": "Как управлять категориями товаров?",
+    "How do I view and manage all orders?": "Как просматривать и управлять всеми заказами?",
     "How do chat and demo payment work?": "Как работают чат и демо-оплата?",
     "How do I register and log in?": "Как зарегистрироваться и войти?",
     "How do I accept a seller offer?": "Как принять предложение продавца?",
@@ -636,6 +650,9 @@ export const uiTranslations = {
     "What can admins do in Mollmart?": "Что могут делать администраторы в Mollmart?",
     "Where are request-deal orders?": "Где заказы по сделкам из заявок?",
     "What do notifications cover?": "Какие уведомления есть в системе?",
+    "New conversation": "Новый диалог",
+    "Copy": "Копировать",
+    "Copied!": "Скопировано!",
     "Admin account": "Аккаунт администратора",
     "Could not load profile.": "Не удалось загрузить профиль.",
     "Notification settings saved.": "Настройки уведомлений сохранены.",
@@ -1278,16 +1295,30 @@ export const uiTranslations = {
       "Пайдаланушылар, модерация, санаттар және тапсырыстар бойынша көмек",
     "Help with Mollmart buyer and seller workflows":
       "Mollmart сатып алушы және сатушы процестері бойынша көмек",
-    "Assistant welcome buyer":
+    "Hello! I'm Mollmart Assistant. Ask about requests, offers, chat, or demo payment.":
       "Сәлем! Мен Mollmart көмекшісімін. Сұраныс, ұсыныс, чат немесе демо төлем туралы сұраңыз.",
-    "Assistant welcome seller":
+    "Hello! I'm Mollmart Assistant. Ask about buyer requests, offers, showcase, or auctions.":
       "Сәлем! Мен Mollmart көмекшісімін. Сатып алушы сұраныстары, ұсыныстар, витрина немесе аукциондар туралы сұраңыз.",
-    "Assistant welcome admin":
+    "Hello! I'm Mollmart Assistant. Ask about users, moderation, categories, or orders.":
       "Сәлем! Мен Mollmart көмекшісімін. Пайдаланушылар, модерация, санаттар немесе тапсырыстар туралы сұраңыз.",
-    "Assistant welcome guest":
+    "Hello! I'm Mollmart Assistant. Ask how the platform works for buyers and sellers.":
       "Сәлем! Мен Mollmart көмекшісімін. Платформа сатып алушы мен сатушыға қалай жұмыс істейтінін сұраңыз.",
+    "What is Mollmart and how does it work?": "Mollmart дегеніміз не және ол қалай жұмыс істейді?",
     "How do I create and publish a buyer request?": "Сатып алушы сұранысын қалай жасап жариялаймын?",
-    "How do sellers find buyer requests?": "Сатушылар сатып алушы сұраныстарын қалай табады?",
+    "How do sellers find and respond to requests?": "Сатушылар сұраныстарды қалай тауып жауап береді?",
+    "How do I sign up and get started?": "Қалай тіркеліп бастаймын?",
+    "How do I post a new buyer request?": "Жаңа сатып алушы сұранысын қалай жариялаймын?",
+    "How do I compare and accept seller offers?": "Сатушы ұсыныстарын қалай салыстырып қабылдаймын?",
+    "How does the chat and deal process work?": "Чат пен мәміле процесі қалай жұмыс істейді?",
+    "How do I track my orders and payments?": "Тапсырыстарым мен төлемдерімді қалай бақылаймын?",
+    "How do I browse and find buyer requests?": "Сатып алушы сұраныстарын қалай қараймын және табамын?",
+    "How do I submit a compelling offer?": "Тартымды ұсынысты қалай жіберемін?",
+    "How do auctions work on the platform?": "Платформада аукциондар қалай жұмыс істейді?",
+    "How do I manage my showcase listings?": "Витринамдағы тауарларды қалай басқарамын?",
+    "How do I manage and moderate users?": "Пайдаланушыларды қалай басқарып модерациялаймын?",
+    "How does request and offer moderation work?": "Сұраныстар мен ұсыныстардың модерациясы қалай жұмыс істейді?",
+    "How do I manage product categories?": "Тауар санаттарын қалай басқарамын?",
+    "How do I view and manage all orders?": "Барлық тапсырыстарды қалай қараймын және басқарамын?",
     "How do chat and demo payment work?": "Чат пен демо төлем қалай жұмыс істейді?",
     "How do I register and log in?": "Қалай тіркеліп кіремін?",
     "How do I accept a seller offer?": "Сатушы ұсынысын қалай қабылдаймын?",
@@ -1300,6 +1331,9 @@ export const uiTranslations = {
     "What can admins do in Mollmart?": "Mollmart-та әкімшілер не істей алады?",
     "Where are request-deal orders?": "Сұраныс мәмілелерінің тапсырыстары қайда?",
     "What do notifications cover?": "Хабарландырулар не қамтиды?",
+    "New conversation": "Жаңа диалог",
+    "Copy": "Көшіру",
+    "Copied!": "Көшірілді!",
     "Admin account": "Әкімші аккаунты",
     "Could not load profile.": "Профильді жүктеу сәтсіз.",
     "Notification settings saved.": "Хабарландыру баптаулары сақталды.",
