@@ -380,8 +380,8 @@ export default function LoginPage() {
         </div>
 
         <div className="pt-10 flex gap-6 text-xs font-medium text-slate-400">
-          <Link className="hover:text-slate-600" href="/help">Privacy Policy</Link>
-          <Link className="hover:text-slate-600" href="/help">Terms of Service</Link>
+          <Link className="hover:text-slate-600" href="/privacy">Privacy Policy</Link>
+          <Link className="hover:text-slate-600" href="/terms">Terms of Service</Link>
           <Link className="hover:text-slate-600" href="/help">Help Center</Link>
         </div>
       </div>

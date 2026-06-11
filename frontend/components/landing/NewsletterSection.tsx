@@ -39,7 +39,7 @@ export function NewsletterSection() {
             </form>
             <p className="mt-3 text-sm text-gray-500">
               We care about the protection of your data. Read our{" "}
-              <Link className="font-medium text-primary underline" href="/help">
+              <Link className="font-medium text-primary underline" href="/privacy">
                 Privacy Policy
               </Link>
               .

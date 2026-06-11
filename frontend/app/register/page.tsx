@@ -344,9 +344,9 @@ export default function RegisterPage() {
               />
               <label className="text-sm text-slate-600" htmlFor="terms">
                 I agree to the{" "}
-                <Link className="text-primary font-medium hover:underline" href="/help">Terms of Service</Link>{" "}
+                <Link className="text-primary font-medium hover:underline" href="/terms">Terms of Service</Link>{" "}
                 and{" "}
-                <Link className="text-primary font-medium hover:underline" href="/help">Privacy Policy</Link>.
+                <Link className="text-primary font-medium hover:underline" href="/privacy">Privacy Policy</Link>.
               </label>
             </div>
             {fieldErrors.terms && (
