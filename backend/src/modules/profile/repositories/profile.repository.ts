@@ -130,10 +130,22 @@ export class ProfileRepository implements ProfileRepositoryLike {
     userId: string,
     data: Partial<Pick<UserProfile, 'fullName' | 'phone' | 'city' | 'avatarUrl'>>
   ): Promise<FullProfile> {
-    return this.client.userProfile.update({
-      where: { userId },
-      data,
-      include: profileInclude
+    return this.client.$transaction(async (tx) => {
+      if (data.fullName !== undefined) {
+        const trimmed = data.fullName.trim();
+        if (trimmed.length >= 2) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { name: trimmed }
+          });
+        }
+      }
+
+      return tx.userProfile.update({
+        where: { userId },
+        data,
+        include: profileInclude
+      });
     });
   }
 

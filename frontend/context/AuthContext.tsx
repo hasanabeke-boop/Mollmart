@@ -24,6 +24,7 @@ export type User = {
   name: string;
   email: string;
   emailVerified?: string | boolean | null;
+  avatarUrl?: string | null;
   role: "buyer" | "seller" | "admin";
   canBuy?: boolean;
   canSell?: boolean;
@@ -77,6 +78,7 @@ function mapMeToUser(me: User): User {
     languagePreference: me.languagePreference ?? "en",
     hasDualWorkspace: me.hasDualWorkspace ?? Boolean(me.canBuy && me.canSell),
     recommendationsOnboardingPending: me.recommendationsOnboardingPending ?? false,
+    avatarUrl: me.avatarUrl ?? null,
     status: (me.status as User["status"]) || "active",
   };
 }

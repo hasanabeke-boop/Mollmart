@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 export type SellerNavId =
   | "dashboard"
@@ -159,9 +160,12 @@ export default function SellerSidebar({ active, open, onClose }: Props) {
               <span className="text-sm font-medium">Settings</span>
             </Link>
             <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-                {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
-              </div>
+              <UserAvatar
+                name={user?.name}
+                email={user?.email}
+                avatarUrl={user?.avatarUrl}
+                size="sm"
+              />
               <div className="flex flex-1 flex-col overflow-hidden">
                 <p className="truncate text-sm font-bold text-[var(--foreground)]">
                   {user?.name || user?.email || "Seller"}

@@ -9,6 +9,7 @@ import AiMark from "@/components/chatbot/AiMark";
 import LanguageSwitcher from "@/components/i18n/LanguageSwitcher";
 import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -141,9 +142,12 @@ export function Header() {
                   <span className="hidden max-w-[4.5rem] truncate text-xs font-semibold text-[var(--foreground)] lg:block xl:max-w-[6rem] xl:text-sm">
                     {user.name || user.email}
                   </span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-sm font-bold">
-                    {(user.name || user.email || "U").charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar
+                    name={user.name}
+                    email={user.email}
+                    avatarUrl={user.avatarUrl}
+                    size="sm"
+                  />
                 </button>
 
                 {menuOpen && (

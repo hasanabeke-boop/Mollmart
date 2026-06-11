@@ -5,6 +5,7 @@ import type { User } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { uploadProfileAvatar } from "@/lib/profile";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { canEditBuyerProfile, canEditSellerProfile } from "@/lib/workspace";
 
 export type ProfileMeResponse = {
@@ -350,15 +351,12 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Avatar URL</span>
               <div className="mb-2 flex items-center gap-3">
-                <div className="h-14 w-14 overflow-hidden rounded-full border border-[#e7f3eb] bg-[#f5f6f8]">
-                  {avatarUrl.trim() ? (
-                    <img src={avatarUrl.trim()} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[#4c9a66]">
-                      {fullName.trim().slice(0, 1).toUpperCase() || user.name?.slice(0, 1).toUpperCase() || "U"}
-                    </div>
-                  )}
-                </div>
+                <UserAvatar
+                  name={fullName || user.name}
+                  email={user.email}
+                  avatarUrl={avatarUrl}
+                  size="lg"
+                />
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#e7f3eb] bg-white px-3 py-2 text-sm font-bold text-[#0d1b12] hover:bg-gray-50">
                   <span className="material-symbols-outlined text-[20px]">
                     {uploadingAvatar ? "progress_activity" : "upload"}

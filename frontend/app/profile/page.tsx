@@ -10,6 +10,7 @@ import WorkspaceModeToggle from "@/components/nav/WorkspaceModeToggle";
 import { useToast } from "@/context/ToastContext";
 import { apiFetch, apiFetchWithRefresh } from "@/lib/api";
 import EditProfileModal, { type ProfileMeResponse } from "@/components/profile/EditProfileModal";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { useCategoryLabel } from "@/hooks/useCategoryLabel";
 import { resolveAccountDisplayName } from "@/lib/profileDisplay";
 import { useLanguage } from "@/context/LanguageContext";
@@ -481,9 +482,13 @@ function UserProfilePageContent() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex items-center gap-5">
               <div className="relative">
-                <div className="size-24 md:size-28 rounded-full border-4 border-[#f5f6f8] shadow-sm flex items-center justify-center bg-[#e7f3eb] text-2xl font-bold text-[#4c9a66]">
-                  {(displayName.charAt(0) || user?.email?.charAt(0) || "U").toUpperCase()}
-                </div>
+                <UserAvatar
+                  name={displayName}
+                  email={user?.email}
+                  avatarUrl={user?.avatarUrl ?? profileData?.avatarUrl}
+                  size="xl"
+                  className="border-4 border-[#f5f6f8] shadow-sm"
+                />
                 <div
                   className="absolute bottom-1 right-1 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-blue-500 text-white shadow-sm"
                   aria-hidden

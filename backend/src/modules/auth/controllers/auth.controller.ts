@@ -63,6 +63,7 @@ const serializeUser = (user: {
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
+  profile?: { avatarUrl: string | null } | null;
 }) => ({
   id: user.id,
   name: user.name,
@@ -78,6 +79,7 @@ const serializeUser = (user: {
     user.recommendationsOnboardingSkippedAt == null,
   status: user.status,
   emailVerified: user.emailVerified,
+  avatarUrl: user.profile?.avatarUrl ?? null,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
   lastLoginAt: user.lastLoginAt
@@ -101,7 +103,8 @@ const activeUserSelect = {
   recommendationsOnboardingSkippedAt: true,
   createdAt: true,
   updatedAt: true,
-  lastLoginAt: true
+  lastLoginAt: true,
+  profile: { select: { avatarUrl: true } }
 } as const;
 
 const adminUserOrderBy = {
