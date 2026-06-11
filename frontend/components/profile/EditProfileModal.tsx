@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/context/ToastContext";
 import { apiFetchWithRefresh } from "@/lib/api";
 import { uploadProfileAvatar } from "@/lib/profile";
@@ -46,7 +47,18 @@ function emptyToUndefined(s: string): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
+function resolveProfileName(
+  stored: string | null | undefined,
+  userId: string,
+  fallbackName?: string | null,
+): string {
+  const trimmed = (stored ?? "").trim();
+  if (trimmed && trimmed !== userId) return trimmed;
+  return (fallbackName ?? "").trim();
+}
+
 export default function EditProfileModal({ open, onClose, user, profile, onSaved }: Props) {
+  const { t } = useLanguage();
   const { error: toastError, info: toastInfo } = useToast();
   const showSellerSection = canEditSellerProfile(user) && Boolean(profile?.sellerProfile);
   const showBuyerSection = canEditBuyerProfile(user) && Boolean(profile?.buyerProfile);
@@ -61,12 +73,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
   const [sellerWebsite, setSellerWebsite] = useState("");
   const [sellerInstagramUrl, setSellerInstagramUrl] = useState("");
 
-  const [buyerDisplayName, setBuyerDisplayName] = useState("");
   const [buyerCity, setBuyerCity] = useState("");
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -74,22 +81,15 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
 
   const resetFromProfile = useCallback(() => {
     if (!profile) return;
-    const looksLikeId = profile.fullName === profile.userId;
-    const displayName =
-      looksLikeId && user.name?.trim()
-        ? user.name.trim()
-        : (profile.fullName ?? "").trim();
-    setFullName(displayName);
+    setFullName(resolveProfileName(profile.fullName, profile.userId, user.name));
     setPhone(profile.phone ?? "");
     setCity(profile.city ?? "");
     setAvatarUrl(profile.avatarUrl ?? "");
 
     if (profile.sellerProfile) {
-      const sd =
-        profile.sellerProfile.displayName === profile.userId && user.name?.trim()
-          ? user.name.trim()
-          : profile.sellerProfile.displayName;
-      setSellerDisplayName(sd);
+      setSellerDisplayName(
+        resolveProfileName(profile.sellerProfile.displayName, profile.userId, user.name),
+      );
       setSellerDescription(profile.sellerProfile.description ?? "");
       setSellerBusinessType(profile.sellerProfile.businessType ?? "");
       setSellerWebsite(profile.sellerProfile.website ?? "");
@@ -103,20 +103,11 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     }
 
     if (profile.buyerProfile) {
-      const bd =
-        profile.buyerProfile.displayName === profile.userId && user.name?.trim()
-          ? user.name.trim()
-          : profile.buyerProfile.displayName;
-      setBuyerDisplayName(bd);
       setBuyerCity(profile.buyerProfile.city ?? "");
     } else {
-      setBuyerDisplayName("");
       setBuyerCity("");
     }
 
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
     setUploadingAvatar(false);
     setError("");
   }, [profile, user.name]);
@@ -163,35 +154,19 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
       return;
     }
 
-    const pwdFilled = Boolean(
-      currentPassword.trim() || newPassword.trim() || confirmPassword.trim(),
-    );
-    const newPwd = newPassword.trim();
-    const confirmPwd = confirmPassword.trim();
-
     const notifyValidation = (msg: string) => {
       setError(msg);
       toastError(msg);
     };
 
-    if (pwdFilled) {
-      if (!currentPassword.trim()) {
-        notifyValidation("Enter your current password to set a new one.");
-        return;
-      }
-      if (newPwd.length < 6) {
-        notifyValidation("New password must be at least 6 characters.");
-        return;
-      }
-      if (newPwd !== confirmPwd) {
-        notifyValidation("New password and confirmation do not match.");
-        return;
-      }
-    }
-
     const baseBody: Record<string, string> = {};
     const fn = fullName.trim();
     if (fn.length >= 2) baseBody.fullName = fn;
+    else if (fn.length > 0) {
+      notifyValidation("Name must be at least 2 characters.");
+      return;
+    }
+
     const ph = emptyToUndefined(phone);
     if (ph !== undefined) baseBody.phone = ph;
     const ci = emptyToUndefined(city);
@@ -201,8 +176,12 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
 
     const sellerBody: Record<string, unknown> = {};
     if (showSellerSection && profile?.sellerProfile) {
-      const dn = sellerDisplayName.trim();
-      if (dn.length >= 2) sellerBody.displayName = dn;
+      const shopName = sellerDisplayName.trim();
+      if (shopName.length >= 2) {
+        sellerBody.displayName = shopName;
+      } else if (fn.length >= 2) {
+        sellerBody.displayName = fn;
+      }
       const desc = sellerDescription.trim();
       if (desc.length > 0) sellerBody.description = desc;
       const bt = sellerBusinessType.trim();
@@ -215,8 +194,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
 
     const buyerBody: Record<string, unknown> = {};
     if (showBuyerSection && profile?.buyerProfile) {
-      const dn = buyerDisplayName.trim();
-      if (dn.length >= 2) buyerBody.displayName = dn;
+      if (fn.length >= 2) buyerBody.displayName = fn;
       const bc = buyerCity.trim();
       if (bc.length > 0) buyerBody.city = bc;
     }
@@ -224,11 +202,9 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
     const willPatchBase = Object.keys(baseBody).length > 0;
     const willPatchSeller = Object.keys(sellerBody).length > 0;
     const willPatchBuyer = Object.keys(buyerBody).length > 0;
-    const willPatchPassword =
-      pwdFilled && currentPassword.trim() && newPwd.length >= 6 && newPwd === confirmPwd;
 
-    if (!willPatchBase && !willPatchSeller && !willPatchBuyer && !willPatchPassword) {
-      const msg = "Nothing to save. Change some fields or fill the password section.";
+    if (!willPatchBase && !willPatchSeller && !willPatchBuyer) {
+      const msg = t("No changes to save.");
       setError(msg);
       toastInfo(msg);
       return;
@@ -257,16 +233,6 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
           service: "profile",
           activeMode: "buyer",
           body: JSON.stringify(buyerBody),
-        });
-      }
-      if (willPatchPassword) {
-        await apiFetchWithRefresh("/api/v1/auth/me/password", {
-          method: "PATCH",
-          service: "auth",
-          body: JSON.stringify({
-            currentPassword: currentPassword.trim(),
-            newPassword: newPwd,
-          }),
         });
       }
       onSaved();
@@ -299,7 +265,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
       >
         <div className="flex items-center justify-between border-b border-[#e7f3eb] px-5 py-4">
           <h2 id="edit-profile-title" className="text-lg font-bold text-[#0d1b12]">
-            Edit profile
+            {t("Edit profile")}
           </h2>
           <button
             type="button"
@@ -320,18 +286,21 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
           )}
 
           <section className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Account</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">{t("Account")}</h3>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Full name</span>
+              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Name")}</span>
               <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="name"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                {t("Shown in the header, profile, and chat.")}
+              </p>
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Phone</span>
+              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Phone")}</span>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -340,7 +309,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">City</span>
+              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("City")}</span>
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -349,7 +318,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Avatar URL</span>
+              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Avatar URL")}</span>
               <div className="mb-2 flex items-center gap-3">
                 <UserAvatar
                   name={fullName || user.name}
@@ -388,17 +357,25 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
 
           {showSellerSection && (
             <section className="space-y-3 border-t border-[#e7f3eb] pt-4">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Seller storefront</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">
+                {t("Seller storefront")}
+              </h3>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Public display name</span>
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">
+                  {t("Shop name (optional)")}
+                </span>
                 <input
                   value={sellerDisplayName}
                   onChange={(e) => setSellerDisplayName(e.target.value)}
+                  placeholder={fullName.trim() || user.name || ""}
                   className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  {t("If empty, your account name is used on the storefront.")}
+                </p>
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Description</span>
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Description")}</span>
                 <textarea
                   value={sellerDescription}
                   onChange={(e) => setSellerDescription(e.target.value)}
@@ -407,7 +384,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Business type</span>
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Business type")}</span>
                 <input
                   value={sellerBusinessType}
                   onChange={(e) => setSellerBusinessType(e.target.value)}
@@ -415,7 +392,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Website</span>
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Website")}</span>
                 <input
                   value={sellerWebsite}
                   onChange={(e) => setSellerWebsite(e.target.value)}
@@ -423,7 +400,7 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Instagram URL</span>
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Instagram URL")}</span>
                 <input
                   value={sellerInstagramUrl}
                   onChange={(e) => setSellerInstagramUrl(e.target.value)}
@@ -431,24 +408,19 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                 />
               </label>
               <p className="text-xs text-gray-500">
-                Recommendation categories are managed under <span className="font-semibold">Preferences</span> on your profile page.
+                Recommendation categories are managed under{" "}
+                <span className="font-semibold">{t("Preferences")}</span> on your profile page.
               </p>
             </section>
           )}
 
           {showBuyerSection && (
             <section className="space-y-3 border-t border-[#e7f3eb] pt-4">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Buyer profile</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">
+                {t("Buyer profile")}
+              </h3>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Public display name</span>
-                <input
-                  value={buyerDisplayName}
-                  onChange={(e) => setBuyerDisplayName(e.target.value)}
-                  className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Buyer city</span>
+                <span className="mb-1 block text-sm font-medium text-[#0d1b12]">{t("Buyer city")}</span>
                 <input
                   value={buyerCity}
                   onChange={(e) => setBuyerCity(e.target.value)}
@@ -459,45 +431,11 @@ export default function EditProfileModal({ open, onClose, user, profile, onSaved
                 You also have a general city field above; use buyer city for matching preferences if you keep them different.
               </p>
               <p className="text-xs text-gray-500">
-                Shopping categories for showcase recommendations are under <span className="font-semibold">Preferences</span> on your profile page.
+                Shopping categories for showcase recommendations are under{" "}
+                <span className="font-semibold">{t("Preferences")}</span> on your profile page.
               </p>
             </section>
           )}
-
-          <section className="space-y-3 border-t border-[#e7f3eb] pt-4">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[#4c9a66]">Change password</h3>
-            <p className="text-xs text-gray-500">Leave blank to keep your current password.</p>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Current password</span>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                autoComplete="current-password"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">New password</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                autoComplete="new-password"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#0d1b12]">Confirm new password</span>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-[#e7f3eb] bg-[#f5f6f8] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                autoComplete="new-password"
-              />
-            </label>
-          </section>
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-[#e7f3eb] bg-[#f5f6f8] px-5 py-4 sm:flex-row sm:justify-end sm:gap-3">
